@@ -1,6 +1,12 @@
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   text-align: center;
+}
+
+.tree {
+  overflow-x: auto;
+  white-space: nowrap;
+  padding: 20px;
 }
 
 .tree ul {
@@ -12,13 +18,52 @@ body {
   display: inline-block;
   text-align: center;
   position: relative;
-  padding: 20px 5px 0 5px;
+  padding: 20px 10px 0 10px;
+}
+
+.tree li::before,
+.tree li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  border-top: 2px solid #555;
+  width: 50%;
+  height: 20px;
+}
+
+.tree li::before {
+  left: -50%;
+}
+
+.tree li::after {
+  right: -50%;
+}
+
+.tree li:only-child::before,
+.tree li:only-child::after {
+  display: none;
+}
+
+.tree li:only-child {
+  padding-top: 0;
+}
+
+.tree li::after {
+  border-left: 2px solid #555;
 }
 
 .tree li span {
-  border: 1px solid #000;
-  padding: 8px 12px;
   display: inline-block;
-  border-radius: 6px;
-  background: #f4f4f4;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e0f7fa, #ffffff);
+  border: 1px solid #555;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.tree li span:hover {
+  background: #cce5ff;
+  cursor: pointer;
+  transform: scale(1.05);
 }
