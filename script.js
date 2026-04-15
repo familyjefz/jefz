@@ -30,7 +30,7 @@ async function buildNode(path, name) {
 // Load tree
 async function loadTree() {
   try {
-    const root = await buildNode(basePath, "Kakek");
+    const root = await buildNode(basePath, "Keluarga");
 
     new Treant({
       chart: {
