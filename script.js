@@ -11,42 +11,44 @@ async function getFolders(path) {
   return data.filter(item => item.type === "dir");
 }
 
-// Convert folder → struktur Treant
+// Build node (fix biar stabil)
 async function buildNode(path, name) {
   const folders = await getFolders(path);
 
-  let node = {
-    text: { name: name },
-    children: []
-  };
+  let children = [];
 
   for (let folder of folders) {
-    const child = await buildNode(folder.path, folder.name);
-    node.children.push(child);
+    children.push(await buildNode(folder.path, folder.name));
   }
 
-  return node;
+  return {
+    text: { name: name },
+    children: children.length ? children : undefined
+  };
 }
 
-// Load tree
+// Load tree (SETTING PENTING ADA DI SINI)
 async function loadTree() {
-  try {
-    const root = await buildNode(basePath, "Keluarga");
+  const root = await buildNode(basePath, "Kakek"); // root kamu
 
-    new Treant({
-      chart: {
-        container: "#tree",
-        nodeAlign: "BOTTOM",
-        connectors: {
-          type: "step"
+  new Treant({
+    chart: {
+      container: "#tree",
+      rootOrientation: "NORTH",   // dari atas ke bawah
+      levelSeparation: 60,        // jarak vertikal
+      siblingSeparation: 40,      // jarak antar saudara
+      subtreeSeparation: 80,      // jarak antar cabang
+      connectors: {
+        type: "step",
+        style: {
+          stroke: "#555",
+          "stroke-width": 2
         }
       },
-      nodeStructure: root
-    });
-
-  } catch (e) {
-    document.getElementById("tree").innerHTML = "Gagal load data!";
-  }
+      nodeAlign: "CENTER"
+    },
+    nodeStructure: root
+  });
 }
 
 loadTree();
