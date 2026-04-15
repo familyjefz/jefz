@@ -11,14 +11,15 @@ async function getFolders(path) {
   return data.filter(item => item.type === "dir");
 }
 
-// Build node tree
+// Build node tree dari folder
 async function buildNode(path, name) {
   const folders = await getFolders(path);
 
   let children = [];
 
   for (let folder of folders) {
-    children.push(await buildNode(folder.path, folder.name));
+    const child = await buildNode(folder.path, folder.name);
+    children.push(child);
   }
 
   return {
@@ -27,10 +28,18 @@ async function buildNode(path, name) {
   };
 }
 
-// Load tree
+// Load tree (FIX: tidak dobel)
 async function loadTree() {
   try {
-    const root = await buildNode(basePath, "keluarga");
+    const folders = await getFolders(basePath);
+
+    if (folders.length === 0) {
+      document.getElementById("tree").innerHTML = "Kosong!";
+      return;
+    }
+
+    // Ambil folder pertama sebagai root
+    const root = await buildNode(folders[0].path, folders[0].name);
 
     new Treant({
       chart: {
@@ -56,4 +65,5 @@ async function loadTree() {
   }
 }
 
+// Jalankan
 loadTree();
