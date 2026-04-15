@@ -3,64 +3,17 @@ body {
   text-align: center;
 }
 
-/* WRAPPER */
-.tree {
-  overflow-x: auto;
-  padding: 20px;
-}
-
-/* UL jadi flex */
-.tree ul {
-  display: flex;
-  justify-content: center;
-  padding-top: 20px;
-  position: relative;
-}
-
-/* LI jadi kolom */
-.tree li {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  padding: 20px 10px;
-}
-
-/* GARIS KE ATAS (horizontal) */
-.tree li::before {
-  content: '';
-  position: absolute;
-  top: 0;
+#tree {
   width: 100%;
-  border-top: 2px solid #555;
+  height: 600px;
+  overflow: auto;
 }
 
-/* GARIS KE BAWAH (vertical) */
-.tree li::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  height: 20px;
-  border-left: 2px solid #555;
-}
-
-/* HAPUS garis kalau root */
-.tree > ul > li::before,
-.tree > ul > li::after {
-  display: none;
-}
-
-/* KOTAK */
-.tree li span {
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: #f4f4f4;
+/* Node style */
+.node {
+  padding: 8px 12px;
   border: 1px solid #555;
-  transition: 0.2s;
-}
-
-.tree li span:hover {
-  background: #cce5ff;
-  transform: scale(1.05);
-  cursor: pointer;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #e0f7fa, #ffffff);
+  display: inline-block;
 }
