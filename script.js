@@ -2,44 +2,52 @@ const username = "familyjefz";
 const repo = "jefz";
 const basePath = "keluarga";
 
-// Ambil folder dari GitHub
-async function getFolders(path) {
-  const url = `https://api.github.com/repos/${username}/${repo}/contents/${path}`;
+// Ambil semua file sekaligus (1 request saja)
+async function getAllData() {
+  const url = `https://api.github.com/repos/${username}/${repo}/git/trees/main?recursive=1`;
   const res = await fetch(url);
-  const data = await res.json();
 
-  return data.filter(item => item.type === "dir");
-}
-
-// Build node tree dari folder
-async function buildNode(path, name) {
-  const folders = await getFolders(path);
-
-  let children = [];
-
-  for (let folder of folders) {
-    const child = await buildNode(folder.path, folder.name);
-    children.push(child);
+  if (!res.ok) {
+    throw new Error("Gagal ambil data: " + res.status);
   }
 
-  return {
-    text: { name: name },
-    children: children.length ? children : undefined
-  };
+  const data = await res.json();
+  return data.tree;
 }
 
-// Load tree (FIX: tidak dobel)
+// Ubah flat list → tree
+function buildTree(data, path) {
+  const children = data
+    .filter(item => item.path.startsWith(path + "/") && item.type === "tree")
+    .map(item => {
+      const name = item.path.replace(path + "/", "").split("/")[0];
+
+      return name;
+    });
+
+  const unique = [...new Set(children)];
+
+  return unique.map(name => {
+    const fullPath = path + "/" + name;
+
+    return {
+      text: { name: name },
+      children: buildTree(data, fullPath)
+    };
+  });
+}
+
+// Load tree
 async function loadTree() {
   try {
-    const folders = await getFolders(basePath);
+    const data = await getAllData();
 
-    if (folders.length === 0) {
+    const nodes = buildTree(data, basePath);
+
+    if (nodes.length === 0) {
       document.getElementById("tree").innerHTML = "Kosong!";
       return;
     }
-
-    // Ambil folder pertama sebagai root
-    const root = await buildNode(folders[0].path, folders[0].name);
 
     new Treant({
       chart: {
@@ -57,13 +65,13 @@ async function loadTree() {
         },
         nodeAlign: "CENTER"
       },
-      nodeStructure: root
+      nodeStructure: nodes[0] // root pertama
     });
 
   } catch (e) {
-    document.getElementById("tree").innerHTML = "Gagal load data!";
+    console.error(e);
+    document.getElementById("tree").innerHTML = "Error: " + e.message;
   }
 }
 
-// Jalankan
 loadTree();
