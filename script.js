@@ -13,10 +13,12 @@ async function getFolders(path) {
 async function buildTree(path) {
   const folders = await getFolders(path);
 
+  if (folders.length === 0) return "";
+
   let html = "<ul>";
 
   for (let folder of folders) {
-    html += `<li>${folder.name}`;
+    html += `<li><span>${folder.name}</span>`;
     html += await buildTree(folder.path);
     html += "</li>";
   }
@@ -27,8 +29,12 @@ async function buildTree(path) {
 }
 
 async function loadTree() {
-  const tree = await buildTree(basePath);
-  document.getElementById("tree").innerHTML = tree;
+  try {
+    const treeHTML = await buildTree(basePath);
+    document.getElementById("tree").innerHTML = treeHTML;
+  } catch (e) {
+    document.getElementById("tree").innerHTML = "Gagal load data!";
+  }
 }
 
 loadTree();
