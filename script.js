@@ -1,3 +1,6 @@
+let currentAction = null;
+let currentPath = [];
+
 async function loadTree() {
   const res = await fetch("data.json?v=" + Date.now());
   const data = await res.json();
@@ -14,13 +17,12 @@ async function loadTree() {
   });
 }
 
-// convert + path
 function convert(node, path = []) {
   return {
     innerHTML: `
       <div>
         ${node.name}<br>
-        <button onclick='showOptions(${JSON.stringify(path)})'>⚙️</button>
+        <button onclick='openMenu(event, ${JSON.stringify(path)})'>⚙️</button>
       </div>
     `,
     children: node.children?.map((child, i) =>
@@ -29,56 +31,91 @@ function convert(node, path = []) {
   };
 }
 
-// menu opsi
-function showOptions(path) {
-  const aksi = prompt(
-    "Pilih:\n1. Tambah anak\n2. Ubah\n3. Hapus\n4. Tambah atas"
-  );
+// MENU
+function openMenu(e, path) {
+  e.stopPropagation();
 
-  if (aksi === "1") tambah(path);
-  if (aksi === "2") ubah(path);
-  if (aksi === "3") hapus(path);
-  if (aksi === "4") tambahAtas(path);
+  currentPath = path;
+
+  const menu = document.getElementById("menu");
+
+  menu.innerHTML = `
+    <button onclick="openModal('add')">➕ Tambah Anak</button>
+    <button onclick="openModal('edit')">✏️ Ubah</button>
+    <button onclick="hapus()">❌ Hapus</button>
+    <button onclick="openModal('parent')">⬆️ Tambah Orang Tua</button>
+  `;
+
+  menu.style.display = "block";
+  menu.style.left = e.pageX + "px";
+  menu.style.top = e.pageY + "px";
 }
 
-// tambah anak
-async function tambah(path) {
-  const nama = prompt("Nama anak:");
-  if (!nama) return;
+// tutup menu
+document.addEventListener("click", () => {
+  document.getElementById("menu").style.display = "none";
+});
+
+// MODAL
+function openModal(action) {
+  currentAction = action;
+
+  const modal = document.getElementById("modal");
+  const input = document.getElementById("modalInput");
+
+  modal.style.display = "block";
+
+  let target = window.treeData;
+  for (let i of currentPath) {
+    target = target.children[i];
+  }
+
+  if (action === "edit") {
+    document.getElementById("modalTitle").innerText = "Ubah Nama";
+    input.value = target.name;
+  }
+
+  if (action === "add") {
+    document.getElementById("modalTitle").innerText = "Tambah Anak";
+    input.value = "";
+  }
+
+  if (action === "parent") {
+    document.getElementById("modalTitle").innerText = "Tambah Orang Tua";
+    input.value = "";
+  }
+}
+
+function closeModal() {
+  document.getElementById("modal").style.display = "none";
+}
+
+// SUBMIT
+async function submitAction() {
+  const input = document.getElementById("modalInput").value;
+  if (!input) return;
+
+  let actionType = "";
+
+  if (currentAction === "add") actionType = "add";
+  if (currentAction === "edit") actionType = "edit";
+  if (currentAction === "parent") actionType = "addParent";
 
   await fetch("https://jefz.vercel.app/api/update", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
-      action: "add",
-      path,
-      name: nama
+      action: actionType,
+      path: currentPath,
+      name: input
     })
   });
 
   location.reload();
 }
 
-// ubah nama
-async function ubah(path) {
-  const nama = prompt("Nama baru:");
-  if (!nama) return;
-
-  await fetch("https://jefz.vercel.app/api/update", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      action: "edit",
-      path,
-      name: nama
-    })
-  });
-
-  location.reload();
-}
-
-// hapus
-async function hapus(path) {
+// HAPUS
+async function hapus() {
   if (!confirm("Yakin hapus?")) return;
 
   await fetch("https://jefz.vercel.app/api/update", {
@@ -86,25 +123,7 @@ async function hapus(path) {
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       action: "delete",
-      path
-    })
-  });
-
-  location.reload();
-}
-
-// tambah orang tua
-async function tambahAtas(path) {
-  const nama = prompt("Nama orang tua:");
-  if (!nama) return;
-
-  await fetch("https://jefz.vercel.app/api/update", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      action: "addParent",
-      path,
-      name: nama
+      path: currentPath
     })
   });
 
