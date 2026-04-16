@@ -21,11 +21,14 @@ export default async function handler(req, res) {
     }
 
     // ambil file dari GitHub
-    const response = await fetch("https://api.github.com/repos/familyjefz/jefz/contents/data.json", {
-      headers: {
-        Authorization: `token ${token}`
+    const response = await fetch(
+      "https://api.github.com/repos/familyjefz/jefz/contents/data.json",
+      {
+        headers: {
+          Authorization: `token ${token}`
+        }
       }
-    });
+    );
 
     const file = await response.json();
 
@@ -52,17 +55,20 @@ export default async function handler(req, res) {
     ).toString("base64");
 
     // kirim update ke GitHub
-    const update = await fetch("https://api.github.com/repos/familyjefz/jefz/contents/data.json", {
-      method: "PUT",
-      headers: {
-        Authorization: `token ${token}`
-      },
-      body: JSON.stringify({
-        message: "Tambah anggota",
-        content: updated,
-        sha: file.sha
-      })
-    });
+    const update = await fetch(
+      "https://api.github.com/repos/familyjefz/jefz/contents/data.json",
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `token ${token}`
+        },
+        body: JSON.stringify({
+          message: "Tambah anggota",
+          content: updated,
+          sha: file.sha
+        })
+      }
+    );
 
     const result = await update.json();
 
