@@ -11,7 +11,7 @@ async function loadTree() {
 }
 
 function render() {
-  document.getElementById("tree").innerHTML = "";
+  document.getElementById("tree").innerHTML = ""; // 🔥 fix duplicate
 
   new Treant({
     chart: {
@@ -21,8 +21,6 @@ function render() {
     },
     nodeStructure: convert(window.treeData)
   });
-
-  setTimeout(attachEvents, 300);
 }
 
 function isActive(path) {
@@ -33,9 +31,10 @@ function convert(node, path = []) {
 
   let content = "";
 
+  // MODE INPUT
   if (isActive(path) && activeMode) {
     content = `
-      <div class="node-box active-node" data-path='${JSON.stringify(path)}'>
+      <div class="node-box">
         <div class="node-name">${node.name}</div>
 
         <input class="node-input" 
@@ -45,16 +44,17 @@ function convert(node, path = []) {
         />
 
         <div class="node-actions">
-          <button class="btn-save" onclick='submitInline(${JSON.stringify(path)})'>✔</button>
-          <button class="btn-cancel" onclick='cancelInline()'>✖</button>
+          <button class="btn-save" onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
+          <button class="btn-cancel" onclick='cancelInline()'>✖ Batal</button>
         </div>
       </div>
     `;
   }
 
+  // MODE MENU
   else if (isActive(path)) {
     content = `
-      <div class="node-box active-node" data-path='${JSON.stringify(path)}'>
+      <div class="node-box">
         <div class="node-name">${node.name}</div>
 
         <div class="node-menu">
@@ -68,11 +68,12 @@ function convert(node, path = []) {
     `;
   }
 
+  // NORMAL
   else {
     content = `
-      <div class="node-box" data-path='${JSON.stringify(path)}'>
+      <div class="node-box">
         <div class="node-name">${node.name}</div>
-        <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️</button>
+        <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
       </div>
     `;
   }
@@ -85,25 +86,11 @@ function convert(node, path = []) {
   };
 }
 
-// 🔥 buka option + auto zoom
+// buka menu
 function openOptions(path) {
   activePath = path;
   activeMode = null;
   render();
-
-  setTimeout(() => focusNode(path), 300);
-}
-
-// 🔥 fokus ke node
-function focusNode(path) {
-  const el = document.querySelector(`[data-path='${JSON.stringify(path)}']`);
-  if (el) {
-    el.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-      inline: "center"
-    });
-  }
 }
 
 // set mode
@@ -111,8 +98,6 @@ function setMode(path, mode) {
   activePath = path;
   activeMode = mode;
   render();
-
-  setTimeout(() => focusNode(path), 300);
 }
 
 // cancel
@@ -138,8 +123,8 @@ async function submitInline(path) {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
-      action,
-      path,
+      action: action,
+      path: path,
       name: val,
       position: parseInt(val)
     })
@@ -157,20 +142,11 @@ async function hapus(path) {
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       action: "delete",
-      path
+      path: path
     })
   });
 
   location.reload();
 }
-
-// 🔥 klik luar = close option
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".node-box")) {
-    activePath = null;
-    activeMode = null;
-    render();
-  }
-});
 
 loadTree();
