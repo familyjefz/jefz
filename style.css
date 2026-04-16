@@ -90,6 +90,8 @@ body {
 .active-node {
   border: 2px solid #2196f3;
 }
+
+
 .floating-menu {
   position: fixed;
   background: #fff;
