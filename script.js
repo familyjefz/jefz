@@ -10,7 +10,6 @@ let startX, startY;
 async function loadTree() {
   const res = await fetch("data.json?v=" + Date.now());
   window.treeData = await res.json();
-
   render();
 }
 
@@ -30,32 +29,29 @@ function render() {
     nodeStructure: convert(window.treeData)
   });
 
-  setTimeout(applyTransform, 200);
+  requestAnimationFrame(applyTransform);
 }
 
-/* 🔥 FIX: transform harus ke container, bukan child tunggal */
+/* 🔥 FIX SMOOTH TRANSFORM */
 function applyTransform() {
-  const tree = document.getElementById("tree");
-  tree.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-  tree.style.transformOrigin = "0 0";
+  const wrapper = document.getElementById("tree-wrapper");
+
+  wrapper.style.transform = `translate3d(${posX}px, ${posY}px, 0) scale(${scale})`;
+  wrapper.style.transition = isDragging ? "none" : "transform 0.2s ease-out";
 }
 
-/* cek active */
+/* ACTIVE CHECK */
 function isActive(path) {
   return JSON.stringify(path) === JSON.stringify(activePath);
 }
 
-/* convert tree */
+/* NODE BUILD */
 function convert(node, path = []) {
   return {
     innerHTML: `
-      <div class="node-box ${isActive(path) ? "active-node" : ""}"
-           data-path='${JSON.stringify(path)}'>
+      <div class="node-box ${isActive(path) ? "active-node" : ""}">
         <div class="node-name">${node.name}</div>
-
-        <button onclick='openNode(${JSON.stringify(path)})'>
-          ⚙️
-        </button>
+        <button onclick="openOptions('${JSON.stringify(path)}')">⚙️ Option</button>
       </div>
     `,
     children: node.children?.map((c, i) =>
@@ -64,16 +60,19 @@ function convert(node, path = []) {
   };
 }
 
-/* klik node */
-function openNode(path) {
+/* 🔥 FIX OPTION BUTTON */
+window.openOptions = function(pathStr) {
+  const path = JSON.parse(pathStr);
+
   activePath = path;
+
   render();
 }
 
 /* ================= PAN ================= */
 
 document.addEventListener("mousedown", (e) => {
-  if (e.target.closest(".node-box")) return;
+  if (e.target.closest("button")) return;
 
   isDragging = true;
   startX = e.clientX - posX;
@@ -91,6 +90,7 @@ document.addEventListener("mousemove", (e) => {
 
 document.addEventListener("mouseup", () => {
   isDragging = false;
+  applyTransform();
 });
 
 /* ================= TOUCH ================= */
@@ -121,7 +121,9 @@ document.addEventListener("touchend", () => {
 document.addEventListener("wheel", (e) => {
   e.preventDefault();
 
-  scale += e.deltaY * -0.001;
+  const zoomIntensity = 0.001;
+
+  scale += e.deltaY * -zoomIntensity;
 
   if (scale < 0.5) scale = 0.5;
   if (scale > 2) scale = 2;
