@@ -130,6 +130,7 @@ function closeMenu() {
   }
 }
 
+
 // klik luar
 document.addEventListener("click", () => {
   closeMenu();
