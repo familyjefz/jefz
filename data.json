@@ -65,7 +65,12 @@
     },
     {
       "name": "nenek",
-      "children": []
+      "children": [
+        {
+          "name": "ipar sepupu",
+          "children": []
+        }
+      ]
     }
   ]
 }
