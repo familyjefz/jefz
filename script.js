@@ -1,13 +1,6 @@
 let activePath = null;
 let activeMode = null;
 
-let scale = 1;
-let posX = 0;
-let posY = 0;
-
-let isDragging = false;
-let startX, startY;
-
 async function loadTree() {
   const res = await fetch("data.json?v=" + Date.now());
   const data = await res.json();
@@ -18,8 +11,7 @@ async function loadTree() {
 }
 
 function render() {
-  const tree = document.getElementById("tree");
-  tree.innerHTML = "";
+  document.getElementById("tree").innerHTML = "";
 
   new Treant({
     chart: {
@@ -30,17 +22,7 @@ function render() {
     nodeStructure: convert(window.treeData)
   });
 
-  setTimeout(() => {
-    applyTransform();
-  }, 300);
-}
-
-function applyTransform() {
-  const tree = document.querySelector("#tree > div");
-  if (tree) {
-    tree.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-    tree.style.transformOrigin = "0 0";
-  }
+  setTimeout(attachEvents, 300);
 }
 
 function isActive(path) {
@@ -59,7 +41,7 @@ function convert(node, path = []) {
         <input class="node-input" 
           id="input-${path.join("-")}" 
           value="${activeMode==='edit'?node.name:''}"
-          placeholder="${activeMode==='order'?'Urutan...':''}"
+          placeholder="${activeMode==='order'?'Urutan (0,1,2...)':''}"
         />
 
         <div class="node-actions">
@@ -103,7 +85,7 @@ function convert(node, path = []) {
   };
 }
 
-// OPTION + AUTO FOCUS
+// 🔥 buka option + auto zoom
 function openOptions(path) {
   activePath = path;
   activeMode = null;
@@ -112,6 +94,7 @@ function openOptions(path) {
   setTimeout(() => focusNode(path), 300);
 }
 
+// 🔥 fokus ke node
 function focusNode(path) {
   const el = document.querySelector(`[data-path='${JSON.stringify(path)}']`);
   if (el) {
@@ -123,7 +106,7 @@ function focusNode(path) {
   }
 }
 
-// MODE
+// set mode
 function setMode(path, mode) {
   activePath = path;
   activeMode = mode;
@@ -132,13 +115,14 @@ function setMode(path, mode) {
   setTimeout(() => focusNode(path), 300);
 }
 
+// cancel
 function cancelInline() {
   activePath = null;
   activeMode = null;
   render();
 }
 
-// SUBMIT
+// submit
 async function submitInline(path) {
   const val = document.getElementById("input-" + path.join("-")).value;
   if (!val) return;
@@ -164,7 +148,7 @@ async function submitInline(path) {
   location.reload();
 }
 
-// HAPUS
+// hapus
 async function hapus(path) {
   if (!confirm("Yakin hapus?")) return;
 
@@ -180,7 +164,7 @@ async function hapus(path) {
   location.reload();
 }
 
-// 🔥 CLICK LUAR
+// 🔥 klik luar = close option
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".node-box")) {
     activePath = null;
@@ -188,60 +172,5 @@ document.addEventListener("click", (e) => {
     render();
   }
 });
-
-// 🔥 DRAG (PAN)
-document.addEventListener("mousedown", (e) => {
-  if (e.target.closest(".node-box")) return;
-
-  isDragging = true;
-  startX = e.clientX - posX;
-  startY = e.clientY - posY;
-});
-
-document.addEventListener("mousemove", (e) => {
-  if (!isDragging) return;
-
-  posX = e.clientX - startX;
-  posY = e.clientY - startY;
-  applyTransform();
-});
-
-document.addEventListener("mouseup", () => {
-  isDragging = false;
-});
-
-// 🔥 TOUCH (HP)
-document.addEventListener("touchstart", (e) => {
-  if (e.touches.length === 1) {
-    isDragging = true;
-    startX = e.touches[0].clientX - posX;
-    startY = e.touches[0].clientY - posY;
-  }
-});
-
-document.addEventListener("touchmove", (e) => {
-  if (!isDragging) return;
-
-  posX = e.touches[0].clientX - startX;
-  posY = e.touches[0].clientY - startY;
-  applyTransform();
-});
-
-document.addEventListener("touchend", () => {
-  isDragging = false;
-});
-
-// 🔥 ZOOM (scroll)
-document.addEventListener("wheel", (e) => {
-  e.preventDefault();
-
-  const zoomSpeed = 0.1;
-  scale += e.deltaY * -zoomSpeed * 0.01;
-
-  if (scale < 0.5) scale = 0.5;
-  if (scale > 2) scale = 2;
-
-  applyTransform();
-}, { passive: false });
 
 loadTree();
