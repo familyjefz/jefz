@@ -7,7 +7,12 @@
     },
     {
       "name": "ayah",
-      "children": []
+      "children": [
+        {
+          "name": "sepupu1",
+          "children": []
+        }
+      ]
     },
     {
       "name": "nenek",
