@@ -12,49 +12,72 @@ export default async function handler(req, res) {
 
     const { action, path, name } = body;
 
+    // ambil data.json dari GitHub
     const response = await fetch("https://api.github.com/repos/familyjefz/jefz/contents/data.json", {
-      headers: { Authorization: `token ${token}` }
+      headers: {
+        Authorization: `token ${token}`
+      }
     });
 
     const file = await response.json();
-    const data = JSON.parse(Buffer.from(file.content, "base64").toString());
 
-    let target = data;
+    let data = JSON.parse(
+      Buffer.from(file.content, "base64").toString()
+    );
 
-    for (let i of path) {
-      target = target.children[i];
-    }
+    // ===== AKSI =====
 
-    // tambah anak
+    // 🔹 TAMBAH ANAK
     if (action === "add") {
+      let target = data;
+
+      for (let i of path) {
+        target = target.children[i];
+      }
+
       if (!target.children) target.children = [];
-      target.children.push({ name, children: [] });
+
+      target.children.push({
+        name: name,
+        children: []
+      });
     }
 
-    // ubah nama
+    // 🔹 UBAH NAMA
     if (action === "edit") {
+      let target = data;
+
+      for (let i of path) {
+        target = target.children[i];
+      }
+
       target.name = name;
     }
 
-    // hapus
+    // 🔹 HAPUS
     if (action === "delete") {
       let parent = data;
+
       for (let i = 0; i < path.length - 1; i++) {
         parent = parent.children[path[i]];
       }
+
       parent.children.splice(path[path.length - 1], 1);
     }
 
-    // tambah orang tua
+    // 🔥 TAMBAH ORANG TUA (FIXED)
     if (action === "addParent") {
+
+      // kalau root
       if (path.length === 0) {
-        const newRoot = {
+        data = {
           name: name,
           children: [data]
         };
-        Object.assign(data, newRoot);
+
       } else {
         let parent = data;
+
         for (let i = 0; i < path.length - 1; i++) {
           parent = parent.children[path[i]];
         }
@@ -68,11 +91,17 @@ export default async function handler(req, res) {
       }
     }
 
-    const updated = Buffer.from(JSON.stringify(data, null, 2)).toString("base64");
+    // encode ke base64
+    const updated = Buffer.from(
+      JSON.stringify(data, null, 2)
+    ).toString("base64");
 
+    // kirim ke GitHub
     await fetch("https://api.github.com/repos/familyjefz/jefz/contents/data.json", {
       method: "PUT",
-      headers: { Authorization: `token ${token}` },
+      headers: {
+        Authorization: `token ${token}`
+      },
       body: JSON.stringify({
         message: "Update tree",
         content: updated,
@@ -80,7 +109,7 @@ export default async function handler(req, res) {
       })
     });
 
-    res.json({ success: true });
+    res.status(200).json({ success: true });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
