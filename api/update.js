@@ -10,10 +10,13 @@ export default async function handler(req, res) {
       ? JSON.parse(req.body)
       : req.body;
 
-    const { action, path = [], name, position } = body;
+    const { action, path, name } = body;
 
+    // ambil data.json dari GitHub
     const response = await fetch("https://api.github.com/repos/familyjefz/jefz/contents/data.json", {
-      headers: { Authorization: `token ${token}` }
+      headers: {
+        Authorization: `token ${token}`
+      }
     });
 
     const file = await response.json();
@@ -22,28 +25,39 @@ export default async function handler(req, res) {
       Buffer.from(file.content, "base64").toString()
     );
 
-    // 🔥 backup sebelum perubahan
-    const backup = JSON.parse(JSON.stringify(data));
-
     // ===== AKSI =====
 
+    // 🔹 TAMBAH ANAK
     if (action === "add") {
       let target = data;
-      for (let i of path) target = target.children[i];
+
+      for (let i of path) {
+        target = target.children[i];
+      }
 
       if (!target.children) target.children = [];
-      target.children.push({ name, children: [] });
+
+      target.children.push({
+        name: name,
+        children: []
+      });
     }
 
+    // 🔹 UBAH NAMA
     if (action === "edit") {
       let target = data;
-      for (let i of path) target = target.children[i];
+
+      for (let i of path) {
+        target = target.children[i];
+      }
 
       target.name = name;
     }
 
+    // 🔹 HAPUS
     if (action === "delete") {
       let parent = data;
+
       for (let i = 0; i < path.length - 1; i++) {
         parent = parent.children[path[i]];
       }
@@ -51,14 +65,19 @@ export default async function handler(req, res) {
       parent.children.splice(path[path.length - 1], 1);
     }
 
+    // 🔥 TAMBAH ORANG TUA (FIXED)
     if (action === "addParent") {
+
+      // kalau root
       if (path.length === 0) {
         data = {
           name: name,
           children: [data]
         };
+
       } else {
         let parent = data;
+
         for (let i = 0; i < path.length - 1; i++) {
           parent = parent.children[path[i]];
         }
@@ -72,41 +91,17 @@ export default async function handler(req, res) {
       }
     }
 
-    // 🔢 REORDER
-    if (action === "reorder") {
-      let parent = data;
-
-      for (let i = 0; i < path.length - 1; i++) {
-        parent = parent.children[path[i]];
-      }
-
-      const oldIndex = path[path.length - 1];
-      let newIndex = position;
-
-      if (newIndex < 0) newIndex = 0;
-      if (newIndex >= parent.children.length)
-        newIndex = parent.children.length - 1;
-
-      const item = parent.children.splice(oldIndex, 1)[0];
-      parent.children.splice(newIndex, 0, item);
-    }
-
-    // 🔥 UNDO
-    if (action === "undo") {
-      if (data._backup) {
-        data = data._backup;
-      }
-    } else {
-      data._backup = backup;
-    }
-
+    // encode ke base64
     const updated = Buffer.from(
       JSON.stringify(data, null, 2)
     ).toString("base64");
 
+    // kirim ke GitHub
     await fetch("https://api.github.com/repos/familyjefz/jefz/contents/data.json", {
       method: "PUT",
-      headers: { Authorization: `token ${token}` },
+      headers: {
+        Authorization: `token ${token}`
+      },
       body: JSON.stringify({
         message: "Update tree",
         content: updated,
@@ -114,7 +109,7 @@ export default async function handler(req, res) {
       })
     });
 
-    res.json({ success: true });
+    res.status(200).json({ success: true });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
