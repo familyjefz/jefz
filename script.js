@@ -1,12 +1,12 @@
-let activePath = null;
-let activeMode = null;
-
 let scale = 1;
 let posX = 0;
 let posY = 0;
 
 let dragging = false;
 let startX, startY;
+
+let activePath = null;
+let activeMode = null;
 
 async function loadTree() {
   const res = await fetch("data.json?v=" + Date.now());
@@ -17,7 +17,8 @@ async function loadTree() {
 }
 
 function render() {
-  document.getElementById("tree").innerHTML = "";
+  const tree = document.getElementById("tree");
+  tree.innerHTML = "";
 
   new Treant({
     chart: {
@@ -28,140 +29,56 @@ function render() {
     nodeStructure: convert(window.treeData)
   });
 
-  setTimeout(applyTransform, 300);
+  applyTransform();
 }
 
 function applyTransform() {
-  const el = document.querySelector("#tree > div");
-  if (el) {
-    el.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
-    el.style.transformOrigin = "0 0";
-  }
+  const tree = document.getElementById("tree");
+
+  tree.style.transform =
+    `translate(${posX}px, ${posY}px) scale(${scale})`;
 }
 
-function isActive(path) {
-  return JSON.stringify(path) === JSON.stringify(activePath);
-}
+// ===== NODE =====
 
 function convert(node, path = []) {
 
-  let content = "";
-
-  if (isActive(path) && activeMode) {
-    content = `
-      <div class="node-box active-node">
-        <div class="node-name">${node.name}</div>
-
-        <input class="node-input" id="input-${path.join("-")}" />
-
-        <div class="node-actions">
-          <button class="btn-save" onclick='submit(path=${JSON.stringify(path)})'>✔</button>
-          <button class="btn-cancel" onclick='cancel()'>✖</button>
-        </div>
-      </div>
-    `;
-  }
-
-  else if (isActive(path)) {
-    content = `
-      <div class="node-box active-node">
-        <div class="node-name">${node.name}</div>
-
-        <div class="node-menu">
-          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕<br>Tambah</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️<br>Ubah</button>
-          <button onclick='hapus(${JSON.stringify(path)})'>❌<br>Hapus</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️<br>Atas</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢<br>Urut</button>
-        </div>
-      </div>
-    `;
-  }
-
-  else {
-    content = `
+  return {
+    innerHTML: `
       <div class="node-box">
         <div class="node-name">${node.name}</div>
-        <button class="btn-option" onclick='open(${JSON.stringify(path)})'>⚙️ Option</button>
+        <button onclick='openMenu(${JSON.stringify(path)})'>⚙️</button>
       </div>
-    `;
-  }
-
-  return {
-    innerHTML: content,
+    `,
     children: node.children?.map((c, i) =>
       convert(c, [...path, i])
     )
   };
 }
 
-/* ========== OPTION ========== */
+// ===== MENU =====
 
-function open(path) {
+function openMenu(path) {
   activePath = path;
-  activeMode = null;
-  render();
-  setTimeout(() => focus(path), 300);
+  alert("Menu aktif (lanjut upgrade UI kalau mau inline)");
 }
 
-function setMode(path, mode) {
-  activePath = path;
-  activeMode = mode;
-  render();
-  setTimeout(() => focus(path), 300);
-}
+// ===== ZOOM =====
 
-function cancel() {
-  activePath = null;
-  activeMode = null;
-  render();
-}
+// scroll zoom
+document.addEventListener("wheel", (e) => {
+  e.preventDefault();
 
-/* ========== SUBMIT ========== */
+  const zoomSpeed = 0.001;
+  scale -= e.deltaY * zoomSpeed;
 
-async function submit(path) {
-  const val = document.getElementById("input-" + path.join("-")).value;
-  if (!val) return;
+  if (scale < 0.5) scale = 0.5;
+  if (scale > 2) scale = 2;
 
-  let action = "";
+  applyTransform();
+}, { passive: false });
 
-  if (activeMode === "add") action = "add";
-  if (activeMode === "edit") action = "edit";
-  if (activeMode === "parent") action = "addParent";
-  if (activeMode === "order") action = "reorder";
-
-  await fetch("https://jefz.vercel.app/api/update", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      action,
-      path,
-      name: val,
-      position: parseInt(val)
-    })
-  });
-
-  location.reload();
-}
-
-/* ========== DELETE ========== */
-
-async function hapus(path) {
-  if (!confirm("Hapus?")) return;
-
-  await fetch("https://jefz.vercel.app/api/update", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      action: "delete",
-      path
-    })
-  });
-
-  location.reload();
-}
-
-/* ========== ZOOM + PAN ========== */
+// ===== PAN (drag kosong) =====
 
 document.addEventListener("mousedown", (e) => {
   if (e.target.closest(".node-box")) return;
@@ -176,12 +93,16 @@ document.addEventListener("mousemove", (e) => {
 
   posX = e.clientX - startX;
   posY = e.clientY - startY;
+
   applyTransform();
 });
 
-document.addEventListener("mouseup", () => dragging = false);
+document.addEventListener("mouseup", () => {
+  dragging = false;
+});
 
-/* touch */
+// ===== TOUCH =====
+
 document.addEventListener("touchstart", (e) => {
   if (e.touches.length !== 1) return;
 
@@ -195,30 +116,12 @@ document.addEventListener("touchmove", (e) => {
 
   posX = e.touches[0].clientX - startX;
   posY = e.touches[0].clientY - startY;
+
   applyTransform();
 });
 
-document.addEventListener("touchend", () => dragging = false);
-
-/* zoom */
-document.addEventListener("wheel", (e) => {
-  e.preventDefault();
-
-  scale += e.deltaY * -0.001;
-
-  if (scale < 0.5) scale = 0.5;
-  if (scale > 2) scale = 2;
-
-  applyTransform();
-}, { passive: false });
-
-/* klik luar */
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".node-box")) {
-    activePath = null;
-    activeMode = null;
-    render();
-  }
+document.addEventListener("touchend", () => {
+  dragging = false;
 });
 
 loadTree();
