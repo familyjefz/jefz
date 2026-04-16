@@ -1,5 +1,5 @@
 async function loadTree() {
-  const res = await fetch("data.json");
+  const res = await fetch("data.json?v=" + Date.now()); // 🔥 anti cache
   const data = await res.json();
 
   new Treant({
