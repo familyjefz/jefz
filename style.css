@@ -4,82 +4,86 @@ body {
   background: #f5f7fb;
 }
 
-/* area tree */
 #tree {
   width: 100%;
   height: 80vh;
 }
 
-/* box node */
-.node-box, 
-.Treant .node {
-  padding: 10px;
-  border-radius: 10px;
-  background: #ffffff;
+/* node box */
+.node-box {
+  background: #fff;
   border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 10px;
+  min-width: 140px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  display: inline-block;
-  min-width: 120px;
 }
 
 /* nama */
-.node-box div,
-.Treant .node div {
-  font-size: 14px;
-  margin-bottom: 5px;
+.node-name {
+  font-weight: bold;
+  margin-bottom: 6px;
 }
 
-/* tombol umum */
-button {
-  margin: 2px;
-  padding: 4px 6px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-/* tombol icon warna */
-button:hover {
-  opacity: 0.8;
-}
-
-/* tombol spesifik */
-button:nth-child(2) { background: #4caf50; color: #fff; } /* tambah */
-button:nth-child(3) { background: #2196f3; color: #fff; } /* edit */
-button:nth-child(4) { background: #f44336; color: #fff; } /* hapus */
-button:nth-child(5) { background: #ff9800; color: #fff; } /* parent */
-button:nth-child(6) { background: #9c27b0; color: #fff; } /* order */
-
-/* tombol gear */
-button:contains("⚙️") {
+/* tombol option */
+.btn-option {
   background: #607d8b;
   color: #fff;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: none;
 }
 
-/* input */
-input {
+/* menu */
+.node-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.node-menu button {
+  font-size: 12px;
   padding: 6px;
   border-radius: 6px;
-  border: 1px solid #ccc;
-  width: 100px;
-  text-align: center;
+  border: none;
+  color: #fff;
 }
 
-/* tombol simpan & batal */
-button:contains("✔") {
+/* warna tombol */
+.node-menu button:nth-child(1) { background: #4caf50; }
+.node-menu button:nth-child(2) { background: #2196f3; }
+.node-menu button:nth-child(3) { background: #f44336; }
+.node-menu button:nth-child(4) { background: #ff9800; }
+.node-menu button:nth-child(5) { background: #9c27b0; }
+
+/* input */
+.node-input {
+  width: 100%;
+  padding: 6px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* tombol bawah */
+.node-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 5px;
+}
+
+.btn-save {
   background: #4caf50;
   color: #fff;
+  flex: 1;
+  border: none;
+  border-radius: 6px;
 }
 
-button:contains("❌") {
+.btn-cancel {
   background: #f44336;
   color: #fff;
-}
-
-/* responsif dikit */
-@media (max-width: 600px) {
-  .Treant .node {
-    font-size: 12px;
-  }
+  flex: 1;
+  border: none;
+  border-radius: 6px;
 }
