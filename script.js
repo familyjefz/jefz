@@ -11,6 +11,8 @@ async function loadTree() {
 }
 
 function render() {
+  document.getElementById("tree").innerHTML = ""; // 🔥 fix duplicate
+
   new Treant({
     chart: {
       container: "#tree",
@@ -32,14 +34,19 @@ function convert(node, path = []) {
   // MODE INPUT
   if (isActive(path) && activeMode) {
     content = `
-      <div>
-        <input id="input-${path.join("-")}" 
-          value="${activeMode==='edit'?node.name:''}" 
-          placeholder="${activeMode==='order'?'Masukkan urutan (0,1,2...)':''}"
+      <div class="node-box">
+        <div class="node-name">${node.name}</div>
+
+        <input class="node-input" 
+          id="input-${path.join("-")}" 
+          value="${activeMode==='edit'?node.name:''}"
+          placeholder="${activeMode==='order'?'Urutan (0,1,2...)':''}"
         />
-        <br>
-        <button onclick='submitInline(${JSON.stringify(path)})'>✔</button>
-        <button onclick='cancelInline()'>❌</button>
+
+        <div class="node-actions">
+          <button class="btn-save" onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
+          <button class="btn-cancel" onclick='cancelInline()'>✖ Batal</button>
+        </div>
       </div>
     `;
   }
@@ -47,13 +54,16 @@ function convert(node, path = []) {
   // MODE MENU
   else if (isActive(path)) {
     content = `
-      <div>
-        ${node.name}<br>
-        <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕</button>
-        <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️</button>
-        <button onclick='hapus(${JSON.stringify(path)})'>❌</button>
-        <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️</button>
-        <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢</button>
+      <div class="node-box">
+        <div class="node-name">${node.name}</div>
+
+        <div class="node-menu">
+          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕<br>Tambah</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️<br>Ubah</button>
+          <button onclick='hapus(${JSON.stringify(path)})'>❌<br>Hapus</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️<br>Atas</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢<br>Urut</button>
+        </div>
       </div>
     `;
   }
@@ -61,9 +71,9 @@ function convert(node, path = []) {
   // NORMAL
   else {
     content = `
-      <div>
-        ${node.name}<br>
-        <button onclick='openOptions(${JSON.stringify(path)})'>⚙️</button>
+      <div class="node-box">
+        <div class="node-name">${node.name}</div>
+        <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
       </div>
     `;
   }
@@ -133,19 +143,6 @@ async function hapus(path) {
     body: JSON.stringify({
       action: "delete",
       path: path
-    })
-  });
-
-  location.reload();
-}
-
-// 🔥 UNDO
-async function undo() {
-  await fetch("https://jefz.vercel.app/api/update", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      action: "undo"
     })
   });
 
