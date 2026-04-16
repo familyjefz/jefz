@@ -1,7 +1,7 @@
 let activePath = null;
 let activeMode = null;
 
-// 🔥 simpan path terakhir untuk fokus
+// fokus node
 let lastFocusPath = null;
 
 async function loadTree() {
@@ -24,10 +24,9 @@ function render() {
     nodeStructure: convert(window.treeData)
   });
 
-  // 🔥 setelah render, balikin fokus ke node
   setTimeout(() => {
     if (lastFocusPath) focusNode(lastFocusPath);
-  }, 100);
+  }, 80);
 }
 
 function isActive(path) {
@@ -43,7 +42,9 @@ function convert(node, path = []) {
       <div class="node-box active-node" data-path='${JSON.stringify(path)}'>
         <div class="node-name">${node.name}</div>
 
-        <input class="node-input" id="input-${path.join("-")}" />
+        <input class="node-input" id="input-${path.join("-")}" 
+          value="${activeMode==='edit'?node.name:''}"
+        />
 
         <div class="node-actions">
           <button onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
@@ -86,48 +87,43 @@ function convert(node, path = []) {
   };
 }
 
-// 🔥 FOKUS KE NODE (INI KUNCI)
+// fokus node biar ga geser aneh
 function focusNode(path) {
   const el = document.querySelector(`[data-path='${JSON.stringify(path)}']`);
   if (el) {
     el.scrollIntoView({
-      behavior: "instant", // 🔥 no animasi biar ga terasa geser
+      behavior: "instant",
       block: "center",
       inline: "center"
     });
   }
 }
 
-// OPEN OPTION
+// open option
 function openOptions(path) {
   lastFocusPath = path;
-
   activePath = path;
   activeMode = null;
-
   render();
 }
 
-// MODE
+// set mode
 function setMode(path, mode) {
   lastFocusPath = path;
-
   activePath = path;
   activeMode = mode;
-
   render();
 }
 
-// CANCEL
+// cancel
 function cancelInline() {
   activePath = null;
   activeMode = null;
   lastFocusPath = null;
-
   render();
 }
 
-// SUBMIT
+// 🔥 SUBMIT TANPA RELOAD
 async function submitInline(path) {
   const val = document.getElementById("input-" + path.join("-")).value;
   if (!val) return;
@@ -150,10 +146,11 @@ async function submitInline(path) {
     })
   });
 
-  location.reload();
+  // 🔥 reload data saja (bukan halaman)
+  await loadTree();
 }
 
-// DELETE
+// delete
 async function hapus(path) {
   if (!confirm("Hapus?")) return;
 
@@ -166,7 +163,7 @@ async function hapus(path) {
     })
   });
 
-  location.reload();
+  await loadTree();
 }
 
 // klik luar
@@ -175,7 +172,6 @@ document.addEventListener("click", (e) => {
     activePath = null;
     activeMode = null;
     lastFocusPath = null;
-
     render();
   }
 });
