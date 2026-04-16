@@ -11,7 +11,12 @@
     },
     {
       "name": "nenek",
-      "children": []
+      "children": [
+        {
+          "name": "cucu",
+          "children": []
+        }
+      ]
     },
     {
       "name": "Jabbar",
