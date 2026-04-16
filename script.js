@@ -47,6 +47,7 @@ function convert(node, path = []) {
       </div>
     `;
   }
+    
 
   // OPTION MODE
   else if (isActive(path)) {
