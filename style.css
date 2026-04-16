@@ -6,7 +6,8 @@ body {
 
 #tree {
   width: 100%;
-  height: 200vh;
+  height: 100vh;
+  text-align: top;
 }
 
 /* node box */
