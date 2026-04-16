@@ -5,6 +5,7 @@ export default async function handler(req, res) {
     }
 
     const token = process.env.GITHUB_TOKEN;
+
     const body = typeof req.body === "string"
       ? JSON.parse(req.body)
       : req.body;
@@ -18,28 +19,53 @@ export default async function handler(req, res) {
     const file = await response.json();
     const data = JSON.parse(Buffer.from(file.content, "base64").toString());
 
-    // cari target node
     let target = data;
+
     for (let i of path) {
       target = target.children[i];
     }
 
-    // aksi
+    // tambah anak
     if (action === "add") {
       if (!target.children) target.children = [];
       target.children.push({ name, children: [] });
     }
 
+    // ubah nama
     if (action === "edit") {
       target.name = name;
     }
 
+    // hapus
     if (action === "delete") {
       let parent = data;
       for (let i = 0; i < path.length - 1; i++) {
         parent = parent.children[path[i]];
       }
       parent.children.splice(path[path.length - 1], 1);
+    }
+
+    // tambah orang tua
+    if (action === "addParent") {
+      if (path.length === 0) {
+        const newRoot = {
+          name: name,
+          children: [data]
+        };
+        Object.assign(data, newRoot);
+      } else {
+        let parent = data;
+        for (let i = 0; i < path.length - 1; i++) {
+          parent = parent.children[path[i]];
+        }
+
+        const index = path[path.length - 1];
+
+        parent.children[index] = {
+          name: name,
+          children: [parent.children[index]]
+        };
+      }
     }
 
     const updated = Buffer.from(JSON.stringify(data, null, 2)).toString("base64");
