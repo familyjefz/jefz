@@ -1,6 +1,10 @@
 let activePath = null;
 let activeMode = null;
 
+// 🔥 simpan posisi scroll
+let lastScrollX = 0;
+let lastScrollY = 0;
+
 async function loadTree() {
   const res = await fetch("data.json?v=" + Date.now());
   const data = await res.json();
@@ -9,8 +13,19 @@ async function loadTree() {
   render();
 }
 
+function saveScroll() {
+  lastScrollX = window.scrollX;
+  lastScrollY = window.scrollY;
+}
+
+function restoreScroll() {
+  window.scrollTo(lastScrollX, lastScrollY);
+}
+
 function render() {
-  document.getElementById("tree").innerHTML = "";
+  const tree = document.getElementById("tree");
+
+  tree.innerHTML = "";
 
   new Treant({
     chart: {
@@ -20,6 +35,11 @@ function render() {
     },
     nodeStructure: convert(window.treeData)
   });
+
+  // 🔥 balikin posisi scroll
+  setTimeout(() => {
+    restoreScroll();
+  }, 10);
 }
 
 function isActive(path) {
@@ -30,7 +50,6 @@ function convert(node, path = []) {
 
   let content = "";
 
-  // INPUT MODE
   if (isActive(path) && activeMode) {
     content = `
       <div class="node-box active-node">
@@ -39,14 +58,13 @@ function convert(node, path = []) {
         <input class="node-input" id="input-${path.join("-")}" />
 
         <div class="node-actions">
-          <button class="btn-save" onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
-          <button class="btn-cancel" onclick='cancelInline()'>✖ Batal</button>
+          <button onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
+          <button onclick='cancelInline()'>✖ Batal</button>
         </div>
       </div>
     `;
   }
 
-  // OPTION MODE
   else if (isActive(path)) {
     content = `
       <div class="node-box active-node">
@@ -63,12 +81,11 @@ function convert(node, path = []) {
     `;
   }
 
-  // NORMAL
   else {
     content = `
       <div class="node-box">
         <div class="node-name">${node.name}</div>
-        <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
+        <button onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
       </div>
     `;
   }
@@ -81,24 +98,33 @@ function convert(node, path = []) {
   };
 }
 
-// OPEN MENU
+// 🔥 OPEN OPTION (NO SCROLL)
 function openOptions(path) {
+  saveScroll(); // simpan posisi
+
   activePath = path;
   activeMode = null;
+
   render();
 }
 
 // MODE
 function setMode(path, mode) {
+  saveScroll();
+
   activePath = path;
   activeMode = mode;
+
   render();
 }
 
 // CANCEL
 function cancelInline() {
+  saveScroll();
+
   activePath = null;
   activeMode = null;
+
   render();
 }
 
@@ -144,11 +170,14 @@ async function hapus(path) {
   location.reload();
 }
 
-// klik luar = close menu
+// klik luar = close tanpa geser
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".node-box")) {
+    saveScroll();
+
     activePath = null;
     activeMode = null;
+
     render();
   }
 });
