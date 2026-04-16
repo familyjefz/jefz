@@ -1,51 +1,85 @@
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   text-align: center;
+  background: #f5f7fb;
 }
 
+/* area tree */
 #tree {
   width: 100%;
   height: 80vh;
 }
 
-/* modal */
-.modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-}
-
-.modal-content {
-  background: #fff;
-  padding: 20px;
-  margin: 100px auto;
-  width: 250px;
+/* box node */
+.node-box, 
+.Treant .node {
+  padding: 10px;
   border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  display: inline-block;
+  min-width: 120px;
 }
 
-/* menu */
-.menu {
-  position: absolute;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  display: none;
-  z-index: 1000;
+/* nama */
+.node-box div,
+.Treant .node div {
+  font-size: 14px;
+  margin-bottom: 5px;
 }
 
-.menu button {
-  display: block;
-  width: 100%;
-  padding: 8px;
+/* tombol umum */
+button {
+  margin: 2px;
+  padding: 4px 6px;
   border: none;
-  background: none;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 12px;
 }
 
-.menu button:hover {
-  background: #f0f0f0;
+/* tombol icon warna */
+button:hover {
+  opacity: 0.8;
+}
+
+/* tombol spesifik */
+button:nth-child(2) { background: #4caf50; color: #fff; } /* tambah */
+button:nth-child(3) { background: #2196f3; color: #fff; } /* edit */
+button:nth-child(4) { background: #f44336; color: #fff; } /* hapus */
+button:nth-child(5) { background: #ff9800; color: #fff; } /* parent */
+button:nth-child(6) { background: #9c27b0; color: #fff; } /* order */
+
+/* tombol gear */
+button:contains("⚙️") {
+  background: #607d8b;
+  color: #fff;
+}
+
+/* input */
+input {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  width: 100px;
+  text-align: center;
+}
+
+/* tombol simpan & batal */
+button:contains("✔") {
+  background: #4caf50;
+  color: #fff;
+}
+
+button:contains("❌") {
+  background: #f44336;
+  color: #fff;
+}
+
+/* responsif dikit */
+@media (max-width: 600px) {
+  .Treant .node {
+    font-size: 12px;
+  }
 }
