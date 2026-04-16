@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
-      return res.status(200).json({ message: "OK" });
+      return res.status(200).json({ ok: true });
     }
 
     const token = process.env.GITHUB_TOKEN;
@@ -12,75 +12,74 @@ export default async function handler(req, res) {
 
     const { action, path = [], name, position } = body;
 
-    const response = await fetch("https://api.github.com/repos/familyjefz/jefz/contents/data.json", {
-      headers: { Authorization: `token ${token}` }
-    });
+    const fileRes = await fetch(
+      "https://api.github.com/repos/familyjefz/jefz/contents/data.json",
+      {
+        headers: { Authorization: `token ${token}` }
+      }
+    );
 
-    const file = await response.json();
+    const file = await fileRes.json();
 
     let data = JSON.parse(
       Buffer.from(file.content, "base64").toString()
     );
 
-    // 🔥 backup sebelum perubahan
     const backup = JSON.parse(JSON.stringify(data));
 
-    // ===== AKSI =====
-
-    if (action === "add") {
-      let target = data;
-      for (let i of path) target = target.children[i];
-
-      if (!target.children) target.children = [];
-      target.children.push({ name, children: [] });
+    // 🔥 GET NODE
+    function getNode(p) {
+      let node = data;
+      for (let i of p) node = node.children[i];
+      return node;
     }
 
-    if (action === "edit") {
-      let target = data;
-      for (let i of path) target = target.children[i];
-
-      target.name = name;
-    }
-
-    if (action === "delete") {
-      let parent = data;
-      for (let i = 0; i < path.length - 1; i++) {
-        parent = parent.children[path[i]];
+    // 🔥 GET PARENT
+    function getParent(p) {
+      let node = data;
+      for (let i = 0; i < p.length - 1; i++) {
+        node = node.children[p[i]];
       }
+      return node;
+    }
 
+    // ========== ACTIONS ==========
+
+    // ✏️ EDIT
+    if (action === "edit") {
+      const node = getNode(path);
+      node.name = name;
+    }
+
+    // ❌ DELETE
+    if (action === "delete") {
+      const parent = getParent(path);
       parent.children.splice(path[path.length - 1], 1);
     }
 
+    // ⬆️ ADD PARENT
     if (action === "addParent") {
       if (path.length === 0) {
         data = {
-          name: name,
+          name,
           children: [data]
         };
       } else {
-        let parent = data;
-        for (let i = 0; i < path.length - 1; i++) {
-          parent = parent.children[path[i]];
-        }
+        const parent = getParent(path);
+        const idx = path[path.length - 1];
 
-        const index = path[path.length - 1];
-
-        parent.children[index] = {
-          name: name,
-          children: [parent.children[index]]
+        parent.children[idx] = {
+          name,
+          children: [parent.children[idx]]
         };
       }
     }
 
     // 🔢 REORDER
     if (action === "reorder") {
-      let parent = data;
-
-      for (let i = 0; i < path.length - 1; i++) {
-        parent = parent.children[path[i]];
-      }
-
+      const parent = getParent(path);
       const oldIndex = path[path.length - 1];
+
       let newIndex = position;
 
       if (newIndex < 0) newIndex = 0;
@@ -91,28 +90,25 @@ export default async function handler(req, res) {
       parent.children.splice(newIndex, 0, item);
     }
 
-    // 🔥 UNDO
-    if (action === "undo") {
-      if (data._backup) {
-        data = data._backup;
-      }
-    } else {
-      data._backup = backup;
-    }
+    // 🔥 SAVE BACKUP
+    data._backup = backup;
 
     const updated = Buffer.from(
       JSON.stringify(data, null, 2)
     ).toString("base64");
 
-    await fetch("https://api.github.com/repos/familyjefz/jefz/contents/data.json", {
-      method: "PUT",
-      headers: { Authorization: `token ${token}` },
-      body: JSON.stringify({
-        message: "Update tree",
-        content: updated,
-        sha: file.sha
-      })
-    });
+    await fetch(
+      "https://api.github.com/repos/familyjefz/jefz/contents/data.json",
+      {
+        method: "PUT",
+        headers: { Authorization: `token ${token}` },
+        body: JSON.stringify({
+          message: "Update tree",
+          content: updated,
+          sha: file.sha
+        })
+      }
+    );
 
     res.json({ success: true });
 
