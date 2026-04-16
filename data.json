@@ -42,7 +42,12 @@
     },
     {
       "name": "Jefzz",
-      "children": []
+      "children": [
+        {
+          "name": "Anak",
+          "children": []
+        }
+      ]
     },
     {
       "name": "Paman",
