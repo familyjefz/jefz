@@ -12,8 +12,11 @@ export default async function handler(req, res) {
 
   const body = JSON.parse(req.body);
 
+  if (!content.children) content.children = [];
+
   content.children.push({
-    name: body.name
+    name: body.name,
+    children: []
   });
 
   const updated = btoa(JSON.stringify(content, null, 2));
