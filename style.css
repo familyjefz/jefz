@@ -1,22 +1,12 @@
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: #f5f7fb;
   text-align: center;
 }
 
-/* 🔥 viewport untuk zoom + pan */
-#viewport {
+#tree {
   width: 100%;
   height: 85vh;
-  overflow: hidden;
-  position: relative;
-  touch-action: none;
-}
-
-/* tree container */
-#tree {
-  position: absolute;
-  transform-origin: 0 0;
 }
 
 /* node */
@@ -31,9 +21,19 @@ body {
 
 .node-name {
   font-weight: bold;
+  margin-bottom: 6px;
 }
 
-/* menu */
+/* tombol option */
+.btn-option {
+  background: #607d8b;
+  color: #fff;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 6px;
+}
+
+/* menu option */
 .node-menu {
   display: flex;
   flex-direction: column;
@@ -43,7 +43,50 @@ body {
 .node-menu button {
   font-size: 12px;
   padding: 6px;
+  border-radius: 6px;
+  border: none;
+  color: #fff;
+}
+
+.node-menu button:nth-child(1) { background: #4caf50; }
+.node-menu button:nth-child(2) { background: #2196f3; }
+.node-menu button:nth-child(3) { background: #f44336; }
+.node-menu button:nth-child(4) { background: #ff9800; }
+.node-menu button:nth-child(5) { background: #9c27b0; }
+
+/* input */
+.node-input {
+  width: 100%;
+  padding: 6px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* actions */
+.node-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.btn-save {
+  background: #4caf50;
+  color: #fff;
+  flex: 1;
   border: none;
   border-radius: 6px;
+}
+
+.btn-cancel {
+  background: #f44336;
   color: #fff;
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+}
+
+/* active */
+.active-node {
+  border: 2px solid #2196f3;
 }
