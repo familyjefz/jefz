@@ -28,7 +28,12 @@
         },
         {
           "name": ">Sutiyah | Mukminin",
-          "children": []
+          "children": [
+            {
+              "name": "Uswatun Hasanah",
+              "children": []
+            }
+          ]
         }
       ]
     }
