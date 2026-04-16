@@ -54,7 +54,12 @@
         },
         {
           "name": "Paman",
-          "children": []
+          "children": [
+            {
+              "name": "Sepupu",
+              "children": []
+            }
+          ]
         }
       ]
     },
