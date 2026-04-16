@@ -6,7 +6,7 @@ body {
 
 #tree {
   width: 100%;
-  height: 100vh;
+  height: 80vh;
 }
 
 /* node box */
@@ -90,4 +90,8 @@ body {
 .active-node {
   border: 2px solid #2196f3;
   transform: scale(1.05);
+}
+#tree {
+  overflow: hidden;
+  touch-action: none;
 }
