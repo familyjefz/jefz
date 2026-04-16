@@ -1,179 +1,138 @@
-let activePath = null;
-let activeMode = null;
+let treeInstance = null;
 
-// fokus node
-let lastFocusPath = null;
-
+// load awal saja
 async function loadTree() {
   const res = await fetch("data.json?v=" + Date.now());
   const data = await res.json();
 
   window.treeData = data;
-  render();
-}
 
-function render() {
-  document.getElementById("tree").innerHTML = "";
-
-  new Treant({
+  treeInstance = new Treant({
     chart: {
       container: "#tree",
       rootOrientation: "NORTH",
       connectors: { type: "step" }
     },
-    nodeStructure: convert(window.treeData)
+    nodeStructure: convert(data)
   });
 
-  setTimeout(() => {
-    if (lastFocusPath) focusNode(lastFocusPath);
-  }, 80);
+  setTimeout(bindEvents, 300);
 }
 
-function isActive(path) {
-  return JSON.stringify(path) === JSON.stringify(activePath);
-}
-
+// buat node
 function convert(node, path = []) {
-
-  let content = "";
-
-  if (isActive(path) && activeMode) {
-    content = `
-      <div class="node-box active-node" data-path='${JSON.stringify(path)}'>
-        <div class="node-name">${node.name}</div>
-
-        <input class="node-input" id="input-${path.join("-")}" 
-          value="${activeMode==='edit'?node.name:''}"
-        />
-
-        <div class="node-actions">
-          <button onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
-          <button onclick='cancelInline()'>✖ Batal</button>
-        </div>
-      </div>
-    `;
-  }
-
-  else if (isActive(path)) {
-    content = `
-      <div class="node-box active-node" data-path='${JSON.stringify(path)}'>
-        <div class="node-name">${node.name}</div>
-
-        <div class="node-menu">
-          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah</button>
-          <button onclick='hapus(${JSON.stringify(path)})'>❌ Hapus</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Parent</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Urut</button>
-        </div>
-      </div>
-    `;
-  }
-
-  else {
-    content = `
+  return {
+    innerHTML: `
       <div class="node-box" data-path='${JSON.stringify(path)}'>
         <div class="node-name">${node.name}</div>
-        <button onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
+        <button class="btn-option">⚙️ Option</button>
       </div>
-    `;
-  }
-
-  return {
-    innerHTML: content,
+    `,
     children: node.children?.map((c, i) =>
       convert(c, [...path, i])
     )
   };
 }
 
-// fokus node biar ga geser aneh
-function focusNode(path) {
-  const el = document.querySelector(`[data-path='${JSON.stringify(path)}']`);
-  if (el) {
-    el.scrollIntoView({
-      behavior: "instant",
-      block: "center",
-      inline: "center"
-    });
-  }
+// 🔥 pasang event TANPA render ulang
+function bindEvents() {
+  document.querySelectorAll(".btn-option").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+
+      const node = btn.closest(".node-box");
+      const path = JSON.parse(node.dataset.path);
+
+      openMenu(node, path);
+    };
+  });
 }
 
-// open option
-function openOptions(path) {
-  lastFocusPath = path;
-  activePath = path;
-  activeMode = null;
-  render();
+// 🔥 MENU MUNCUL TANPA UBAH TREE
+function openMenu(nodeEl, path) {
+
+  closeMenu();
+
+  const menu = document.createElement("div");
+  menu.className = "floating-menu";
+
+  menu.innerHTML = `
+    <button onclick='action("${JSON.stringify(path)}","add")'>➕ Tambah</button>
+    <button onclick='action("${JSON.stringify(path)}","edit")'>✏️ Ubah</button>
+    <button onclick='hapus("${JSON.stringify(path)}")'>❌ Hapus</button>
+    <button onclick='action("${JSON.stringify(path)}","parent")'>⬆️ Parent</button>
+    <button onclick='action("${JSON.stringify(path)}","order")'>🔢 Urut</button>
+  `;
+
+  document.body.appendChild(menu);
+
+  // posisi menu dekat node
+  const rect = nodeEl.getBoundingClientRect();
+
+  menu.style.top = rect.bottom + "px";
+  menu.style.left = rect.left + "px";
+
+  window.activeMenu = menu;
 }
 
-// set mode
-function setMode(path, mode) {
-  lastFocusPath = path;
-  activePath = path;
-  activeMode = mode;
-  render();
-}
+// 🔥 ACTION INPUT
+function action(pathStr, mode) {
+  const path = JSON.parse(pathStr);
 
-// cancel
-function cancelInline() {
-  activePath = null;
-  activeMode = null;
-  lastFocusPath = null;
-  render();
-}
+  const name = prompt("Input:");
 
-// 🔥 SUBMIT TANPA RELOAD
-async function submitInline(path) {
-  const val = document.getElementById("input-" + path.join("-")).value;
-  if (!val) return;
+  if (!name) return;
 
   let action = "";
 
-  if (activeMode === "add") action = "add";
-  if (activeMode === "edit") action = "edit";
-  if (activeMode === "parent") action = "addParent";
-  if (activeMode === "order") action = "reorder";
+  if (mode === "add") action = "add";
+  if (mode === "edit") action = "edit";
+  if (mode === "parent") action = "addParent";
+  if (mode === "order") action = "reorder";
 
-  await fetch("https://jefz.vercel.app/api/update", {
+  fetch("https://jefz.vercel.app/api/update", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       action,
       path,
-      name: val,
-      position: parseInt(val)
+      name,
+      position: parseInt(name)
     })
+  }).then(() => {
+    loadTree(); // reload data setelah aksi
   });
-
-  // 🔥 reload data saja (bukan halaman)
-  await loadTree();
 }
 
-// delete
-async function hapus(path) {
+// hapus
+function hapus(pathStr) {
+  const path = JSON.parse(pathStr);
+
   if (!confirm("Hapus?")) return;
 
-  await fetch("https://jefz.vercel.app/api/update", {
+  fetch("https://jefz.vercel.app/api/update", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       action: "delete",
       path
     })
+  }).then(() => {
+    loadTree();
   });
+}
 
-  await loadTree();
+// 🔥 tutup menu
+function closeMenu() {
+  if (window.activeMenu) {
+    window.activeMenu.remove();
+    window.activeMenu = null;
+  }
 }
 
 // klik luar
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".node-box")) {
-    activePath = null;
-    activeMode = null;
-    lastFocusPath = null;
-    render();
-  }
+document.addEventListener("click", () => {
+  closeMenu();
 });
 
 loadTree();
