@@ -1,57 +1,62 @@
 {
-  "name": "Kakek",
+  "name": "Buyut",
   "children": [
     {
-      "name": "Jefz",
+      "name": "Kakek",
       "children": [
         {
-          "name": "Saudara1",
-          "children": []
-        }
-      ]
-    },
-    {
-      "name": "ayah",
-      "children": [
+          "name": "Jefz",
+          "children": [
+            {
+              "name": "Saudara1",
+              "children": []
+            }
+          ]
+        },
         {
-          "name": "sepupu1",
+          "name": "ayah",
+          "children": [
+            {
+              "name": "sepupu1",
+              "children": []
+            },
+            {
+              "name": "sepupu2",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "nenek",
+          "children": [
+            {
+              "name": "cucu",
+              "children": []
+            },
+            {
+              "name": "kompoy",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "Jabbar",
           "children": []
         },
         {
-          "name": "sepupu2",
-          "children": []
-        }
-      ]
-    },
-    {
-      "name": "nenek",
-      "children": [
-        {
-          "name": "cucu",
-          "children": []
+          "name": "Jefzz",
+          "children": [
+            {
+              "name": "Anak",
+              "children": []
+            }
+          ]
         },
         {
-          "name": "kompoy",
+          "name": "Paman",
           "children": []
         }
       ]
-    },
-    {
-      "name": "Jabbar",
-      "children": []
-    },
-    {
-      "name": "Jefzz",
-      "children": [
-        {
-          "name": "Anak",
-          "children": []
-        }
-      ]
-    },
-    {
-      "name": "Paman",
-      "children": []
     }
   ]
 }
