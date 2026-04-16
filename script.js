@@ -1,144 +1,105 @@
+let treeInstance = null;
 let activePath = null;
 let activeMode = null;
-
-// 🔥 simpan posisi scroll
-let lastScrollX = 0;
-let lastScrollY = 0;
 
 async function loadTree() {
   const res = await fetch("data.json?v=" + Date.now());
   const data = await res.json();
 
   window.treeData = data;
-  render();
-}
 
-function saveScroll() {
-  lastScrollX = window.scrollX;
-  lastScrollY = window.scrollY;
-}
-
-function restoreScroll() {
-  window.scrollTo(lastScrollX, lastScrollY);
-}
-
-function render() {
-  const tree = document.getElementById("tree");
-
-  tree.innerHTML = "";
-
-  new Treant({
+  treeInstance = new Treant({
     chart: {
       container: "#tree",
       rootOrientation: "NORTH",
       connectors: { type: "step" }
     },
-    nodeStructure: convert(window.treeData)
+    nodeStructure: convert(data)
   });
 
-  // 🔥 balikin posisi scroll
-  setTimeout(() => {
-    restoreScroll();
-  }, 10);
-}
-
-function isActive(path) {
-  return JSON.stringify(path) === JSON.stringify(activePath);
+  setTimeout(bindNodes, 300);
 }
 
 function convert(node, path = []) {
-
-  let content = "";
-
-  if (isActive(path) && activeMode) {
-    content = `
-      <div class="node-box active-node">
-        <div class="node-name">${node.name}</div>
-
-        <input class="node-input" id="input-${path.join("-")}" />
-
-        <div class="node-actions">
-          <button onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
-          <button onclick='cancelInline()'>✖ Batal</button>
-        </div>
-      </div>
-    `;
-  }
-
-  else if (isActive(path)) {
-    content = `
-      <div class="node-box active-node">
-        <div class="node-name">${node.name}</div>
-
-        <div class="node-menu">
-          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah</button>
-          <button onclick='hapus(${JSON.stringify(path)})'>❌ Hapus</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Parent</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Urut</button>
-        </div>
-      </div>
-    `;
-  }
-
-  else {
-    content = `
-      <div class="node-box">
-        <div class="node-name">${node.name}</div>
-        <button onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
-      </div>
-    `;
-  }
-
   return {
-    innerHTML: content,
+    innerHTML: `
+      <div class="node-box" data-path='${JSON.stringify(path)}'>
+        <div class="node-name">${node.name}</div>
+        <button class="btn-option">⚙️</button>
+      </div>
+    `,
     children: node.children?.map((c, i) =>
       convert(c, [...path, i])
     )
   };
 }
 
-// 🔥 OPEN OPTION (NO SCROLL)
-function openOptions(path) {
-  saveScroll(); // simpan posisi
+// 🔥 bind semua node sekali saja
+function bindNodes() {
+  document.querySelectorAll(".node-box").forEach(node => {
+
+    const path = JSON.parse(node.dataset.path);
+
+    node.querySelector(".btn-option").onclick = (e) => {
+      e.stopPropagation();
+      openMenu(node, path);
+    };
+  });
+}
+
+// 🔥 buka menu TANPA render ulang
+function openMenu(nodeEl, path) {
+
+  closeAll();
 
   activePath = path;
-  activeMode = null;
 
-  render();
+  nodeEl.innerHTML = `
+    <div class="node-name">${getNode(path).name}</div>
+
+    <div class="node-menu">
+      <button onclick='actionMode("${path}", "add")'>➕ Tambah</button>
+      <button onclick='actionMode("${path}", "edit")'>✏️ Ubah</button>
+      <button onclick='hapusNode("${path}")'>❌ Hapus</button>
+      <button onclick='actionMode("${path}", "parent")'>⬆️ Parent</button>
+      <button onclick='actionMode("${path}", "order")'>🔢 Urut</button>
+    </div>
+  `;
 }
 
-// MODE
-function setMode(path, mode) {
-  saveScroll();
+// 🔥 mode input
+function actionMode(pathStr, mode) {
+  const path = JSON.parse(pathStr);
+  const node = getNode(path);
 
-  activePath = path;
-  activeMode = mode;
+  const el = findNodeEl(path);
 
-  render();
+  el.innerHTML = `
+    <div class="node-name">${node.name}</div>
+
+    <input class="node-input" id="input-${path.join("-")}" 
+      value="${mode==='edit'?node.name:''}"
+    />
+
+    <div class="node-actions">
+      <button onclick='submit("${pathStr}", "${mode}")'>✔</button>
+      <button onclick='resetNode("${pathStr}")'>✖</button>
+    </div>
+  `;
 }
 
-// CANCEL
-function cancelInline() {
-  saveScroll();
-
-  activePath = null;
-  activeMode = null;
-
-  render();
-}
-
-// SUBMIT
-async function submitInline(path) {
+// 🔥 submit TANPA reload
+async function submit(pathStr, mode) {
+  const path = JSON.parse(pathStr);
   const val = document.getElementById("input-" + path.join("-")).value;
   if (!val) return;
 
   let action = "";
 
-  if (activeMode === "add") action = "add";
-  if (activeMode === "edit") action = "edit";
-  if (activeMode === "parent") action = "addParent";
-  if (activeMode === "order") action = "reorder";
+  if (mode === "add") action = "add";
+  if (mode === "edit") action = "edit";
+  if (mode === "parent") action = "addParent";
+  if (mode === "order") action = "reorder";
 
   await fetch("https://jefz.vercel.app/api/update", {
     method: "POST",
@@ -151,11 +112,13 @@ async function submitInline(path) {
     })
   });
 
-  location.reload();
+  loadTree(); // 🔥 reload data saja (UI tetap smooth)
 }
 
-// DELETE
-async function hapus(path) {
+// 🔥 hapus
+async function hapusNode(pathStr) {
+  const path = JSON.parse(pathStr);
+
   if (!confirm("Hapus?")) return;
 
   await fetch("https://jefz.vercel.app/api/update", {
@@ -167,19 +130,34 @@ async function hapus(path) {
     })
   });
 
-  location.reload();
+  loadTree();
 }
 
-// klik luar = close tanpa geser
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".node-box")) {
-    saveScroll();
+// 🔥 ambil node data
+function getNode(path) {
+  let node = window.treeData;
+  for (let i of path) node = node.children[i];
+  return node;
+}
 
-    activePath = null;
-    activeMode = null;
+// 🔥 cari element node
+function findNodeEl(path) {
+  return document.querySelector(`[data-path='${JSON.stringify(path)}']`);
+}
 
-    render();
-  }
+// 🔥 reset node UI
+function resetNode(pathStr) {
+  loadTree();
+}
+
+// 🔥 tutup semua menu
+function closeAll() {
+  loadTree();
+}
+
+// klik luar
+document.addEventListener("click", () => {
+  closeAll();
 });
 
 loadTree();
