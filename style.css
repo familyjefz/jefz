@@ -7,3 +7,45 @@ body {
   width: 100%;
   height: 80vh;
 }
+
+/* modal */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  margin: 100px auto;
+  width: 250px;
+  border-radius: 10px;
+}
+
+/* menu */
+.menu {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  display: none;
+  z-index: 1000;
+}
+
+.menu button {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.menu button:hover {
+  background: #f0f0f0;
+}
