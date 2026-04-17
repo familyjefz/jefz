@@ -54,7 +54,6 @@ h2 {
   background: #455a64;
 }
 
-/* Wrapper yang bisa di-scroll */
 .tree-wrapper {
   flex: 1;
   overflow: auto;
@@ -62,7 +61,6 @@ h2 {
   position: relative;
 }
 
-/* Container untuk zoom - pusat zoom di tengah */
 .tree-zoom-container {
   transform-origin: center center;
   transition: transform 0.1s ease;
@@ -70,14 +68,12 @@ h2 {
   height: fit-content;
 }
 
-/* Tree container - ukuran besar agar bisa di-scroll */
 #tree {
   position: relative;
   width: 2000px;
   height: 1500px;
 }
 
-/* PERKECIL JARAK NODE - 4x lebih rapat */
 .node-box {
   background: #fff;
   border: 1px solid #ddd;
