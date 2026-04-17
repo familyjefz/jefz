@@ -85,8 +85,8 @@ h2 {
 }
 
 .active-node {
-  border: 2px solid #2196f3 !important;
-  background: #e3f2fd !important;
+  border: 2px solid #2196f3;
+  background: #e3f2fd;
 }
 
 .node-name {
