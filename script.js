@@ -3,7 +3,6 @@ let activeMode = null;
 let currentTreeData = null;
 let isFirstLoad = true;
 let currentZoom = 1;
-
 // Fungsi untuk mendapatkan warna berdasarkan generasi (HSL)
 function getGenerationColor(generation) {
   const hue = (generation * 37) % 360;
