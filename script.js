@@ -1,110 +1,78 @@
 let activePath = null;
 let activeMode = null;
 let currentTreeData = null;
-let isRendering = false;
+let isFirstLoad = true;
 
 async function loadTree() {
-  if (isRendering) return;
-  isRendering = true;
-  
   try {
     const res = await fetch("data.json?v=" + Date.now());
     const data = await res.json();
     currentTreeData = data;
-    render();
+    renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
-    isRendering = false;
   }
 }
 
-function render() {
+function renderTree() {
   const container = document.getElementById("tree");
   if (!container) return;
   
-  // Simpan scroll position SEBELUM render
   const wrapper = document.getElementById("tree-wrapper");
-  const savedLeft = wrapper ? wrapper.scrollLeft : 0;
-  const savedTop = wrapper ? wrapper.scrollTop : 0;
   
-  // Kosongkan container
+  // Simpan posisi scroll sebelum render
+  const savedLeft = wrapper ? wrapper.scrollLeft : 800;
+  const savedTop = wrapper ? wrapper.scrollTop : 400;
+  
   container.innerHTML = "";
   
-  try {
-    new Treant({
-      chart: {
-        container: "#tree",
-        rootOrientation: "NORTH",
-        connectors: { type: "step" },
-        animateOnInit: false,  // Matikan animasi
-        levelSeparation: 40,   // Perkecil jarak vertikal (dari 80 jadi 40)
-        siblingSeparation: 30,  // Perkecil jarak horizontal (dari 50 jadi 30)
-        subTeeSeparation: 30,
-        nodeAlign: "CENTER",
-        scrollbar: "none"  // Matikan scrollbar bawaan Treant
-      },
-      nodeStructure: convert(currentTreeData)
-    });
-    
-    // Restore scroll position TANPA perubahan posisi
-    setTimeout(() => {
-      if (wrapper) {
+  new Treant({
+    chart: {
+      container: "#tree",
+      rootOrientation: "NORTH",
+      connectors: { type: "step" },
+      animateOnInit: false,
+      levelSeparation: 80,
+      siblingSeparation: 60,
+      subTeeSeparation: 60
+    },
+    nodeStructure: convert(currentTreeData)
+  });
+  
+  // Kembalikan posisi scroll setelah render
+  setTimeout(() => {
+    if (wrapper) {
+      if (isFirstLoad) {
+        // Pertama kali: scroll ke tengah-tengah tree
+        // Tree ada di tengah area 2000x1500
+        wrapper.scrollLeft = 800;
+        wrapper.scrollTop = 400;
+        isFirstLoad = false;
+      } else {
         wrapper.scrollLeft = savedLeft;
         wrapper.scrollTop = savedTop;
       }
-      isRendering = false;
-    }, 20);
-    
-  } catch (err) {
-    console.error("Treant error:", err);
-    isRendering = false;
-  }
-}
-
-function isActive(path) {
-  if (!activePath) return false;
-  return JSON.stringify(path) === JSON.stringify(activePath);
-}
-
-function escapeHtml(str) {
-  if (!str) return "";
-  return str.replace(/[&<>]/g, function(m) {
-    if (m === '&') return '&amp;';
-    if (m === '<') return '&lt;';
-    if (m === '>') return '&gt;';
-    return m;
-  });
+    }
+  }, 100);
 }
 
 function convert(node, path = []) {
-  let content = "";
-
-  if (isActive(path) && activeMode) {
+  const isActiveNode = isActive(path);
+  let innerHTML = "";
+  
+  if (isActiveNode && activeMode) {
     let inputValue = "";
     let placeholder = "";
+    if (activeMode === "edit") { inputValue = node.name; placeholder = "Nama baru"; }
+    else if (activeMode === "add") placeholder = "Nama anak baru";
+    else if (activeMode === "parent") placeholder = "Nama parent baru";
+    else if (activeMode === "order") placeholder = "Urutan (0=pertama)";
     
-    if (activeMode === "edit") {
-      inputValue = node.name;
-      placeholder = "Masukkan nama baru";
-    } else if (activeMode === "add") {
-      inputValue = "";
-      placeholder = "Masukkan nama anak baru";
-    } else if (activeMode === "parent") {
-      inputValue = "";
-      placeholder = "Masukkan nama parent baru";
-    } else if (activeMode === "order") {
-      inputValue = "";
-      placeholder = "Masukkan nomor urutan (0 = pertama)";
-    }
-    
-    content = `
+    innerHTML = `
       <div class="node-box active-node">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <input class="node-input" id="input-${path.join("-")}" 
-          placeholder="${placeholder}"
-          value="${escapeHtml(inputValue)}"
-          autofocus
-        />
+          placeholder="${placeholder}" value="${escapeHtml(inputValue)}" autofocus />
         <div class="node-actions">
           <button onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
           <button onclick='cancelInline()'>✖ Batal</button>
@@ -112,9 +80,8 @@ function convert(node, path = []) {
       </div>
     `;
   }
-  
-  else if (isActive(path)) {
-    content = `
+  else if (isActiveNode) {
+    innerHTML = `
       <div class="node-box active-node">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <div class="node-menu">
@@ -127,37 +94,48 @@ function convert(node, path = []) {
       </div>
     `;
   }
-  
   else {
-    content = `
+    innerHTML = `
       <div class="node-box">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
       </div>
     `;
   }
-
+  
   return {
-    innerHTML: content,
-    children: node.children?.map((c, i) =>
-      convert(c, [...path, i])
-    )
+    innerHTML: innerHTML,
+    children: node.children?.map((child, i) => convert(child, [...path, i]))
   };
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
+function isActive(path) {
+  if (!activePath) return false;
+  return JSON.stringify(path) === JSON.stringify(activePath);
 }
 
 function getCurrentScroll() {
-  const wrapper = document.getElementById("tree-wrapper");
-  return {
-    left: wrapper ? wrapper.scrollLeft : 0,
-    top: wrapper ? wrapper.scrollTop : 0
-  };
+  const w = document.getElementById("tree-wrapper");
+  return { left: w ? w.scrollLeft : 800, top: w ? w.scrollTop : 400 };
 }
 
 function restoreScroll(left, top) {
-  const wrapper = document.getElementById("tree-wrapper");
-  if (wrapper) {
-    wrapper.scrollLeft = left;
-    wrapper.scrollTop = top;
+  const w = document.getElementById("tree-wrapper");
+  if (w) {
+    setTimeout(() => {
+      w.scrollLeft = left;
+      w.scrollTop = top;
+    }, 50);
   }
 }
 
@@ -165,7 +143,7 @@ function openOptions(path) {
   const scroll = getCurrentScroll();
   activePath = path;
   activeMode = null;
-  render();
+  renderTree();
   restoreScroll(scroll.left, scroll.top);
 }
 
@@ -173,7 +151,7 @@ function setMode(path, mode) {
   const scroll = getCurrentScroll();
   activePath = path;
   activeMode = mode;
-  render();
+  renderTree();
   restoreScroll(scroll.left, scroll.top);
 }
 
@@ -181,106 +159,57 @@ function cancelInline() {
   const scroll = getCurrentScroll();
   activePath = null;
   activeMode = null;
-  render();
+  renderTree();
   restoreScroll(scroll.left, scroll.top);
 }
 
 async function submitInline(path) {
-  const inputEl = document.getElementById("input-" + path.join("-"));
-  if (!inputEl) return;
+  const input = document.getElementById(`input-${path.join("-")}`);
+  if (!input) return;
+  const val = input.value.trim();
+  if (activeMode !== "order" && !val) { alert("Tidak boleh kosong!"); return; }
   
-  const val = inputEl.value.trim();
+  let action, body = { path };
+  if (activeMode === "add") { action = "add"; body.name = val; }
+  else if (activeMode === "edit") { action = "edit"; body.name = val; }
+  else if (activeMode === "parent") { action = "addParent"; body.name = val; }
+  else if (activeMode === "order") { action = "reorder"; body.position = parseInt(val); if (isNaN(body.position)) { alert("Masukkan angka!"); return; } }
+  else return;
   
-  if (activeMode !== "order") {
-    if (!val) {
-      alert("Nama tidak boleh kosong!");
-      return;
-    }
-  }
-  
-  let action = "";
-  let bodyData = {};
-
-  if (activeMode === "add") {
-    action = "add";
-    bodyData = { action, path, name: val };
-  }
-  else if (activeMode === "edit") {
-    action = "edit";
-    bodyData = { action, path, name: val };
-  }
-  else if (activeMode === "parent") {
-    action = "addParent";
-    bodyData = { action, path, name: val };
-  }
-  else if (activeMode === "order") {
-    const newIndex = parseInt(val);
-    if (isNaN(newIndex)) {
-      alert("Masukkan angka untuk urutan!");
-      return;
-    }
-    action = "reorder";
-    bodyData = { action, path, position: newIndex };
-  }
-
   try {
-    const response = await fetch("https://jefz.vercel.app/api/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bodyData)
+    const res = await fetch("https://jefz.vercel.app/api/update", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, ...body })
     });
-    
-    const result = await response.json();
-    
+    const result = await res.json();
     if (result.success) {
-      activePath = null;
-      activeMode = null;
+      activePath = null; activeMode = null;
       await loadTree();
-    } else {
-      alert("Gagal: " + (result.error || "Unknown error"));
-    }
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
+    } else alert("Gagal: " + (result.error || "Error"));
+  } catch (err) { alert("Error: " + err.message); }
 }
 
 async function hapus(path) {
-  if (!confirm("Yakin ingin menghapus node ini?")) return;
-
+  if (!confirm("Hapus node ini?")) return;
   try {
-    const response = await fetch("https://jefz.vercel.app/api/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "delete",
-        path
-      })
+    const res = await fetch("https://jefz.vercel.app/api/update", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", path })
     });
-    
-    const result = await response.json();
-    
+    const result = await res.json();
     if (result.success) {
-      activePath = null;
-      activeMode = null;
+      activePath = null; activeMode = null;
       await loadTree();
-    } else {
-      alert("Gagal menghapus: " + (result.error || "Unknown error"));
-    }
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
+    } else alert("Gagal hapus");
+  } catch (err) { alert("Error: " + err.message); }
 }
 
-// Klik luar
 document.addEventListener("click", (e) => {
-  const isButton = e.target.closest("button");
-  const isInput = e.target.tagName === "INPUT";
-  
-  if (!e.target.closest(".node-box") && !isButton && !isInput) {
+  if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "INPUT") {
     const scroll = getCurrentScroll();
     activePath = null;
     activeMode = null;
-    render();
+    renderTree();
     restoreScroll(scroll.left, scroll.top);
   }
 });
