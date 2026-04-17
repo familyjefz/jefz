@@ -4,7 +4,7 @@ let currentTreeData = null;
 let isFirstLoad = true;
 let currentZoom = 1;
 
-// Fungsi untuk mendapatkan warna berdasarkan generasi (HSL)
+// Fungsi untuk mendapatkan warna berdasarkan generasi (HSL) - TAMBAHAN SAJA
 function getGenerationColor(generation) {
   const hue = (generation * 37) % 360;
   return `hsl(${hue}, 80%, 55%)`;
@@ -13,13 +13,11 @@ function getGenerationColor(generation) {
 async function loadTree() {
   try {
     const res = await fetch("data.json?v=" + Date.now());
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     currentTreeData = data;
     renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
-    alert("Gagal memuat data silsilah. Periksa koneksi internet Anda.");
   }
 }
 
@@ -63,7 +61,7 @@ function renderTree() {
 
 function convert(node, path = [], generation = 1) {
   const isActiveNode = isActive(path);
-  const genColor = getGenerationColor(generation);
+  const genColor = getGenerationColor(generation); // TAMBAHAN
   
   let innerHTML = "";
   
@@ -92,11 +90,11 @@ function convert(node, path = [], generation = 1) {
       <div class="node-box active-node" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <div class="node-menu">
-          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Anak</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah Anak</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah Nama</button>
           <button onclick='hapus(${JSON.stringify(path)})'>❌ Hapus</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Parent</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Urut</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Tambah Parent</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Ubah Urutan</button>
         </div>
       </div>
     `;
@@ -105,7 +103,7 @@ function convert(node, path = [], generation = 1) {
     innerHTML = `
       <div class="node-box" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
-        <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️</button>
+        <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
       </div>
     `;
   }
@@ -188,70 +186,27 @@ async function submitInline(path) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, ...body })
     });
-    
-    // Periksa apakah response OK
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
-    
-    // Ambil response text terlebih dahulu
-    const responseText = await res.text();
-    
-    // Coba parse JSON
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (e) {
-      console.error("Response bukan JSON:", responseText);
-      throw new Error("Server merespon dengan format yang tidak valid");
-    }
-    
+    const result = await res.json();
     if (result.success) {
-      activePath = null;
-      activeMode = null;
+      activePath = null; activeMode = null;
       await loadTree();
-    } else {
-      alert("Gagal: " + (result.error || "Unknown error"));
-    }
-  } catch (err) {
-    console.error("Error:", err);
-    alert("Error: " + err.message + "\n\nPeriksa koneksi internet atau coba lagi nanti.");
-  }
+    } else alert("Gagal: " + (result.error || "Error"));
+  } catch (err) { alert("Error: " + err.message); }
 }
 
 async function hapus(path) {
   if (!confirm("Hapus node ini?")) return;
-  
   try {
     const res = await fetch("https://jefz.vercel.app/api/update", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", path })
     });
-    
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
-    
-    const responseText = await res.text();
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch (e) {
-      console.error("Response bukan JSON:", responseText);
-      throw new Error("Server merespon dengan format yang tidak valid");
-    }
-    
+    const result = await res.json();
     if (result.success) {
-      activePath = null;
-      activeMode = null;
+      activePath = null; activeMode = null;
       await loadTree();
-    } else {
-      alert("Gagal hapus: " + (result.error || "Unknown error"));
-    }
-  } catch (err) {
-    console.error("Error:", err);
-    alert("Error: " + err.message + "\n\nPeriksa koneksi internet atau coba lagi nanti.");
-  }
+    } else alert("Gagal hapus");
+  } catch (err) { alert("Error: " + err.message); }
 }
 
 // ZOOM FUNCTIONS
