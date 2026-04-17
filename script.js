@@ -4,7 +4,7 @@ let currentTreeData = null;
 let isFirstLoad = true;
 let currentZoom = 1;
 
-// Fungsi untuk mendapatkan warna berdasarkan generasi (HSL) - TAMBAHAN SAJA
+// Fungsi untuk mendapatkan warna berdasarkan generasi (HSL)
 function getGenerationColor(generation) {
   const hue = (generation * 37) % 360;
   return `hsl(${hue}, 80%, 55%)`;
@@ -61,7 +61,7 @@ function renderTree() {
 
 function convert(node, path = [], generation = 1) {
   const isActiveNode = isActive(path);
-  const genColor = getGenerationColor(generation); // TAMBAHAN
+  const genColor = getGenerationColor(generation);
   
   let innerHTML = "";
   
