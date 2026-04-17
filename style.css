@@ -62,7 +62,7 @@ h2 {
   position: relative;
 }
 
-/* Container untuk zoom - PUSAT ZOOM DI TENGAH */
+/* Container untuk zoom - pusat zoom di tengah */
 .tree-zoom-container {
   transform-origin: center center;
   transition: transform 0.1s ease;
@@ -89,8 +89,8 @@ h2 {
 }
 
 .active-node {
-  border: 2px solid #2196f3;
-  background: #e3f2fd;
+  border: 2px solid #2196f3 !important;
+  background: #e3f2fd !important;
 }
 
 .node-name {
