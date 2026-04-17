@@ -1,8 +1,12 @@
 let activePath = null;
 let activeMode = null;
 let currentTreeData = null;
+let isRendering = false;
 
 async function loadTree() {
+  if (isRendering) return;
+  isRendering = true;
+  
   try {
     const res = await fetch("data.json?v=" + Date.now());
     const data = await res.json();
@@ -10,6 +14,7 @@ async function loadTree() {
     render();
   } catch (err) {
     console.error("Gagal load tree:", err);
+    isRendering = false;
   }
 }
 
@@ -17,42 +22,42 @@ function render() {
   const container = document.getElementById("tree");
   if (!container) return;
   
+  // Simpan scroll position SEBELUM render
+  const wrapper = document.getElementById("tree-wrapper");
+  const savedLeft = wrapper ? wrapper.scrollLeft : 0;
+  const savedTop = wrapper ? wrapper.scrollTop : 0;
+  
   // Kosongkan container
   container.innerHTML = "";
-  
-  // Buat wrapper untuk Treant dengan ukuran minimal yang besar
-  const wrapper = document.createElement("div");
-  wrapper.id = "treant-wrapper";
-  wrapper.style.position = "relative";
-  wrapper.style.minWidth = "2500px";
-  wrapper.style.minHeight = "1200px";
-  container.appendChild(wrapper);
   
   try {
     new Treant({
       chart: {
-        container: "#treant-wrapper",
+        container: "#tree",
         rootOrientation: "NORTH",
         connectors: { type: "step" },
-        animateOnInit: false,
-        levelSeparation: 80,
-        siblingSeparation: 50,
-        subTeeSeparation: 50
+        animateOnInit: false,  // Matikan animasi
+        levelSeparation: 40,   // Perkecil jarak vertikal (dari 80 jadi 40)
+        siblingSeparation: 30,  // Perkecil jarak horizontal (dari 50 jadi 30)
+        subTeeSeparation: 30,
+        nodeAlign: "CENTER",
+        scrollbar: "none"  // Matikan scrollbar bawaan Treant
       },
       nodeStructure: convert(currentTreeData)
     });
     
-    // Scroll ke tengah setelah render
+    // Restore scroll position TANPA perubahan posisi
     setTimeout(() => {
-      const wrapperEl = document.querySelector(".tree-wrapper");
-      if (wrapperEl) {
-        wrapperEl.scrollLeft = 800;
-        wrapperEl.scrollTop = 400;
+      if (wrapper) {
+        wrapper.scrollLeft = savedLeft;
+        wrapper.scrollTop = savedTop;
       }
-    }, 100);
+      isRendering = false;
+    }, 20);
     
   } catch (err) {
     console.error("Treant error:", err);
+    isRendering = false;
   }
 }
 
@@ -141,21 +146,19 @@ function convert(node, path = []) {
 }
 
 function getCurrentScroll() {
-  const wrapper = document.querySelector(".tree-wrapper");
+  const wrapper = document.getElementById("tree-wrapper");
   return {
-    left: wrapper ? wrapper.scrollLeft : 800,
-    top: wrapper ? wrapper.scrollTop : 400
+    left: wrapper ? wrapper.scrollLeft : 0,
+    top: wrapper ? wrapper.scrollTop : 0
   };
 }
 
 function restoreScroll(left, top) {
-  setTimeout(() => {
-    const wrapper = document.querySelector(".tree-wrapper");
-    if (wrapper) {
-      wrapper.scrollLeft = left;
-      wrapper.scrollTop = top;
-    }
-  }, 30);
+  const wrapper = document.getElementById("tree-wrapper");
+  if (wrapper) {
+    wrapper.scrollLeft = left;
+    wrapper.scrollTop = top;
+  }
 }
 
 function openOptions(path) {
