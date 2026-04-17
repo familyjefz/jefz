@@ -9,9 +9,18 @@
 </head>
 <body>
 <div class="app-container">
-  <h2>Silsilah Keluarga</h2>
+  <div class="header">
+    <h2>Silsilah Keluarga</h2>
+    <div class="zoom-controls">
+      <button id="zoom-in" title="Perbesar">🔍+</button>
+      <button id="zoom-out" title="Perkecil (lihat keseluruhan)">🔍-</button>
+      <button id="zoom-reset" title="Reset">⟳</button>
+    </div>
+  </div>
   <div class="tree-wrapper" id="tree-wrapper">
-    <div id="tree"></div>
+    <div class="tree-zoom-container" id="tree-zoom-container">
+      <div id="tree"></div>
+    </div>
   </div>
 </div>
 
