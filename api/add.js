@@ -25,9 +25,7 @@ export default async function handler(req, res) {
       Buffer.from(file.content, "base64").toString()
     );
 
-    // 🔥 cari node target
     let target = data;
-
     for (let i of path) {
       if (!target.children) target.children = [];
       target = target.children[i];
@@ -36,7 +34,7 @@ export default async function handler(req, res) {
     if (!target.children) target.children = [];
 
     target.children.push({
-      name,
+      name: name,
       children: []
     });
 
