@@ -10,6 +10,7 @@ body {
   height: 100vh;
   overflow: hidden;
 }
+
 .app-container {
   height: 100vh;
   display: flex;
@@ -25,7 +26,7 @@ h2 {
   border-bottom: 1px solid #ddd;
 }
 
-/* Wrapper scroll - ini yang penting */
+/* Wrapper scroll */
 .tree-wrapper {
   flex: 1;
   overflow: auto;
@@ -33,35 +34,35 @@ h2 {
   background: #f5f7fb;
 }
 
-/* Container tree - harus bisa discroll */
+/* Container tree */
 #tree {
   position: relative;
   min-width: 100%;
   min-height: 100%;
 }
 
-/* Override Treant - biar container bisa discroll */
+/* Override Treant */
 .Treant {
   position: relative !important;
   display: block !important;
-  min-width: 2000px !important;
-  min-height: 1000px !important;
 }
 
 .Treant .node {
   position: absolute !important;
 }
 
-/* Node box styling */
+/* Node box - text center */
 .node-box {
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 12px;
   padding: 10px;
   min-width: 140px;
-  max-width: 200px;
+  max-width: 180px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  transition: all 0.15s ease;
+  text-align: center;
+  transition: all 0.1s ease;
+  will-change: transform;
 }
 
 .active-node {
@@ -77,6 +78,7 @@ h2 {
   word-break: break-word;
   white-space: normal;
   line-height: 1.4;
+  text-align: center;
 }
 
 .btn-option {
@@ -129,6 +131,7 @@ h2 {
   border: 1px solid #ccc;
   font-size: 13px;
   box-sizing: border-box;
+  text-align: center;
 }
 
 .node-actions {
@@ -166,16 +169,16 @@ svg {
 
 @media (max-width: 768px) {
   .node-box {
-    min-width: 120px;
-    padding: 8px;
+    min-width: 110px;
+    padding: 6px;
   }
   .node-name {
-    font-size: 12px;
+    font-size: 11px;
   }
   .btn-option,
   .node-menu button,
   .node-actions button {
-    font-size: 11px;
-    padding: 5px;
+    font-size: 10px;
+    padding: 4px;
   }
 }
