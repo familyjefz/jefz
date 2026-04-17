@@ -2,6 +2,8 @@ let activePath = null;
 let activeMode = null;
 let treantInstance = null;
 let scrollPosition = { x: 0, y: 0 };
+let isRendering = false;
+let renderTimeout = null;
 
 async function loadTree() {
   try {
@@ -23,29 +25,55 @@ function saveScrollPosition() {
 
 function restoreScrollPosition() {
   const container = document.getElementById("tree");
-  if (container) {
-    container.scrollLeft = scrollPosition.x;
-    container.scrollTop = scrollPosition.y;
+  if (container && (scrollPosition.x !== 0 || scrollPosition.y !== 0)) {
+    // Gunakan requestAnimationFrame untuk menghindari flicker
+    requestAnimationFrame(() => {
+      container.scrollLeft = scrollPosition.x;
+      container.scrollTop = scrollPosition.y;
+    });
   }
 }
 
 function render() {
+  // Hindari render ganda
+  if (isRendering) return;
+  isRendering = true;
+  
   const container = document.getElementById("tree");
   if (!container) return;
   
   saveScrollPosition();
-  container.innerHTML = "";
-
-  treantInstance = new Treant({
-    chart: {
-      container: "#tree",
-      rootOrientation: "NORTH",
-      connectors: { type: "step" }
-    },
-    nodeStructure: convert(window.treeData)
-  });
   
-  setTimeout(restoreScrollPosition, 10);
+  // Sembunyikan container sebentar untuk menghindari flicker
+  container.style.opacity = "0";
+  container.style.transition = "opacity 0.05s";
+  
+  container.innerHTML = "";
+  
+  // Gunakan setTimeout untuk memberi waktu DOM update
+  setTimeout(() => {
+    try {
+      treantInstance = new Treant({
+        chart: {
+          container: "#tree",
+          rootOrientation: "NORTH",
+          connectors: { type: "step" },
+          animateOnInit: false, // Matikan animasi awal
+          collision: true
+        },
+        nodeStructure: convert(window.treeData)
+      });
+    } catch (err) {
+      console.error("Treant error:", err);
+    }
+    
+    // Kembalikan opacity dan scroll
+    setTimeout(() => {
+      container.style.opacity = "1";
+      restoreScrollPosition();
+      isRendering = false;
+    }, 50);
+  }, 10);
 }
 
 function isActive(path) {
@@ -53,10 +81,20 @@ function isActive(path) {
   return JSON.stringify(path) === JSON.stringify(activePath);
 }
 
+function escapeHtml(str) {
+  if (!str) return "";
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
 function convert(node, path = []) {
   let content = "";
 
-  // INPUT MODE (untuk Tambah, Ubah, Parent, Urut)
+  // INPUT MODE
   if (isActive(path) && activeMode) {
     let inputValue = "";
     let placeholder = "";
@@ -81,6 +119,7 @@ function convert(node, path = []) {
         <input class="node-input" id="input-${path.join("-")}" 
           placeholder="${placeholder}"
           value="${escapeHtml(inputValue)}"
+          autofocus
         />
         <div class="node-actions">
           <button onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
@@ -90,7 +129,7 @@ function convert(node, path = []) {
     `;
   }
   
-  // OPTION MODE (menu tombol-tombol)
+  // OPTION MODE
   else if (isActive(path)) {
     content = `
       <div class="node-box active-node" data-path='${JSON.stringify(path)}'>
@@ -124,16 +163,6 @@ function convert(node, path = []) {
   };
 }
 
-function escapeHtml(str) {
-  if (!str) return "";
-  return str.replace(/[&<>]/g, function(m) {
-    if (m === '&') return '&amp;';
-    if (m === '<') return '&lt;';
-    if (m === '>') return '&gt;';
-    return m;
-  });
-}
-
 function openOptions(path) {
   activePath = path;
   activeMode = null;
@@ -158,8 +187,7 @@ async function submitInline(path) {
   
   const val = inputEl.value.trim();
   
-  // Validasi
-  if (activeMode !== "delete" && activeMode !== "order") {
+  if (activeMode !== "order") {
     if (!val) {
       alert("Nama tidak boleh kosong!");
       return;
@@ -247,13 +275,15 @@ async function hapus(path) {
   }
 }
 
-// Klik luar untuk menutup menu
+// Klik luar untuk menutup menu - tapi jangan trigger saat di input
 document.addEventListener("click", (e) => {
-  if (!e.target.closest(".node-box")) {
+  const isInput = e.target.tagName === "INPUT" || e.target.tagName === "BUTTON";
+  if (!e.target.closest(".node-box") && !isInput) {
     activePath = null;
     activeMode = null;
     render();
   }
 });
 
+// Load awal
 loadTree();
