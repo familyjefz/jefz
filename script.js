@@ -21,6 +21,7 @@ function renderTree() {
   
   const wrapper = document.getElementById("tree-wrapper");
   
+  // Simpan posisi scroll sebelum render
   const savedLeft = wrapper ? wrapper.scrollLeft : 800;
   const savedTop = wrapper ? wrapper.scrollTop : 400;
   
@@ -36,9 +37,10 @@ function renderTree() {
       siblingSeparation: 8,
       subTeeSeparation: 8
     },
-    nodeStructure: convert(currentTreeData, [])
+    nodeStructure: convert(currentTreeData)
   });
   
+  // Kembalikan posisi scroll setelah render
   setTimeout(() => {
     if (wrapper) {
       if (isFirstLoad) {
@@ -82,11 +84,11 @@ function convert(node, path = []) {
       <div class="node-box active-node">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <div class="node-menu">
-          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah Anak</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah Nama</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Anak</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah</button>
           <button onclick='hapus(${JSON.stringify(path)})'>❌ Hapus</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Tambah Parent</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Ubah Urutan</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Parent</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Urut</button>
         </div>
       </div>
     `;
@@ -95,7 +97,7 @@ function convert(node, path = []) {
     innerHTML = `
       <div class="node-box">
         <div class="node-name">${escapeHtml(node.name)}</div>
-        <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
+        <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️</button>
       </div>
     `;
   }
@@ -201,6 +203,7 @@ async function hapus(path) {
   } catch (err) { alert("Error: " + err.message); }
 }
 
+// ZOOM FUNCTIONS - TANPA BATASAN MIN/MAX
 function setZoom(zoom) {
   currentZoom = zoom;
   const zoomContainer = document.getElementById("tree-zoom-container");
@@ -213,6 +216,7 @@ function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
+// Event klik luar
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "INPUT") {
     const scroll = getCurrentScroll();
@@ -223,6 +227,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
+// Setup zoom buttons
 document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
 document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
 document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
