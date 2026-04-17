@@ -6,7 +6,6 @@ let currentZoom = 1;
 
 // Fungsi untuk mendapatkan warna berdasarkan generasi (HSL)
 function getGenerationColor(generation) {
-  // Hue: 0-360, berbeda setiap generasi dengan jarak 37 derajat
   const hue = (generation * 37) % 360;
   return `hsl(${hue}, 80%, 55%)`;
 }
@@ -14,11 +13,13 @@ function getGenerationColor(generation) {
 async function loadTree() {
   try {
     const res = await fetch("data.json?v=" + Date.now());
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     currentTreeData = data;
     renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
+    alert("Gagal memuat data silsilah. Periksa koneksi internet Anda.");
   }
 }
 
@@ -28,7 +29,6 @@ function renderTree() {
   
   const wrapper = document.getElementById("tree-wrapper");
   
-  // Simpan posisi scroll sebelum render
   const savedLeft = wrapper ? wrapper.scrollLeft : 800;
   const savedTop = wrapper ? wrapper.scrollTop : 400;
   
@@ -47,7 +47,6 @@ function renderTree() {
     nodeStructure: convert(currentTreeData, [], 1)
   });
   
-  // Kembalikan posisi scroll setelah render
   setTimeout(() => {
     if (wrapper) {
       if (isFirstLoad) {
@@ -64,7 +63,6 @@ function renderTree() {
 
 function convert(node, path = [], generation = 1) {
   const isActiveNode = isActive(path);
-  // Warna berdasarkan generasi untuk border kiri
   const genColor = getGenerationColor(generation);
   
   let innerHTML = "";
@@ -190,30 +188,73 @@ async function submitInline(path) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, ...body })
     });
-    const result = await res.json();
+    
+    // Periksa apakah response OK
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    
+    // Ambil response text terlebih dahulu
+    const responseText = await res.text();
+    
+    // Coba parse JSON
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Response bukan JSON:", responseText);
+      throw new Error("Server merespon dengan format yang tidak valid");
+    }
+    
     if (result.success) {
-      activePath = null; activeMode = null;
+      activePath = null;
+      activeMode = null;
       await loadTree();
-    } else alert("Gagal: " + (result.error || "Error"));
-  } catch (err) { alert("Error: " + err.message); }
+    } else {
+      alert("Gagal: " + (result.error || "Unknown error"));
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    alert("Error: " + err.message + "\n\nPeriksa koneksi internet atau coba lagi nanti.");
+  }
 }
 
 async function hapus(path) {
   if (!confirm("Hapus node ini?")) return;
+  
   try {
     const res = await fetch("https://jefz.vercel.app/api/update", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", path })
     });
-    const result = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+    
+    const responseText = await res.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Response bukan JSON:", responseText);
+      throw new Error("Server merespon dengan format yang tidak valid");
+    }
+    
     if (result.success) {
-      activePath = null; activeMode = null;
+      activePath = null;
+      activeMode = null;
       await loadTree();
-    } else alert("Gagal hapus");
-  } catch (err) { alert("Error: " + err.message); }
+    } else {
+      alert("Gagal hapus: " + (result.error || "Unknown error"));
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    alert("Error: " + err.message + "\n\nPeriksa koneksi internet atau coba lagi nanti.");
+  }
 }
 
-// ZOOM FUNCTIONS - TANPA BATASAN MIN/MAX
+// ZOOM FUNCTIONS
 function setZoom(zoom) {
   currentZoom = zoom;
   const zoomContainer = document.getElementById("tree-zoom-container");
