@@ -4,6 +4,13 @@ let currentTreeData = null;
 let isFirstLoad = true;
 let currentZoom = 1;
 
+// Fungsi untuk mendapatkan warna berdasarkan generasi (HSL)
+function getGenerationColor(generation) {
+  // Hue: 0-360, berbeda setiap generasi dengan jarak 37 derajat
+  const hue = (generation * 37) % 360;
+  return `hsl(${hue}, 80%, 55%)`;
+}
+
 async function loadTree() {
   try {
     const res = await fetch("data.json?v=" + Date.now());
@@ -37,7 +44,7 @@ function renderTree() {
       siblingSeparation: 8,
       subTeeSeparation: 8
     },
-    nodeStructure: convert(currentTreeData)
+    nodeStructure: convert(currentTreeData, [], 1)
   });
   
   // Kembalikan posisi scroll setelah render
@@ -55,8 +62,11 @@ function renderTree() {
   }, 100);
 }
 
-function convert(node, path = []) {
+function convert(node, path = [], generation = 1) {
   const isActiveNode = isActive(path);
+  // Warna berdasarkan generasi untuk border kiri
+  const genColor = getGenerationColor(generation);
+  
   let innerHTML = "";
   
   if (isActiveNode && activeMode) {
@@ -68,7 +78,7 @@ function convert(node, path = []) {
     else if (activeMode === "order") placeholder = "Urutan (0=pertama)";
     
     innerHTML = `
-      <div class="node-box active-node">
+      <div class="node-box active-node" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <input class="node-input" id="input-${path.join("-")}" 
           placeholder="${placeholder}" value="${escapeHtml(inputValue)}" autofocus />
@@ -81,7 +91,7 @@ function convert(node, path = []) {
   }
   else if (isActiveNode) {
     innerHTML = `
-      <div class="node-box active-node">
+      <div class="node-box active-node" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <div class="node-menu">
           <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Anak</button>
@@ -95,7 +105,7 @@ function convert(node, path = []) {
   }
   else {
     innerHTML = `
-      <div class="node-box">
+      <div class="node-box" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️</button>
       </div>
@@ -104,7 +114,7 @@ function convert(node, path = []) {
   
   return {
     innerHTML: innerHTML,
-    children: node.children?.map((child, i) => convert(child, [...path, i]))
+    children: node.children?.map((child, i) => convert(child, [...path, i], generation + 1))
   };
 }
 
