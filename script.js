@@ -251,6 +251,7 @@ async function submitInline(path) {
 async function hapus(path) {
   if (!confirm("Yakin ingin menghapus node ini?")) return;
 
+  
   try {
     const response = await fetch("https://jefz.vercel.app/api/update", {
       method: "POST",
