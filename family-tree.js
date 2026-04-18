@@ -37,27 +37,27 @@ function getNodeColor(node) {
 
 // ========== FUNGSI BANTU ==========
 function isMultiRoot(data) {
-  return Array.isArray(data) && data.length > 0 && data[0].hasOwnProperty('name');
+  return Array.isArray(data) && data.length > 0 && data[0] && typeof data[0] === 'object' && data[0].hasOwnProperty('name');
 }
 
 function getNodeByPath(data, path) {
-  if (!path || path.length === 0) return null;
+  if (!path || path.length === 0) return data;
   
-  // Jika single-root
-  if (!isMultiRoot(data)) {
-    let current = data;
-    for (let i = 0; i < path.length; i++) {
+  // Jika multi-root
+  if (isMultiRoot(data)) {
+    const rootIndex = path[0];
+    if (!data[rootIndex]) return null;
+    let current = data[rootIndex];
+    for (let i = 1; i < path.length; i++) {
       if (!current.children || !current.children[path[i]]) return null;
       current = current.children[path[i]];
     }
     return current;
   }
   
-  // Multi-root
-  const rootIndex = path[0];
-  if (!data[rootIndex]) return null;
-  let current = data[rootIndex];
-  for (let i = 1; i < path.length; i++) {
+  // Single-root
+  let current = data;
+  for (let i = 0; i < path.length; i++) {
     if (!current.children || !current.children[path[i]]) return null;
     current = current.children[path[i]];
   }
@@ -121,7 +121,6 @@ async function loadTree() {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
     let data = await res.json();
     
-    // Biarkan data apa adanya (single-root atau multi-root)
     currentTreeData = data;
     resetSiblingColors();
     
@@ -157,6 +156,7 @@ function renderTree() {
     forestContainer.style.alignItems = "flex-start";
     forestContainer.style.gap = "50px";
     forestContainer.style.flexWrap = "wrap";
+    forestContainer.style.padding = "20px";
     
     currentTreeData.forEach((root, idx) => {
       const treeContainer = document.createElement("div");
@@ -169,6 +169,7 @@ function renderTree() {
       
       forestContainer.appendChild(treeContainer);
       
+      // Konversi root ke struktur Treant dengan path yang menyertakan root index
       new Treant({
         chart: {
           container: `#temp-tree-${idx}`,
