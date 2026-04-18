@@ -50,15 +50,18 @@ document.addEventListener("click", (e) => {
   }
 });
 
-document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
-document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
-document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
-document.getElementById("login-btn")?.addEventListener("click", showLoginModal);
-document.querySelector(".close")?.addEventListener("click", closeLoginModal);
-document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
-document.getElementById("submit-pin")?.addEventListener("click", checkPin);
-document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") checkPin();
+// Tunggu DOM siap
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
+  document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
+  document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
+  document.getElementById("login-btn")?.addEventListener("click", showLoginModal);
+  document.querySelector(".close")?.addEventListener("click", closeLoginModal);
+  document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
+  document.getElementById("submit-pin")?.addEventListener("click", checkPin);
+  document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") checkPin();
+  });
 });
 
 window.addEventListener("click", (e) => {
