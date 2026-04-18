@@ -9,13 +9,20 @@ async function showInfo(path) {
   const title = document.getElementById("info-title");
   const body = document.getElementById("info-body");
   
-  title.innerHTML = `📋 Info: ${escapeHtml(node.name).replace(/\n/g, '<br>')}`;
+  // ========== PERBAIKAN: Nama tanpa pasangan ==========
+  let displayName = node.name;
+  if (displayName && displayName.includes("|")) {
+    // Ambil hanya bagian sebelum "|" (nama utama)
+    displayName = displayName.split("|")[0].trim();
+  }
+  
+  title.innerHTML = `📋 Info: ${escapeHtml(displayName).replace(/\n/g, '<br>')}`;
   
   body.innerHTML = `
     <div class="info-grid-2col">
       <div class="info-section">
         <div class="info-label">👤 Nama</div>
-        <div class="info-value">${escapeHtml(node.name).replace(/\n/g, '<br>')}</div>
+        <div class="info-value">${escapeHtml(displayName).replace(/\n/g, '<br>')}</div>
       </div>
       
       <div class="info-section">
@@ -138,7 +145,7 @@ function generateFamilyInfo(treeData, path, node) {
     }
   });
   
-  // Pasangan
+  // Pasangan (dari nama yang mengandung "|") - TAMPILKAN LENGKAP
   let spouse = null;
   if (node.name && node.name.includes("|")) {
     const parts = node.name.split("|");
@@ -177,26 +184,21 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
-  // ========== 7 KETURUNAN KE ATAS (DIPERBAIKI) ==========
+  // ========== 7 KETURUNAN KE ATAS ==========
   let ancestors = [];
   let currentParent = parent;
   let gen = 1;
   let maxGen = 7;
   
   while (currentParent && gen <= maxGen) {
-    // Tambahkan parent ke daftar ancestors
     ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
     
-    // Cari parent selanjutnya (ke atas)
     const currentParentPath = getPathOfNode(treeData, currentParent);
     
     if (currentParentPath && currentParentPath.length > 0) {
-      // Parent saat ini memiliki parent
       const newParentPath = currentParentPath.slice(0, -1);
       if (newParentPath.length === 0) {
-        // Parent berikutnya adalah root
         currentParent = treeData;
-        // Cegah infinite loop jika root sudah ditambahkan
         if (currentParent === treeData && ancestors.length > 0 && ancestors[ancestors.length-1].includes(treeData.name)) {
           break;
         }
@@ -204,12 +206,10 @@ function generateFamilyInfo(treeData, path, node) {
         currentParent = getNodeByPath(treeData, newParentPath);
       }
     } else {
-      // Tidak ada parent lagi
       break;
     }
     gen++;
   }
-  
   const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
   
   // ========== 7 KETURUNAN KE BAWAH ==========
