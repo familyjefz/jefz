@@ -1,12 +1,13 @@
 // ========== FITUR INFO ==========
 async function showInfo(path) {
-  // Path bisa berupa array biasa atau JSON string
+  // Path bisa berupa array atau JSON string
   let parsedPath = path;
   if (typeof path === 'string') {
     try {
       parsedPath = JSON.parse(path);
     } catch(e) {
       console.error("Gagal parse path:", e);
+      alert("Gagal memuat info. Silakan coba lagi.");
       return;
     }
   }
@@ -99,7 +100,7 @@ async function showInfo(path) {
 }
 
 function generateFamilyInfo(treeData, path, node) {
-  // Cari parent (orang tua)
+  // Cari parent
   const parentPath = path.slice(0, -1);
   let parent = null;
   
@@ -112,10 +113,8 @@ function generateFamilyInfo(treeData, path, node) {
   // SAUDARA KANDUNG
   let siblings = [];
   if (parent && parent.children && path.length > 0) {
-    let currentNodeIndex = -1;
-    // Untuk multi-root, path[path.length-1] adalah index anak terakhir
-    currentNodeIndex = path[path.length - 1];
-    if (currentNodeIndex !== -1 && currentNodeIndex < parent.children.length) {
+    const currentNodeIndex = path[path.length - 1];
+    if (currentNodeIndex !== undefined && currentNodeIndex < parent.children.length) {
       siblings = parent.children.filter((_, idx) => idx !== currentNodeIndex);
     }
   }
@@ -130,12 +129,11 @@ function generateFamilyInfo(treeData, path, node) {
   
   // PAMAN/BIBI
   let auntsUncles = [];
-  if (parent) {
+  if (parent && parentPath.length > 0) {
     const grandparentPath = parentPath.slice(0, -1);
     let grandparent = null;
     if (grandparentPath.length === 0) {
-      // Parent adalah root
-      grandparent = null;
+      grandparent = treeData;
     } else {
       grandparent = getNodeByPath(treeData, grandparentPath);
     }
@@ -185,16 +183,14 @@ function generateFamilyInfo(treeData, path, node) {
   let grandparent = null;
   if (parentPath.length > 0) {
     const grandparentPath = parentPath.slice(0, -1);
-    const grandparentNode = grandparentPath.length === 0 ? treeData : getNodeByPath(treeData, grandparentPath);
+    let grandparentNode = null;
+    if (grandparentPath.length === 0) {
+      grandparentNode = treeData;
+    } else {
+      grandparentNode = getNodeByPath(treeData, grandparentPath);
+    }
     if (grandparentNode && grandparentNode !== node && grandparentNode !== parent) {
-      let gpName = grandparentNode.name;
-      if (Array.isArray(treeData) && grandparentPath.length === 0) {
-        // Root node, ambil dari array
-        if (grandparentNode.name) {
-          gpName = grandparentNode.name;
-        }
-      }
-      grandparent = gpName.replace(/\n/g, '<br>');
+      grandparent = grandparentNode.name.replace(/\n/g, '<br>');
     }
   }
   
@@ -205,14 +201,7 @@ function generateFamilyInfo(treeData, path, node) {
   let maxGen = 7;
   
   while (currentParent && gen <= maxGen) {
-    let parentName = currentParent.name;
-    if (Array.isArray(treeData) && parentPath.length === 0 && gen === 1) {
-      // Root node
-      if (currentParent.name) {
-        parentName = currentParent.name;
-      }
-    }
-    ancestors.push(`Generasi ke-${gen}: ${parentName.replace(/\n/g, '<br>')}`);
+    ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
     
     const currentParentPath = getPathOfNode(treeData, currentParent);
     if (currentParentPath && currentParentPath.length > 0) {
