@@ -42,14 +42,6 @@ function checkPin() {
   }
 }
 
-// ========== UPDATE TOMBOL ADMIN ==========
-function updateAdminButtons() {
-  const addFamilyBtn = document.getElementById("add-family-btn");
-  if (addFamilyBtn) {
-    addFamilyBtn.style.display = isAdmin ? "inline-block" : "none";
-  }
-}
-
 // ========== EVENT LISTENERS ==========
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
@@ -61,7 +53,6 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// Tunggu DOM siap
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
   document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
@@ -74,11 +65,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter") checkPin();
   });
   
-  // Event untuk modal tambah keluarga
+  // Tombol tambah keluarga (sembunyikan dulu sampai login)
   const addFamilyBtn = document.getElementById("add-family-btn");
   if (addFamilyBtn) {
+    addFamilyBtn.style.display = "none";
     addFamilyBtn.addEventListener("click", showAddFamilyModal);
   }
+  
+  // Event untuk modal tambah keluarga
   document.querySelector(".close-family")?.addEventListener("click", closeAddFamilyModal);
   document.getElementById("submit-family")?.addEventListener("click", addNewFamily);
   document.getElementById("new-family-name")?.addEventListener("keypress", (e) => {
@@ -98,5 +92,4 @@ window.addEventListener("click", (e) => {
   }
 });
 
-// ========== START ==========
 loadTree();
