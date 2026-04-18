@@ -369,3 +369,12 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+/* Tambahkan di style.css */
+
+.add-family-btn {
+  background: #ff9800 !important;
+}
+
+.add-family-btn:hover {
+  background: #e68900 !important;
+}
