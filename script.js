@@ -3,8 +3,12 @@ let activeMode = null;
 let currentTreeData = null;
 let isFirstLoad = true;
 let currentZoom = 1;
+let isAdmin = false;  // Status login admin
 
-// CREDENTIALS SUPABASE ANDA (Verify JWT = OFF, jadi tidak pakai Authorization header)
+// PIN Admin (ganti sesuai keinginan Anda)
+const ADMIN_PIN = "00";
+
+// CREDENTIALS SUPABASE
 const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
 
 function getGenerationColor(generation) {
@@ -14,7 +18,6 @@ function getGenerationColor(generation) {
 
 async function loadTree() {
   try {
-    // Tidak pakai Authorization header karena Verify JWT sudah OFF
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
     const data = await res.json();
     currentTreeData = data;
@@ -68,7 +71,8 @@ function convert(node, path = [], generation = 1) {
   
   let innerHTML = "";
   
-  if (isActiveNode && activeMode) {
+  // Jika admin, tampilkan menu edit. Jika user, hanya tombol Option tanpa menu
+  if (isActiveNode && activeMode && isAdmin) {
     let inputValue = "";
     let placeholder = "";
     if (activeMode === "edit") { inputValue = node.name; placeholder = "Nama baru"; }
@@ -88,7 +92,7 @@ function convert(node, path = [], generation = 1) {
       </div>
     `;
   }
-  else if (isActiveNode) {
+  else if (isActiveNode && isAdmin) {
     innerHTML = `
       <div class="node-box active-node" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
@@ -106,7 +110,7 @@ function convert(node, path = [], generation = 1) {
     innerHTML = `
       <div class="node-box" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
-        <button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>
+        ${isAdmin ? `<button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>` : ''}
       </div>
     `;
   }
@@ -148,6 +152,7 @@ function restoreScroll(left, top) {
 }
 
 function openOptions(path) {
+  if (!isAdmin) return;
   const scroll = getCurrentScroll();
   activePath = path;
   activeMode = null;
@@ -156,6 +161,7 @@ function openOptions(path) {
 }
 
 function setMode(path, mode) {
+  if (!isAdmin) return;
   const scroll = getCurrentScroll();
   activePath = path;
   activeMode = mode;
@@ -164,6 +170,7 @@ function setMode(path, mode) {
 }
 
 function cancelInline() {
+  if (!isAdmin) return;
   const scroll = getCurrentScroll();
   activePath = null;
   activeMode = null;
@@ -172,6 +179,7 @@ function cancelInline() {
 }
 
 async function submitInline(path) {
+  if (!isAdmin) return;
   const input = document.getElementById(`input-${path.join("-")}`);
   if (!input) return;
   const val = input.value.trim();
@@ -199,6 +207,7 @@ async function submitInline(path) {
 }
 
 async function hapus(path) {
+  if (!isAdmin) return;
   if (!confirm("Hapus node ini?")) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
@@ -226,6 +235,39 @@ function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
+// LOGIN MODAL FUNCTIONS
+function showLoginModal() {
+  document.getElementById("login-modal").style.display = "block";
+  document.getElementById("pin-input").value = "";
+  document.getElementById("pin-error").innerText = "";
+}
+
+function closeLoginModal() {
+  document.getElementById("login-modal").style.display = "none";
+}
+
+function checkPin() {
+  const pin = document.getElementById("pin-input").value;
+  if (pin === ADMIN_PIN) {
+    isAdmin = true;
+    closeLoginModal();
+    alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
+    // Refresh tree untuk menampilkan tombol option
+    renderTree();
+  } else {
+    document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
+  }
+}
+
+function logout() {
+  isAdmin = false;
+  activePath = null;
+  activeMode = null;
+  renderTree();
+  alert("Anda telah logout dari mode Admin.");
+}
+
+// Event listeners
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "INPUT") {
     const scroll = getCurrentScroll();
@@ -239,5 +281,18 @@ document.addEventListener("click", (e) => {
 document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
 document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
 document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
+document.getElementById("login-btn")?.addEventListener("click", showLoginModal);
+document.querySelector(".close")?.addEventListener("click", closeLoginModal);
+document.getElementById("submit-pin")?.addEventListener("click", checkPin);
+document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") checkPin();
+});
+
+// Klik luar modal
+window.addEventListener("click", (e) => {
+  if (e.target === document.getElementById("login-modal")) {
+    closeLoginModal();
+  }
+});
 
 loadTree();
