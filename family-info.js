@@ -84,37 +84,28 @@ function generateFamilyInfo(treeData, path, node) {
   let parent = null;
   
   if (path.length === 0) {
-    // Root node
     parent = null;
   } else if (parentPath.length === 0) {
-    // Node adalah anak langsung dari root
     parent = treeData;
   } else {
     parent = getNodeByPath(treeData, parentPath);
   }
   
-  // SAUDARA KANDUNG: semua anak dari parent yang SAMA, kecuali diri sendiri
+  // SAUDARA KANDUNG
   let siblings = [];
-  let currentNodeIndex = -1;
-  
-  if (parent && parent.children) {
-    if (path.length === 0) {
-      // Root node tidak punya saudara
-      siblings = [];
-    } else if (parentPath.length === 0) {
-      // Anak root: cari berdasarkan nama
+  if (parent && parent.children && path.length > 0) {
+    let currentNodeIndex = -1;
+    if (parentPath.length === 0) {
       currentNodeIndex = parent.children.findIndex(c => c.name === node.name);
-      if (currentNodeIndex !== -1) {
-        siblings = parent.children.filter((_, idx) => idx !== currentNodeIndex);
-      }
     } else {
-      // Bukan anak root: gunakan index dari path
       currentNodeIndex = path[path.length - 1];
+    }
+    if (currentNodeIndex !== -1) {
       siblings = parent.children.filter((_, idx) => idx !== currentNodeIndex);
     }
   }
   
-  // PONAKAN (anak dari saudara kandung)
+  // PONAKAN
   let nephews = [];
   siblings.forEach(sibling => {
     if (sibling.children && sibling.children.length > 0) {
@@ -122,27 +113,24 @@ function generateFamilyInfo(treeData, path, node) {
     }
   });
   
-  // PAMAN/BIBI (saudara dari orang tua)
+  // PAMAN/BIBI
   let auntsUncles = [];
   if (parent) {
     let grandparent = null;
     if (parentPath.length === 0) {
-      // Parent adalah root
       grandparent = null;
     } else if (parentPath.length === 1) {
-      // Parent adalah anak root
       grandparent = treeData;
     } else {
       const grandparentPath = parentPath.slice(0, -1);
       grandparent = getNodeByPath(treeData, grandparentPath);
     }
-    
     if (grandparent && grandparent.children) {
       auntsUncles = grandparent.children.filter(p => p !== parent);
     }
   }
   
-  // SEPUPU (anak dari paman/bibi)
+  // SEPUPU
   let cousins = [];
   auntsUncles.forEach(au => {
     if (au.children && au.children.length > 0) {
@@ -150,7 +138,7 @@ function generateFamilyInfo(treeData, path, node) {
     }
   });
   
-  // Pasangan (dari nama yang mengandung "|")
+  // Pasangan
   let spouse = null;
   if (node.name && node.name.includes("|")) {
     const parts = node.name.split("|");
@@ -189,7 +177,7 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
-  // 7 keturunan ke atas
+  // 7 ke atas
   let ancestors = [];
   let currentParent = parent;
   let gen = 1;
@@ -207,7 +195,7 @@ function generateFamilyInfo(treeData, path, node) {
   }
   const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
   
-  // 7 keturunan ke bawah
+  // 7 ke bawah
   let descendants = [];
   let queue = [{ node: node, level: 1 }];
   while (queue.length > 0) {
@@ -221,12 +209,6 @@ function generateFamilyInfo(treeData, path, node) {
   }
   const descendants7 = descendants.length > 0 ? descendants.join('<br>') : null;
   
-  // Format daftar
-  const siblingsList = siblings.length > 0 ? siblings.map((s, i) => `${i + 1}. ${s.name.replace(/\n/g, '<br>')}`).join('<br>') : null;
-  const nephewsList = nephews.length > 0 ? nephews.map((n, i) => `${i + 1}. ${n.name.replace(/\n/g, '<br>')}`).join('<br>') : null;
-  const auntsUnclesList = auntsUncles.length > 0 ? auntsUncles.map((au, i) => `${i + 1}. ${au.name.replace(/\n/g, '<br>')}`).join('<br>') : null;
-  const cousinsList = cousins.length > 0 ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>') : null;
-  
   return {
     spouse,
     childrenList,
@@ -234,10 +216,10 @@ function generateFamilyInfo(treeData, path, node) {
     parents,
     grandparents: grandparent,
     ancestors7,
-    siblings: siblingsList,
-    nephews: nephewsList,
-    auntsUncles: auntsUnclesList,
-    cousins: cousinsList,
+    siblings: siblings.length > 0 ? siblings.map((s, i) => `${i + 1}. ${s.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
+    nephews: nephews.length > 0 ? nephews.map((n, i) => `${i + 1}. ${n.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
+    auntsUncles: auntsUncles.length > 0 ? auntsUncles.map((au, i) => `${i + 1}. ${au.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
+    cousins: cousins.length > 0 ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
     descendants7
   };
 }
