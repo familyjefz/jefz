@@ -70,6 +70,165 @@ function escapeHtml(str) {
   });
 }
 
+// ========== UNDO/REDO STACK ==========
+let undoStack = [];
+let redoStack = [];
+let maxStackSize = 50;
+
+function saveToUndo(data) {
+  if (data) {
+    undoStack.push(JSON.parse(JSON.stringify(data)));
+    redoStack = [];
+    if (undoStack.length > maxStackSize) {
+      undoStack.shift();
+    }
+  }
+}
+
+function undo() {
+  if (undoStack.length === 0) {
+    alert("Tidak ada aksi yang bisa di-undo");
+    return false;
+  }
+  const previousData = undoStack.pop();
+  redoStack.push(JSON.parse(JSON.stringify(currentTreeData)));
+  return previousData;
+}
+
+function redo() {
+  if (redoStack.length === 0) {
+    alert("Tidak ada aksi yang bisa di-redo");
+    return false;
+  }
+  const nextData = redoStack.pop();
+  undoStack.push(JSON.parse(JSON.stringify(currentTreeData)));
+  return nextData;
+}
+
+async function applyUndoRedo(newData) {
+  if (!newData) return;
+  currentTreeData = newData;
+  resetSiblingColors();
+  assignSiblingGroups(currentTreeData);
+  renderTree();
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "replace", data: currentTreeData })
+    });
+    await res.json();
+  } catch (err) {
+    console.error("Gagal simpan ke database:", err);
+  }
+}
+
+async function undoAction() {
+  const previousData = undo();
+  if (previousData) {
+    await applyUndoRedo(previousData);
+  }
+}
+
+async function redoAction() {
+  const nextData = redo();
+  if (nextData) {
+    await applyUndoRedo(nextData);
+  }
+}
+
+// ========== HAPUS DENGAN OPSI ==========
+async function hapusWithOption(path) {
+  if (!isAdmin) return;
+  
+  const choice = confirm(
+    "Pilih opsi hapus:\n\n" +
+    "OK = Hapus node ini saja (anak-anak naik ke parent)\n" +
+    "CANCEL = Hapus node dan semua keturunannya"
+  );
+  
+  if (choice) {
+    await hapusNodeOnly(path);
+  } else {
+    await hapusWithChildren(path);
+  }
+}
+
+async function hapusNodeOnly(path) {
+  if (!isAdmin) return;
+  
+  try {
+    saveToUndo(currentTreeData);
+    
+    const parentPath = path.slice(0, -1);
+    const nodeIndex = path[path.length - 1];
+    let parent = null;
+    
+    if (parentPath.length === 0) {
+      parent = currentTreeData;
+    } else {
+      parent = getNodeByPath(currentTreeData, parentPath);
+    }
+    
+    if (!parent || !parent.children) return;
+    
+    const nodeToDelete = parent.children[nodeIndex];
+    if (!nodeToDelete) return;
+    
+    const grandchildren = nodeToDelete.children || [];
+    
+    parent.children.splice(nodeIndex, 1);
+    
+    if (grandchildren.length > 0) {
+      parent.children.splice(nodeIndex, 0, ...grandchildren);
+    }
+    
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "replace", data: currentTreeData })
+    });
+    const result = await res.json();
+    
+    if (result.success) {
+      activePath = null;
+      activeMode = null;
+      await loadTree();
+    } else {
+      alert("Gagal menghapus: " + (result.error || "Error"));
+    }
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
+
+async function hapusWithChildren(path) {
+  if (!isAdmin) return;
+  if (!confirm("Hapus node ini dan SEMUA keturunannya?")) return;
+  
+  try {
+    saveToUndo(currentTreeData);
+    
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", path })
+    });
+    const result = await res.json();
+    
+    if (result.success) {
+      activePath = null;
+      activeMode = null;
+      await loadTree();
+    } else {
+      alert("Gagal hapus: " + (result.error || "Error"));
+    }
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
+
 // ========== RENDER TREE ==========
 let activePath = null;
 let activeMode = null;
@@ -85,6 +244,9 @@ async function loadTree() {
     currentTreeData = data;
     resetSiblingColors();
     assignSiblingGroups(currentTreeData);
+    
+    saveToUndo(currentTreeData);
+    
     renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
@@ -163,9 +325,13 @@ function convert(node, path = [], generation = 1) {
         <div class="node-menu">
           <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah Anak</button>
           <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah Nama</button>
-          <button onclick='hapus(${JSON.stringify(path)})'>❌ Hapus</button>
+          <button onclick='hapusWithOption(${JSON.stringify(path)})'>❌ Hapus</button>
           <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Tambah Parent</button>
           <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Ubah Urutan</button>
+        </div>
+        <div class="undo-redo-buttons">
+          <button onclick='undoAction()'>↩️ Undo</button>
+          <button onclick='redoAction()'>↪️ Redo</button>
         </div>
       </div>
     `;
@@ -250,6 +416,8 @@ async function submitInline(path) {
   else return;
   
   try {
+    saveToUndo(currentTreeData);
+    
     const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -263,19 +431,5 @@ async function submitInline(path) {
   } catch (err) { alert("Error: " + err.message); }
 }
 
-async function hapus(path) {
-  if (!isAdmin) return;
-  if (!confirm("Hapus node ini?")) return;
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", path })
-    });
-    const result = await res.json();
-    if (result.success) {
-      activePath = null; activeMode = null;
-      await loadTree();
-    } else alert("Gagal hapus");
-  } catch (err) { alert("Error: " + err.message); }
-}
+// Catatan: fungsi hapus() yang lama sudah diganti dengan hapusWithChildren()
+// hapusWithChildren masih tersedia untuk dipanggil
