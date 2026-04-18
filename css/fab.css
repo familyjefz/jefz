@@ -16,18 +16,12 @@
   font-size: 24px;
   cursor: pointer;
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Minimalisasi tap highlight di HP */
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-  tap-highlight-color: rgba(0,0,0,0);
-  outline: none;
 }
 
 .fab-main:hover {
-  transform: scale(1.05);
   background: #555555;
 }
 
@@ -39,7 +33,6 @@
   flex-direction: column;
   gap: 12px;
   margin-bottom: 5px;
-  transition: all 0.3s ease;
 }
 
 .fab-menu.hidden {
@@ -56,17 +49,11 @@
   font-size: 20px;
   cursor: pointer;
   box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Minimalisasi tap highlight di HP */
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-  tap-highlight-color: rgba(0,0,0,0);
-  outline: none;
 }
 
 .fab-item:hover {
-  transform: scale(1.05);
   background: #555555;
 }
