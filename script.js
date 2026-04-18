@@ -27,22 +27,13 @@ function getOrCreateSiblingColor(siblingGroupId) {
   return color;
 }
 
-function assignSiblingGroups(node, siblingGroupId = null) {
+function assignSiblingGroups(node) {
   if (!node) return;
-  
-  // Set kelompok saudara untuk node ini
-  if (siblingGroupId !== null) {
-    node._siblingGroupId = siblingGroupId;
-  }
-  
-  // Proses anak-anak: semua anak dari parent yang SAMA punya ID kelompok yang SAMA
   if (node.children && node.children.length > 0) {
-    // Buat ID kelompok baru untuk semua anak dari node ini
     const childrenGroupId = nextSiblingGroupId++;
-    
     node.children.forEach(child => {
       child._siblingGroupId = childrenGroupId;
-      assignSiblingGroups(child, childrenGroupId);
+      assignSiblingGroups(child);
     });
   }
 }
@@ -59,11 +50,8 @@ async function loadTree() {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
     const data = await res.json();
     currentTreeData = data;
-    
-    // Reset dan assign ulang kelompok saudara
     resetSiblingColors();
     assignSiblingGroups(currentTreeData);
-    
     renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
@@ -197,7 +185,7 @@ function getPathOfNode(root, targetNode) {
   return search(root, []);
 }
 
-// ========== FITUR INFO ==========
+// ========== FITUR INFO (2 KOLOM) ==========
 async function showInfo(path) {
   const node = getNodeByPath(currentTreeData, path);
   if (!node) return;
@@ -210,90 +198,68 @@ async function showInfo(path) {
   
   title.innerHTML = `📋 Info: ${escapeHtml(node.name).replace(/\n/g, '<br>')}`;
   
+  // Layout 2 kolom menggunakan CSS Grid
   body.innerHTML = `
-    <div class="info-section">
-      <div class="info-label">👤 Nama</div>
-      <div class="info-value">${escapeHtml(node.name).replace(/\n/g, '<br>')}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">💑 Pasangan</div>
-      <div class="info-value">${info.spouse || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👶 Anak (${info.childrenCount})</div>
-      <div class="info-value">${info.childrenList || '<span class="empty-info">- Tidak memiliki anak</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👶 Cucu (${info.grandchildrenCount})</div>
-      <div class="info-value">${info.grandchildrenList || '<span class="empty-info">- Tidak memiliki cucu</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👨‍👩‍👧‍👦 Orang Tua</div>
-      <div class="info-value">${info.parents || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👴👵 Kakek/Nenek</div>
-      <div class="info-value">${info.grandparents || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">📜 7 Keturunan ke Atas</div>
-      <div class="info-value">${info.ancestors7 || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👨‍👩‍👧‍👦 Saudara Kandung</div>
-      <div class="info-value">${info.siblings || '<span class="empty-info">- Tidak ada saudara kandung</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👨‍👩‍👧‍👦 Paman/Bibi</div>
-      <div class="info-value">${info.auntsUncles || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👨‍👩‍👧‍👦 Sepupu</div>
-      <div class="info-value">${info.cousins || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👨‍👩‍👧‍👦 Sepupu 2 (Duapupu)</div>
-      <div class="info-value">${info.cousins2 || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👨‍👩‍👧‍👦 Sepupu 3 (Telupupu)</div>
-      <div class="info-value">${info.cousins3 || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">👨‍👩‍👧‍👦 Ipar (Saudara Pasangan)</div>
-      <div class="info-value">${info.inLaws || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">💍 Mertua (Orang Tua Pasangan)</div>
-      <div class="info-value">${info.parentsInLaw || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">💍 Menantu (Pasangan Anak)</div>
-      <div class="info-value">${info.sonInLawDaughterInLaw || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">💍 Besan (Orang Tua Menantu)</div>
-      <div class="info-value">${info.inLawsParents || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
-    </div>
-    
-    <div class="info-section">
-      <div class="info-label">📜 7 Keturunan ke Bawah</div>
-      <div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    <div class="info-grid-2col">
+      <div class="info-section">
+        <div class="info-label">👤 Nama</div>
+        <div class="info-value">${escapeHtml(node.name).replace(/\n/g, '<br>')}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">💑 Pasangan</div>
+        <div class="info-value">${info.spouse || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">👶 Anak</div>
+        <div class="info-value">${info.childrenList || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">👶 Cucu</div>
+        <div class="info-value">${info.grandchildrenList || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">👨‍👩‍👧‍👦 Orang Tua</div>
+        <div class="info-value">${info.parents || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">👴👵 Kakek/Nenek</div>
+        <div class="info-value">${info.grandparents || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">👨‍👩‍👧‍👦 Saudara Kandung</div>
+        <div class="info-value">${info.siblings || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">👶 Ponakan</div>
+        <div class="info-value">${info.nephews || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">👨‍👩‍👧‍👦 Paman/Bibi</div>
+        <div class="info-value">${info.auntsUncles || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">👨‍👩‍👧‍👦 Sepupu</div>
+        <div class="info-value">${info.cousins || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">📜 7 Keturunan ke Atas</div>
+        <div class="info-value">${info.ancestors7 || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
+      
+      <div class="info-section">
+        <div class="info-label">📜 7 Keturunan ke Bawah</div>
+        <div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada</span>'}</div>
+      </div>
     </div>
   `;
   
@@ -301,40 +267,43 @@ async function showInfo(path) {
 }
 
 function generateFamilyInfo(treeData, path, node) {
-  // Cari parent (orang tua dari node ini)
+  // Cari parent
   const parentPath = path.slice(0, -1);
-  let parent = null;
+  let parent = parentPath.length === 0 ? null : getNodeByPath(treeData, parentPath);
   
-  if (parentPath.length === 0) {
-    // Node ini adalah anak langsung dari root
-    parent = treeData;
-  } else {
-    parent = getNodeByPath(treeData, parentPath);
-  }
-  
-  // SAUDARA KANDUNG: semua anak dari parent yang SAMA, kecuali diri sendiri
+  // SAUDARA KANDUNG (anak dari parent yang sama)
   let siblings = [];
   if (parent && parent.children) {
-    // Dapatkan index node ini di parent.children
-    let currentNodeIndex = -1;
-    if (parentPath.length === 0) {
-      // Node adalah anak root, cari berdasarkan nama
-      currentNodeIndex = parent.children.findIndex(c => c.name === node.name);
-    } else {
-      // Node bukan anak root, gunakan path terakhir
-      const lastIndex = path[path.length - 1];
-      currentNodeIndex = lastIndex;
+    siblings = parent.children.filter((_, idx) => idx !== path[path.length - 1]);
+  }
+  
+  // PONAKAN (anak dari saudara kandung)
+  let nephews = [];
+  siblings.forEach(sibling => {
+    if (sibling.children && sibling.children.length > 0) {
+      nephews = nephews.concat(sibling.children);
     }
-    
-    if (currentNodeIndex !== -1) {
-      siblings = parent.children.filter((_, idx) => idx !== currentNodeIndex);
-    } else {
-      // Fallback: filter berdasarkan nama
-      siblings = parent.children.filter(c => c.name !== node.name);
+  });
+  
+  // PAMAN/BIBI (saudara dari orang tua)
+  let auntsUncles = [];
+  if (parent) {
+    const grandparentPath = parentPath.slice(0, -1);
+    let grandparent = grandparentPath.length === 0 ? treeData : getNodeByPath(treeData, grandparentPath);
+    if (grandparent && grandparent.children) {
+      auntsUncles = grandparent.children.filter(p => p !== parent);
     }
   }
   
-  // Pasangan (dari nama yang mengandung "|")
+  // SEPUPU (anak dari paman/bibi)
+  let cousins = [];
+  auntsUncles.forEach(au => {
+    if (au.children && au.children.length > 0) {
+      cousins = cousins.concat(au.children);
+    }
+  });
+  
+  // Pasangan
   let spouse = null;
   if (node.name && node.name.includes("|")) {
     const parts = node.name.split("|");
@@ -343,33 +312,11 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
-  // Ipar - untuk sementara data statis
-  let inLaws = null;
-  let parentsInLaw = null;
-  
   // Anak-anak
   const children = node.children || [];
-  const childrenCount = children.length;
   const childrenList = children.length > 0 
     ? children.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
-  
-  // Menantu (pasangan dari anak)
-  let sonInLawDaughterInLaw = [];
-  children.forEach(child => {
-    if (child.name && child.name.includes("|")) {
-      const parts = child.name.split("|");
-      if (parts.length > 1 && parts[1].trim()) {
-        sonInLawDaughterInLaw.push(`${child.name.split("|")[0].trim()} → ${parts[1].trim()}`);
-      }
-    }
-  });
-  const sonInLawDaughterInLawList = sonInLawDaughterInLaw.length > 0
-    ? sonInLawDaughterInLaw.join('<br>')
-    : null;
-  
-  // Besan - data statis
-  let inLawsParents = null;
   
   // Cucu
   let grandchildren = [];
@@ -378,7 +325,6 @@ function generateFamilyInfo(treeData, path, node) {
       grandchildren = grandchildren.concat(child.children);
     }
   });
-  const grandchildrenCount = grandchildren.length;
   const grandchildrenList = grandchildren.length > 0
     ? grandchildren.map((gc, i) => `${i + 1}. ${gc.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
@@ -394,9 +340,6 @@ function generateFamilyInfo(treeData, path, node) {
     if (grandparentNode) {
       grandparent = grandparentNode.name.replace(/\n/g, '<br>');
     }
-  } else if (parent === treeData && treeData.name) {
-    // Parent adalah root, maka kakek/nenek tidak ada
-    grandparent = null;
   }
   
   // 7 keturunan ke atas
@@ -404,74 +347,18 @@ function generateFamilyInfo(treeData, path, node) {
   let currentParent = parent;
   let gen = 1;
   while (currentParent && gen <= 7) {
-    if (currentParent !== treeData || (currentParent === treeData && gen === 1)) {
-      ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
-    }
+    ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
     const currentPath = getPathOfNode(treeData, currentParent);
     if (currentPath && currentPath.length > 0) {
       const newParentPath = currentPath.slice(0, -1);
       currentParent = newParentPath.length === 0 ? treeData : getNodeByPath(treeData, newParentPath);
-      if (currentParent === treeData && newParentPath.length === 0) {
-        // Sudah sampai root, berhenti
-        break;
-      }
+      if (currentParent === treeData && newParentPath.length === 0) break;
     } else {
       currentParent = null;
     }
     gen++;
   }
   const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
-  
-  // Saudara kandung (format tampilan)
-  const siblingsList = siblings.length > 0
-    ? siblings.map((s, i) => `${i + 1}. ${s.name.replace(/\n/g, '<br>')}`).join('<br>')
-    : null;
-  
-  // Paman/bibi (saudara dari orang tua)
-  let auntsUncles = [];
-  if (parent) {
-    const parentParentPath = parentPath.length > 0 ? parentPath.slice(0, -1) : [];
-    const grandparentNode = parentParentPath.length === 0 ? treeData : getNodeByPath(treeData, parentParentPath);
-    if (grandparentNode && grandparentNode.children) {
-      auntsUncles = grandparentNode.children.filter(p => p !== parent);
-    }
-  }
-  const auntsUnclesList = auntsUncles.length > 0
-    ? auntsUncles.map((au, i) => `${i + 1}. ${au.name.replace(/\n/g, '<br>')}`).join('<br>')
-    : null;
-  
-  // Sepupu (anak dari paman/bibi)
-  let cousins = [];
-  auntsUncles.forEach(au => {
-    if (au.children && au.children.length > 0) {
-      cousins = cousins.concat(au.children);
-    }
-  });
-  const cousinsList = cousins.length > 0
-    ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
-    : null;
-  
-  // Sepupu 2 (anak dari sepupu)
-  let cousins2 = [];
-  cousins.forEach(c => {
-    if (c.children && c.children.length > 0) {
-      cousins2 = cousins2.concat(c.children);
-    }
-  });
-  const cousins2List = cousins2.length > 0
-    ? cousins2.map((c2, i) => `${i + 1}. ${c2.name.replace(/\n/g, '<br>')}`).join('<br>')
-    : null;
-  
-  // Sepupu 3 (anak dari sepupu 2)
-  let cousins3 = [];
-  cousins2.forEach(c2 => {
-    if (c2.children && c2.children.length > 0) {
-      cousins3 = cousins3.concat(c2.children);
-    }
-  });
-  const cousins3List = cousins3.length > 0
-    ? cousins3.map((c3, i) => `${i + 1}. ${c3.name.replace(/\n/g, '<br>')}`).join('<br>')
-    : null;
   
   // 7 keturunan ke bawah
   let descendants = [];
@@ -487,24 +374,23 @@ function generateFamilyInfo(treeData, path, node) {
   }
   const descendants7 = descendants.length > 0 ? descendants.join('<br>') : null;
   
+  // Format daftar
+  const siblingsList = siblings.length > 0 ? siblings.map((s, i) => `${i + 1}. ${s.name.replace(/\n/g, '<br>')}`).join('<br>') : null;
+  const nephewsList = nephews.length > 0 ? nephews.map((n, i) => `${i + 1}. ${n.name.replace(/\n/g, '<br>')}`).join('<br>') : null;
+  const auntsUnclesList = auntsUncles.length > 0 ? auntsUncles.map((au, i) => `${i + 1}. ${au.name.replace(/\n/g, '<br>')}`).join('<br>') : null;
+  const cousinsList = cousins.length > 0 ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>') : null;
+  
   return {
     spouse,
-    childrenCount,
     childrenList,
-    grandchildrenCount,
     grandchildrenList,
     parents,
     grandparents: grandparent,
     ancestors7,
     siblings: siblingsList,
+    nephews: nephewsList,
     auntsUncles: auntsUnclesList,
     cousins: cousinsList,
-    cousins2: cousins2List,
-    cousins3: cousins3List,
-    inLaws: inLaws,
-    parentsInLaw: parentsInLaw,
-    sonInLawDaughterInLaw: sonInLawDaughterInLawList,
-    inLawsParents: inLawsParents,
     descendants7
   };
 }
