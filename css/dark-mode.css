@@ -1,4 +1,4 @@
-/* Dark Mode - Menggunakan Invert */
+/* Dark Mode - Menggunakan Invert (semua termasuk border ikut invert) */
 body.dark-mode {
   filter: invert(1) hue-rotate(180deg);
 }
@@ -10,13 +10,13 @@ body.dark-mode iframe {
   filter: invert(1) hue-rotate(180deg);
 }
 
-/* Perbaiki warna FAB di dark mode */
+/* FAB ikut invert juga */
 body.dark-mode .fab-main,
 body.dark-mode .fab-item {
   filter: invert(1) hue-rotate(180deg);
 }
 
-/* Perbaiki warna modal di dark mode */
+/* Modal ikut invert */
 body.dark-mode .modal-content,
 body.dark-mode .custom-popup-content {
   filter: invert(1) hue-rotate(180deg);
