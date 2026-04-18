@@ -216,6 +216,36 @@ async function showInfo(path) {
     </div>
     
     <div class="info-section">
+      <div class="info-label">👨‍👩‍👧‍👦 Sepupu 2 (Duapupu)</div>
+      <div class="info-value">${info.cousins2 || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">👨‍👩‍👧‍👦 Sepupu 3 (Telupupu)</div>
+      <div class="info-value">${info.cousins3 || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">👨‍👩‍👧‍👦 Ipar (Saudara Pasangan)</div>
+      <div class="info-value">${info.inLaws || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">💍 Mertua (Orang Tua Pasangan)</div>
+      <div class="info-value">${info.parentsInLaw || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">💍 Menantu (Pasangan Anak)</div>
+      <div class="info-value">${info.sonInLawDaughterInLaw || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">💍 Besan (Orang Tua Menantu)</div>
+      <div class="info-value">${info.inLawsParents || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
       <div class="info-label">📜 7 Keturunan ke Bawah</div>
       <div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
     </div>
@@ -229,20 +259,27 @@ function generateFamilyInfo(treeData, path, node) {
   const parentPath = path.slice(0, -1);
   const parent = parentPath.length === 0 ? null : getNodeByPath(treeData, parentPath);
   
-  // SAUDARA KANDUNG
+  // Saudara kandung
   let siblings = [];
   if (parent && parent.children) {
     siblings = parent.children.filter((_, idx) => idx !== path[path.length - 1]);
   }
   
-  // Pasangan
+  // Pasangan (dari nama yang mengandung "|")
   let spouse = null;
+  let spouseName = null;
   if (node.name && node.name.includes("|")) {
     const parts = node.name.split("|");
     if (parts.length > 1 && parts[1].trim()) {
-      spouse = parts[1].trim();
+      spouseName = parts[1].trim();
+      spouse = spouseName;
     }
   }
+  
+  // Ipar (saudara dari pasangan) - untuk sementara data statis
+  let inLaws = null;
+  // Mertua (orang tua pasangan) - untuk sementara data statis
+  let parentsInLaw = null;
   
   // Anak-anak
   const children = node.children || [];
@@ -250,6 +287,23 @@ function generateFamilyInfo(treeData, path, node) {
   const childrenList = children.length > 0 
     ? children.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
+  
+  // Menantu (pasangan dari anak) - ambil dari nama anak yang mengandung "|"
+  let sonInLawDaughterInLaw = [];
+  children.forEach(child => {
+    if (child.name && child.name.includes("|")) {
+      const parts = child.name.split("|");
+      if (parts.length > 1 && parts[1].trim()) {
+        sonInLawDaughterInLaw.push(`${child.name.split("|")[0].trim()} → ${parts[1].trim()}`);
+      }
+    }
+  });
+  const sonInLawDaughterInLawList = sonInLawDaughterInLaw.length > 0
+    ? sonInLawDaughterInLaw.join('<br>')
+    : null;
+  
+  // Besan (orang tua dari menantu) - untuk sementara data statis
+  let inLawsParents = null;
   
   // Cucu
   let grandchildren = [];
@@ -311,7 +365,7 @@ function generateFamilyInfo(treeData, path, node) {
     ? auntsUncles.map((au, i) => `${i + 1}. ${au.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
-  // Sepupu
+  // Sepupu (anak dari paman/bibi)
   let cousins = [];
   auntsUncles.forEach(au => {
     if (au.children && au.children.length > 0) {
@@ -320,6 +374,28 @@ function generateFamilyInfo(treeData, path, node) {
   });
   const cousinsList = cousins.length > 0
     ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
+    : null;
+  
+  // Sepupu 2 (anak dari sepupu)
+  let cousins2 = [];
+  cousins.forEach(c => {
+    if (c.children && c.children.length > 0) {
+      cousins2 = cousins2.concat(c.children);
+    }
+  });
+  const cousins2List = cousins2.length > 0
+    ? cousins2.map((c2, i) => `${i + 1}. ${c2.name.replace(/\n/g, '<br>')}`).join('<br>')
+    : null;
+  
+  // Sepupu 3 (anak dari sepupu 2)
+  let cousins3 = [];
+  cousins2.forEach(c2 => {
+    if (c2.children && c2.children.length > 0) {
+      cousins3 = cousins3.concat(c2.children);
+    }
+  });
+  const cousins3List = cousins3.length > 0
+    ? cousins3.map((c3, i) => `${i + 1}. ${c3.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
   // 7 keturunan ke bawah
@@ -348,6 +424,12 @@ function generateFamilyInfo(treeData, path, node) {
     siblings: siblingsList,
     auntsUncles: auntsUnclesList,
     cousins: cousinsList,
+    cousins2: cousins2List,
+    cousins3: cousins3List,
+    inLaws: inLaws,
+    parentsInLaw: parentsInLaw,
+    sonInLawDaughterInLaw: sonInLawDaughterInLawList,
+    inLawsParents: inLawsParents,
     descendants7
   };
 }
