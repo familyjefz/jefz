@@ -3,14 +3,14 @@ body.dark-mode {
   filter: invert(1) hue-rotate(180deg);
 }
 
-/* Kecualikan gambar dan video dari invert (opsional) */
+/* Kecualikan gambar dan video dari invert */
 body.dark-mode img,
 body.dark-mode video,
 body.dark-mode iframe {
   filter: invert(1) hue-rotate(180deg);
 }
 
-/* Perbaiki warna FAB di dark mode (jadi normal) */
+/* Perbaiki warna FAB di dark mode */
 body.dark-mode .fab-main,
 body.dark-mode .fab-item {
   filter: invert(1) hue-rotate(180deg);
