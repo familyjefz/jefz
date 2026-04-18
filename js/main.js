@@ -12,22 +12,27 @@ function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
 // ========== FAB MENU ==========
-let isFabMenuVisible = true;
+let isFabMenuVisible = false;
 
 function toggleFabMenu() {
   const fabMenu = document.getElementById("fab-menu");
-  const fabHide = document.getElementById("fab-hide");
   
   if (isFabMenuVisible) {
     fabMenu.classList.add("hidden");
-    fabHide.textContent = "➡️";
     isFabMenuVisible = false;
   } else {
     fabMenu.classList.remove("hidden");
-    fabHide.textContent = "⬅️";
     isFabMenuVisible = true;
   }
 }
+
+// Tutup FAB menu jika klik di luar
+document.addEventListener("click", (e) => {
+  const fabContainer = document.querySelector(".fab-container");
+  if (fabContainer && !fabContainer.contains(e.target) && isFabMenuVisible) {
+    toggleFabMenu();
+  }
+});
 
 function updateFabButtons() {
   const undoBtn = document.getElementById("fab-undo");
@@ -111,15 +116,38 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // FAB Events
   document.getElementById("fab-main")?.addEventListener("click", toggleFabMenu);
-  document.getElementById("fab-undo")?.addEventListener("click", () => undoAction());
-  document.getElementById("fab-redo")?.addEventListener("click", () => redoAction());
-  document.getElementById("fab-zoom-in")?.addEventListener("click", zoomIn);
-  document.getElementById("fab-zoom-out")?.addEventListener("click", zoomOut);
-  document.getElementById("fab-zoom-reset")?.addEventListener("click", zoomReset);
-  document.getElementById("fab-login")?.addEventListener("click", showLoginModal);
-  document.getElementById("fab-logout")?.addEventListener("click", logout);
-  document.getElementById("fab-theme")?.addEventListener("click", toggleTheme);
-  document.getElementById("fab-hide")?.addEventListener("click", toggleFabMenu);
+  document.getElementById("fab-undo")?.addEventListener("click", () => {
+    toggleFabMenu();
+    undoAction();
+  });
+  document.getElementById("fab-redo")?.addEventListener("click", () => {
+    toggleFabMenu();
+    redoAction();
+  });
+  document.getElementById("fab-zoom-in")?.addEventListener("click", () => {
+    toggleFabMenu();
+    zoomIn();
+  });
+  document.getElementById("fab-zoom-out")?.addEventListener("click", () => {
+    toggleFabMenu();
+    zoomOut();
+  });
+  document.getElementById("fab-zoom-reset")?.addEventListener("click", () => {
+    toggleFabMenu();
+    zoomReset();
+  });
+  document.getElementById("fab-login")?.addEventListener("click", () => {
+    toggleFabMenu();
+    showLoginModal();
+  });
+  document.getElementById("fab-logout")?.addEventListener("click", () => {
+    toggleFabMenu();
+    logout();
+  });
+  document.getElementById("fab-theme")?.addEventListener("click", () => {
+    toggleFabMenu();
+    toggleTheme();
+  });
   
   // Modal Events
   document.querySelector(".close")?.addEventListener("click", closeLoginModal);
