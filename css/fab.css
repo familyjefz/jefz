@@ -20,8 +20,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
 }
 
 .fab-main:hover {
@@ -63,8 +61,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
 }
 
 .fab-item:hover {
