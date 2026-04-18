@@ -5,36 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Silsilah Keluarga</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/modal.css">
-  <link rel="stylesheet" href="css/fab.css">
-  <link rel="stylesheet" href="css/dark-mode.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app-container">
   <div class="header">
     <h2>Silsilah Keluarga</h2>
+    <div class="zoom-controls">
+      <button id="zoom-in">🔍+</button>
+      <button id="zoom-out">🔍-</button>
+      <button id="zoom-reset">⟳</button>
+      <button id="login-btn" class="login-btn">👤 Login Admin</button>
+    </div>
   </div>
   <div class="tree-wrapper" id="tree-wrapper">
     <div class="tree-zoom-container" id="tree-zoom-container">
       <div id="tree"></div>
     </div>
   </div>
-</div>
-
-<!-- Floating Action Button -->
-<div class="fab-container" id="fab-container">
-  <div class="fab-menu" id="fab-menu">
-    <button class="fab-item" id="fab-undo" title="Undo">↩️</button>
-    <button class="fab-item" id="fab-redo" title="Redo">↪️</button>
-    <button class="fab-item" id="fab-zoom-in" title="Zoom In">🔍+</button>
-    <button class="fab-item" id="fab-zoom-out" title="Zoom Out">🔍-</button>
-    <button class="fab-item" id="fab-zoom-reset" title="Reset Zoom">⟳</button>
-    <button class="fab-item" id="fab-login" title="Login Admin">👤</button>
-    <button class="fab-item" id="fab-logout" title="Logout" style="display:none;">🚪</button>
-    <button class="fab-item" id="fab-theme" title="Dark/Light Mode">🌙</button>
-  </div>
-  <button class="fab-main" id="fab-main">⚙️</button>
 </div>
 
 <!-- Modal Login -->
@@ -64,23 +52,11 @@
   </div>
 </div>
 
-<!-- Modal Custom Popup -->
-<div id="custom-popup" class="custom-popup">
-  <div class="custom-popup-content">
-    <div class="custom-popup-header">
-      <h4 id="popup-title">Peringatan</h4>
-    </div>
-    <div class="custom-popup-body" id="popup-message"></div>
-    <div class="custom-popup-buttons" id="popup-buttons"></div>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
-<script src="js/config.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/family-tree.js"></script>
-<script src="js/family-info.js"></script>
-<script src="js/main.js"></script>
+<script src="config.js"></script>
+<script src="family-tree.js"></script>
+<script src="family-info.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
