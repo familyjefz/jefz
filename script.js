@@ -105,7 +105,6 @@ function convert(node, path = [], generation = 1) {
   }
   else {
     const displayName = escapeHtml(node.name).replace(/\n/g, '<br>');
-    // Tombol Info dan Option (jika admin) sejajar di luar
     let buttons = `<button class="btn-info" onclick='showInfo(${JSON.stringify(path)})'>📄 Info</button>`;
     if (isAdmin) {
       buttons = `<button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>${buttons}`;
@@ -127,8 +126,33 @@ function convert(node, path = [], generation = 1) {
   };
 }
 
+// ========== FUNGSI BANTU ==========
+function getNodeByPath(node, path) {
+  if (!path || path.length === 0) return node;
+  let current = node;
+  for (let i = 0; i < path.length; i++) {
+    if (!current.children || !current.children[path[i]]) return null;
+    current = current.children[path[i]];
+  }
+  return current;
+}
+
+function getPathOfNode(root, targetNode) {
+  function search(node, path) {
+    if (node === targetNode) return path;
+    if (node.children) {
+      for (let i = 0; i < node.children.length; i++) {
+        const result = search(node.children[i], [...path, i]);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+  return search(root, []);
+}
+
 // ========== FITUR INFO ==========
-function showInfo(path) {
+async function showInfo(path) {
   const node = getNodeByPath(currentTreeData, path);
   if (!node) return;
   
@@ -167,7 +191,7 @@ function showInfo(path) {
     </div>
     
     <div class="info-section">
-      <div class="info-label">👴👵 Kakek/Nenek (2 generasi ke atas)</div>
+      <div class="info-label">👴👵 Kakek/Nenek</div>
       <div class="info-value">${info.grandparents || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
     </div>
     
@@ -177,17 +201,17 @@ function showInfo(path) {
     </div>
     
     <div class="info-section">
-      <div class="info-label">👨‍👩‍👧 Saudara Kandung</div>
+      <div class="info-label">👨‍👩‍👧‍👦 Saudara Kandung</div>
       <div class="info-value">${info.siblings || '<span class="empty-info">- Tidak ada saudara kandung</span>'}</div>
     </div>
     
     <div class="info-section">
-      <div class="info-label">👨‍👩‍👧‍👦 Paman/Bibi (saudara orang tua)</div>
+      <div class="info-label">👨‍👩‍👧‍👦 Paman/Bibi</div>
       <div class="info-value">${info.auntsUncles || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
     </div>
     
     <div class="info-section">
-      <div class="info-label">👨‍👩‍👧‍👦 Sepupu (anak paman/bibi)</div>
+      <div class="info-label">👨‍👩‍👧‍👦 Sepupu</div>
       <div class="info-value">${info.cousins || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
     </div>
     
@@ -200,21 +224,18 @@ function showInfo(path) {
   modal.style.display = "block";
 }
 
-function getNodeByPath(node, path) {
-  if (path.length === 0) return node;
-  let current = node;
-  for (let i = 0; i < path.length; i++) {
-    if (!current.children || !current.children[path[i]]) return null;
-    current = current.children[path[i]];
-  }
-  return current;
-}
-
 function generateFamilyInfo(treeData, path, node) {
+  // Cari parent
   const parentPath = path.slice(0, -1);
   const parent = parentPath.length === 0 ? null : getNodeByPath(treeData, parentPath);
-  const siblings = parent ? parent.children.filter((_, idx) => idx !== path[path.length - 1]) : [];
   
+  // SAUDARA KANDUNG
+  let siblings = [];
+  if (parent && parent.children) {
+    siblings = parent.children.filter((_, idx) => idx !== path[path.length - 1]);
+  }
+  
+  // Pasangan
   let spouse = null;
   if (node.name && node.name.includes("|")) {
     const parts = node.name.split("|");
@@ -223,12 +244,14 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
+  // Anak-anak
   const children = node.children || [];
   const childrenCount = children.length;
   const childrenList = children.length > 0 
     ? children.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
+  // Cucu
   let grandchildren = [];
   children.forEach(child => {
     if (child.children && child.children.length > 0) {
@@ -240,8 +263,10 @@ function generateFamilyInfo(treeData, path, node) {
     ? grandchildren.map((gc, i) => `${i + 1}. ${gc.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
+  // Orang tua
   const parents = parent ? parent.name.replace(/\n/g, '<br>') : null;
   
+  // Kakek/nenek
   let grandparent = null;
   if (parentPath.length > 0) {
     const grandparentPath = parentPath.slice(0, -1);
@@ -251,26 +276,29 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
+  // 7 keturunan ke atas
   let ancestors = [];
-  let current = parent;
+  let currentParent = parent;
   let gen = 1;
-  while (current && gen <= 7) {
-    ancestors.push(`Generasi ke-${gen}: ${current.name.replace(/\n/g, '<br>')}`);
-    const currentPath = getPathOfNode(treeData, current);
-    if (currentPath.length > 0) {
+  while (currentParent && gen <= 7) {
+    ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
+    const currentPath = getPathOfNode(treeData, currentParent);
+    if (currentPath && currentPath.length > 0) {
       const newParentPath = currentPath.slice(0, -1);
-      current = newParentPath.length === 0 ? (newParentPath.length === 0 ? treeData : null) : getNodeByPath(treeData, newParentPath);
+      currentParent = newParentPath.length === 0 ? treeData : getNodeByPath(treeData, newParentPath);
     } else {
-      current = null;
+      currentParent = null;
     }
     gen++;
   }
   const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
   
+  // Saudara kandung
   const siblingsList = siblings.length > 0
     ? siblings.map((s, i) => `${i + 1}. ${s.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
+  // Paman/bibi
   let auntsUncles = [];
   if (parent) {
     const parentParentPath = parentPath.slice(0, -1);
@@ -283,6 +311,7 @@ function generateFamilyInfo(treeData, path, node) {
     ? auntsUncles.map((au, i) => `${i + 1}. ${au.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
+  // Sepupu
   let cousins = [];
   auntsUncles.forEach(au => {
     if (au.children && au.children.length > 0) {
@@ -293,6 +322,7 @@ function generateFamilyInfo(treeData, path, node) {
     ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
+  // 7 keturunan ke bawah
   let descendants = [];
   let queue = [{ node: node, level: 1 }];
   while (queue.length > 0) {
@@ -320,20 +350,6 @@ function generateFamilyInfo(treeData, path, node) {
     cousins: cousinsList,
     descendants7
   };
-}
-
-function getPathOfNode(root, targetNode) {
-  function search(node, path) {
-    if (node === targetNode) return path;
-    if (node.children) {
-      for (let i = 0; i < node.children.length; i++) {
-        const result = search(node.children[i], [...path, i]);
-        if (result) return result;
-      }
-    }
-    return null;
-  }
-  return search(root, []);
 }
 
 function escapeHtml(str) {
