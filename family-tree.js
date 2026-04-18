@@ -35,33 +35,10 @@ function getNodeColor(node) {
   return getOrCreateSiblingColor(node._siblingGroupId);
 }
 
-// ========== FUNGSI BANTU MULTI-ROOT ==========
-function isMultiRoot(data) {
-  return Array.isArray(data) && data.length > 0;
-}
-
-function getNodeByPath(data, path) {
-  if (!path || path.length === 0) return data;
-  
-  // Jika multi-root
-  if (isMultiRoot(data)) {
-    let current = data;
-    for (let i = 0; i < path.length; i++) {
-      if (i === 0) {
-        // Index root
-        if (!current[path[i]]) return null;
-        current = current[path[i]];
-      } else {
-        // Children
-        if (!current.children || !current.children[path[i]]) return null;
-        current = current.children[path[i]];
-      }
-    }
-    return current;
-  }
-  
-  // Single-root
-  let current = data;
+// ========== FUNGSI BANTU ==========
+function getNodeByPath(node, path) {
+  if (!path || path.length === 0) return node;
+  let current = node;
   for (let i = 0; i < path.length; i++) {
     if (!current.children || !current.children[path[i]]) return null;
     current = current.children[path[i]];
@@ -69,28 +46,7 @@ function getNodeByPath(data, path) {
   return current;
 }
 
-function getPathOfNode(data, targetNode) {
-  // Multi-root
-  if (isMultiRoot(data)) {
-    for (let rootIdx = 0; rootIdx < data.length; rootIdx++) {
-      if (data[rootIdx] === targetNode) return [rootIdx];
-      function search(node, path) {
-        if (node === targetNode) return path;
-        if (node.children) {
-          for (let i = 0; i < node.children.length; i++) {
-            const result = search(node.children[i], [...path, i]);
-            if (result) return result;
-          }
-        }
-        return null;
-      }
-      const result = search(data[rootIdx], [rootIdx]);
-      if (result) return result;
-    }
-    return null;
-  }
-  
-  // Single-root
+function getPathOfNode(root, targetNode) {
   function search(node, path) {
     if (node === targetNode) return path;
     if (node.children) {
@@ -101,7 +57,7 @@ function getPathOfNode(data, targetNode) {
     }
     return null;
   }
-  return search(data, []);
+  return search(root, []);
 }
 
 function escapeHtml(str) {
@@ -125,17 +81,10 @@ let isAdmin = false;
 async function loadTree() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
-    let data = await res.json();
-    
+    const data = await res.json();
     currentTreeData = data;
     resetSiblingColors();
-    
-    if (isMultiRoot(currentTreeData)) {
-      currentTreeData.forEach(root => assignSiblingGroups(root));
-    } else {
-      assignSiblingGroups(currentTreeData);
-    }
-    
+    assignSiblingGroups(currentTreeData);
     renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
@@ -153,74 +102,18 @@ function renderTree() {
   
   container.innerHTML = "";
   
-  // Jika multi-root dengan lebih dari 1 root
-  if (isMultiRoot(currentTreeData) && currentTreeData.length > 1) {
-    const forestContainer = document.createElement("div");
-    forestContainer.style.display = "flex";
-    forestContainer.style.flexDirection = "row";
-    forestContainer.style.justifyContent = "center";
-    forestContainer.style.alignItems = "flex-start";
-    forestContainer.style.gap = "50px";
-    forestContainer.style.flexWrap = "wrap";
-    forestContainer.style.padding = "50px";
-    
-    currentTreeData.forEach((root, idx) => {
-      const treeContainer = document.createElement("div");
-      treeContainer.style.display = "inline-block";
-      treeContainer.style.verticalAlign = "top";
-      treeContainer.style.border = "1px solid #ddd";
-      treeContainer.style.borderRadius = "10px";
-      treeContainer.style.padding = "20px";
-      treeContainer.style.backgroundColor = "#fff";
-      treeContainer.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-      
-      const title = document.createElement("div");
-      title.style.textAlign = "center";
-      title.style.fontWeight = "bold";
-      title.style.marginBottom = "15px";
-      title.style.padding = "5px";
-      title.style.backgroundColor = "#f0f0f0";
-      title.style.borderRadius = "5px";
-      title.innerText = root.name.split("|")[0].trim();
-      treeContainer.appendChild(title);
-      
-      const tempDiv = document.createElement("div");
-      tempDiv.id = `temp-tree-${idx}`;
-      treeContainer.appendChild(tempDiv);
-      
-      forestContainer.appendChild(treeContainer);
-      
-      new Treant({
-        chart: {
-          container: `#temp-tree-${idx}`,
-          rootOrientation: "NORTH",
-          connectors: { type: "step" },
-          animateOnInit: false,
-          levelSeparation: 12,
-          siblingSeparation: 8,
-          subTeeSeparation: 8
-        },
-        nodeStructure: convert(root, [idx], 1)
-      });
-    });
-    
-    container.appendChild(forestContainer);
-  } else {
-    // Single-root
-    const singleRoot = isMultiRoot(currentTreeData) ? currentTreeData[0] : currentTreeData;
-    new Treant({
-      chart: {
-        container: "#tree",
-        rootOrientation: "NORTH",
-        connectors: { type: "step" },
-        animateOnInit: false,
-        levelSeparation: 12,
-        siblingSeparation: 8,
-        subTeeSeparation: 8
-      },
-      nodeStructure: convert(singleRoot, [0], 1)
-    });
-  }
+  new Treant({
+    chart: {
+      container: "#tree",
+      rootOrientation: "NORTH",
+      connectors: { type: "step" },
+      animateOnInit: false,
+      levelSeparation: 12,
+      siblingSeparation: 8,
+      subTeeSeparation: 8
+    },
+    nodeStructure: convert(currentTreeData, [], 1)
+  });
   
   setTimeout(() => {
     if (wrapper) {
@@ -385,66 +278,4 @@ async function hapus(path) {
       await loadTree();
     } else alert("Gagal hapus");
   } catch (err) { alert("Error: " + err.message); }
-}
-
-// ========== TAMBAH KELUARGA BARU (MULTI-ROOT) ==========
-async function addNewFamily() {
-  if (!isAdmin) {
-    alert("Hanya admin yang dapat menambah keluarga baru!");
-    return;
-  }
-  
-  const familyName = document.getElementById("new-family-name").value.trim();
-  if (!familyName) {
-    document.getElementById("family-error").innerText = "Nama keluarga tidak boleh kosong!";
-    return;
-  }
-  
-  document.getElementById("family-error").innerText = "";
-  closeAddFamilyModal();
-  
-  try {
-    let currentData = currentTreeData;
-    
-    // Jika masih single-root, konversi ke array
-    if (!isMultiRoot(currentData)) {
-      currentData = [currentData];
-    }
-    
-    const newRoot = {
-      name: familyName,
-      children: []
-    };
-    currentData.push(newRoot);
-    
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        action: "replace", 
-        data: currentData 
-      })
-    });
-    const result = await res.json();
-    if (result.success) {
-      alert("Keluarga baru berhasil ditambahkan!");
-      await loadTree();
-    } else {
-      alert("Gagal: " + (result.error || "Error"));
-    }
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
-}
-
-function showAddFamilyModal() {
-  if (!isAdmin) return;
-  document.getElementById("add-family-modal").style.display = "block";
-  document.getElementById("new-family-name").value = "";
-  document.getElementById("family-error").innerText = "";
-  setTimeout(() => document.getElementById("new-family-name").focus(), 100);
-}
-
-function closeAddFamilyModal() {
-  document.getElementById("add-family-modal").style.display = "none";
 }
