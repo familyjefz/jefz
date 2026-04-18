@@ -77,7 +77,6 @@ function convert(node, path = [], generation = 1) {
     else if (activeMode === "parent") placeholder = "Tulis nama parent (Enter untuk baris baru)";
     else if (activeMode === "order") placeholder = "Masukkan nomor urutan (0=pertama)";
     
-    // Gunakan textarea (bisa multi baris, Enter = new line)
     innerHTML = `
       <div class="node-box active-node" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
@@ -105,12 +104,19 @@ function convert(node, path = [], generation = 1) {
     `;
   }
   else {
-    // Tampilkan nama dengan baris baru (split menjadi beberapa baris)
     const displayName = escapeHtml(node.name).replace(/\n/g, '<br>');
+    // Tombol Info dan Option (jika admin) sejajar di luar
+    let buttons = `<button class="btn-info" onclick='showInfo(${JSON.stringify(path)})'>📄 Info</button>`;
+    if (isAdmin) {
+      buttons = `<button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>${buttons}`;
+    }
+    
     innerHTML = `
       <div class="node-box" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${displayName}</div>
-        ${isAdmin ? `<button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>` : ''}
+        <div class="node-buttons">
+          ${buttons}
+        </div>
       </div>
     `;
   }
@@ -119,6 +125,215 @@ function convert(node, path = [], generation = 1) {
     innerHTML: innerHTML,
     children: node.children?.map((child, i) => convert(child, [...path, i], generation + 1))
   };
+}
+
+// ========== FITUR INFO ==========
+function showInfo(path) {
+  const node = getNodeByPath(currentTreeData, path);
+  if (!node) return;
+  
+  const info = generateFamilyInfo(currentTreeData, path, node);
+  
+  const modal = document.getElementById("info-modal");
+  const title = document.getElementById("info-title");
+  const body = document.getElementById("info-body");
+  
+  title.innerHTML = `📋 Info: ${escapeHtml(node.name).replace(/\n/g, '<br>')}`;
+  
+  body.innerHTML = `
+    <div class="info-section">
+      <div class="info-label">👤 Nama</div>
+      <div class="info-value">${escapeHtml(node.name).replace(/\n/g, '<br>')}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">💑 Pasangan</div>
+      <div class="info-value">${info.spouse || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">👶 Anak (${info.childrenCount})</div>
+      <div class="info-value">${info.childrenList || '<span class="empty-info">- Tidak memiliki anak</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">👶 Cucu (${info.grandchildrenCount})</div>
+      <div class="info-value">${info.grandchildrenList || '<span class="empty-info">- Tidak memiliki cucu</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">👨‍👩‍👧‍👦 Orang Tua</div>
+      <div class="info-value">${info.parents || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">👴👵 Kakek/Nenek (2 generasi ke atas)</div>
+      <div class="info-value">${info.grandparents || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">📜 7 Keturunan ke Atas</div>
+      <div class="info-value">${info.ancestors7 || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">👨‍👩‍👧 Saudara Kandung</div>
+      <div class="info-value">${info.siblings || '<span class="empty-info">- Tidak ada saudara kandung</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">👨‍👩‍👧‍👦 Paman/Bibi (saudara orang tua)</div>
+      <div class="info-value">${info.auntsUncles || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">👨‍👩‍👧‍👦 Sepupu (anak paman/bibi)</div>
+      <div class="info-value">${info.cousins || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-label">📜 7 Keturunan ke Bawah</div>
+      <div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada informasi</span>'}</div>
+    </div>
+  `;
+  
+  modal.style.display = "block";
+}
+
+function getNodeByPath(node, path) {
+  if (path.length === 0) return node;
+  let current = node;
+  for (let i = 0; i < path.length; i++) {
+    if (!current.children || !current.children[path[i]]) return null;
+    current = current.children[path[i]];
+  }
+  return current;
+}
+
+function generateFamilyInfo(treeData, path, node) {
+  const parentPath = path.slice(0, -1);
+  const parent = parentPath.length === 0 ? null : getNodeByPath(treeData, parentPath);
+  const siblings = parent ? parent.children.filter((_, idx) => idx !== path[path.length - 1]) : [];
+  
+  let spouse = null;
+  if (node.name && node.name.includes("|")) {
+    const parts = node.name.split("|");
+    if (parts.length > 1 && parts[1].trim()) {
+      spouse = parts[1].trim();
+    }
+  }
+  
+  const children = node.children || [];
+  const childrenCount = children.length;
+  const childrenList = children.length > 0 
+    ? children.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
+    : null;
+  
+  let grandchildren = [];
+  children.forEach(child => {
+    if (child.children && child.children.length > 0) {
+      grandchildren = grandchildren.concat(child.children);
+    }
+  });
+  const grandchildrenCount = grandchildren.length;
+  const grandchildrenList = grandchildren.length > 0
+    ? grandchildren.map((gc, i) => `${i + 1}. ${gc.name.replace(/\n/g, '<br>')}`).join('<br>')
+    : null;
+  
+  const parents = parent ? parent.name.replace(/\n/g, '<br>') : null;
+  
+  let grandparent = null;
+  if (parentPath.length > 0) {
+    const grandparentPath = parentPath.slice(0, -1);
+    const grandparentNode = grandparentPath.length === 0 ? treeData : getNodeByPath(treeData, grandparentPath);
+    if (grandparentNode) {
+      grandparent = grandparentNode.name.replace(/\n/g, '<br>');
+    }
+  }
+  
+  let ancestors = [];
+  let current = parent;
+  let gen = 1;
+  while (current && gen <= 7) {
+    ancestors.push(`Generasi ke-${gen}: ${current.name.replace(/\n/g, '<br>')}`);
+    const currentPath = getPathOfNode(treeData, current);
+    if (currentPath.length > 0) {
+      const newParentPath = currentPath.slice(0, -1);
+      current = newParentPath.length === 0 ? (newParentPath.length === 0 ? treeData : null) : getNodeByPath(treeData, newParentPath);
+    } else {
+      current = null;
+    }
+    gen++;
+  }
+  const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
+  
+  const siblingsList = siblings.length > 0
+    ? siblings.map((s, i) => `${i + 1}. ${s.name.replace(/\n/g, '<br>')}`).join('<br>')
+    : null;
+  
+  let auntsUncles = [];
+  if (parent) {
+    const parentParentPath = parentPath.slice(0, -1);
+    const grandparentNode = parentParentPath.length === 0 ? treeData : getNodeByPath(treeData, parentParentPath);
+    if (grandparentNode && grandparentNode.children) {
+      auntsUncles = grandparentNode.children.filter(p => p !== parent);
+    }
+  }
+  const auntsUnclesList = auntsUncles.length > 0
+    ? auntsUncles.map((au, i) => `${i + 1}. ${au.name.replace(/\n/g, '<br>')}`).join('<br>')
+    : null;
+  
+  let cousins = [];
+  auntsUncles.forEach(au => {
+    if (au.children && au.children.length > 0) {
+      cousins = cousins.concat(au.children);
+    }
+  });
+  const cousinsList = cousins.length > 0
+    ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
+    : null;
+  
+  let descendants = [];
+  let queue = [{ node: node, level: 1 }];
+  while (queue.length > 0) {
+    const { node: n, level } = queue.shift();
+    if (level > 1 && level <= 7) {
+      descendants.push(`Generasi ke-${level - 1}: ${n.name.replace(/\n/g, '<br>')}`);
+    }
+    if (n.children && level < 7) {
+      n.children.forEach(child => queue.push({ node: child, level: level + 1 }));
+    }
+  }
+  const descendants7 = descendants.length > 0 ? descendants.join('<br>') : null;
+  
+  return {
+    spouse,
+    childrenCount,
+    childrenList,
+    grandchildrenCount,
+    grandchildrenList,
+    parents,
+    grandparents: grandparent,
+    ancestors7,
+    siblings: siblingsList,
+    auntsUncles: auntsUnclesList,
+    cousins: cousinsList,
+    descendants7
+  };
+}
+
+function getPathOfNode(root, targetNode) {
+  function search(node, path) {
+    if (node === targetNode) return path;
+    if (node.children) {
+      for (let i = 0; i < node.children.length; i++) {
+        const result = search(node.children[i], [...path, i]);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+  return search(root, []);
 }
 
 function escapeHtml(str) {
@@ -247,6 +462,10 @@ function closeLoginModal() {
   document.getElementById("login-modal").style.display = "none";
 }
 
+function closeInfoModal() {
+  document.getElementById("info-modal").style.display = "none";
+}
+
 function checkPin() {
   const pin = document.getElementById("pin-input").value;
   if (pin === ADMIN_PIN) {
@@ -275,6 +494,7 @@ document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
 document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
 document.getElementById("login-btn")?.addEventListener("click", showLoginModal);
 document.querySelector(".close")?.addEventListener("click", closeLoginModal);
+document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
 document.getElementById("submit-pin")?.addEventListener("click", checkPin);
 document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
   if (e.key === "Enter") checkPin();
@@ -283,6 +503,9 @@ document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
 window.addEventListener("click", (e) => {
   if (e.target === document.getElementById("login-modal")) {
     closeLoginModal();
+  }
+  if (e.target === document.getElementById("info-modal")) {
+    closeInfoModal();
   }
 });
 
