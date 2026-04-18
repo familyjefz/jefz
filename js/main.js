@@ -26,15 +26,8 @@ function toggleFabMenu() {
   }
 }
 
-// Tutup FAB menu jika klik di luar FAB container
-document.addEventListener("click", (e) => {
-  const fabContainer = document.querySelector(".fab-container");
-  if (fabContainer && !fabContainer.contains(e.target) && isFabMenuVisible) {
-    const fabMenu = document.getElementById("fab-menu");
-    fabMenu.classList.add("hidden");
-    isFabMenuVisible = false;
-  }
-});
+// Hanya hide ketika klik induk FAB
+// Tidak ada auto hide dari klik luar
 
 function updateFabButtons() {
   const undoBtn = document.getElementById("fab-undo");
@@ -116,38 +109,32 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load theme
   loadTheme();
   
-  // FAB Events
+  // FAB Events - hanya induk yang toggle
   document.getElementById("fab-main")?.addEventListener("click", toggleFabMenu);
+  
+  // Tombol FAB lainnya TIDAK menutup menu
   document.getElementById("fab-undo")?.addEventListener("click", () => {
-    if (isFabMenuVisible) toggleFabMenu();
     undoAction();
   });
   document.getElementById("fab-redo")?.addEventListener("click", () => {
-    if (isFabMenuVisible) toggleFabMenu();
     redoAction();
   });
   document.getElementById("fab-zoom-in")?.addEventListener("click", () => {
-    if (isFabMenuVisible) toggleFabMenu();
     zoomIn();
   });
   document.getElementById("fab-zoom-out")?.addEventListener("click", () => {
-    if (isFabMenuVisible) toggleFabMenu();
     zoomOut();
   });
   document.getElementById("fab-zoom-reset")?.addEventListener("click", () => {
-    if (isFabMenuVisible) toggleFabMenu();
     zoomReset();
   });
   document.getElementById("fab-login")?.addEventListener("click", () => {
-    if (isFabMenuVisible) toggleFabMenu();
     showLoginModal();
   });
   document.getElementById("fab-logout")?.addEventListener("click", () => {
-    if (isFabMenuVisible) toggleFabMenu();
     logout();
   });
   document.getElementById("fab-theme")?.addEventListener("click", () => {
-    if (isFabMenuVisible) toggleFabMenu();
     toggleTheme();
   });
   
