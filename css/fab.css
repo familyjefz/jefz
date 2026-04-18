@@ -27,11 +27,6 @@
   background: #555555;
 }
 
-.fab-main:active {
-  transform: scale(0.98);
-  background: #333333;
-}
-
 .fab-menu {
   position: absolute;
   bottom: 70px;
@@ -66,9 +61,4 @@
 .fab-item:hover {
   transform: scale(1.05);
   background: #555555;
-}
-
-.fab-item:active {
-  transform: scale(0.98);
-  background: #333333;
 }
