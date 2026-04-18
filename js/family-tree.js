@@ -396,4 +396,36 @@ function cancelInline() {
   restoreScroll(scroll.left, scroll.top);
 }
 
-async function submit
+async function submitInline(path) {
+  if (!isAdmin) return;
+  const input = document.getElementById(`input-${path.join("-")}`);
+  if (!input) return;
+  const val = input.value.trim();
+  if (activeMode !== "order" && !val) { showPopup("Nama tidak boleh kosong!", "Peringatan", null, null, false); return; }
+  
+  let action, body = { path };
+  if (activeMode === "add") { action = "add"; body.name = val; }
+  else if (activeMode === "edit") { action = "edit"; body.name = val; }
+  else if (activeMode === "parent") { action = "addParent"; body.name = val; }
+  else if (activeMode === "order") { action = "reorder"; body.position = parseInt(val); if (isNaN(body.position)) { showPopup("Masukkan angka untuk urutan!", "Peringatan", null, null, false); return; } }
+  else return;
+  
+  try {
+    saveToUndo(currentTreeData);
+    
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, ...body })
+    });
+    const result = await res.json();
+    if (result.success) {
+      activePath = null; activeMode = null;
+      await loadTree();
+    } else {
+      showPopup("Gagal: " + (result.error || "Error"), "Error", null, null, false);
+    }
+  } catch (err) { 
+    showPopup("Error: " + err.message, "Error", null, null, false);
+  }
+}
