@@ -334,3 +334,27 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+/* ========== UNDO/REDO BUTTONS ========== */
+.undo-redo-buttons {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  justify-content: center;
+  border-top: 1px solid #ddd;
+  padding-top: 4px;
+}
+
+.undo-redo-buttons button {
+  flex: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 7px;
+  cursor: pointer;
+  border: none;
+  background: #607d8b;
+  color: white;
+}
+
+.undo-redo-buttons button:hover {
+  background: #455a64;
+}
