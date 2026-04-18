@@ -36,27 +36,9 @@ function getNodeColor(node) {
 }
 
 // ========== FUNGSI BANTU ==========
-function isMultiRoot(data) {
-  return Array.isArray(data) && data.length > 0 && data[0] && typeof data[0] === 'object' && data[0].hasOwnProperty('name');
-}
-
-function getNodeByPath(data, path) {
-  if (!path || path.length === 0) return data;
-  
-  // Jika multi-root
-  if (isMultiRoot(data)) {
-    const rootIndex = path[0];
-    if (!data[rootIndex]) return null;
-    let current = data[rootIndex];
-    for (let i = 1; i < path.length; i++) {
-      if (!current.children || !current.children[path[i]]) return null;
-      current = current.children[path[i]];
-    }
-    return current;
-  }
-  
-  // Single-root
-  let current = data;
+function getNodeByPath(node, path) {
+  if (!path || path.length === 0) return node;
+  let current = node;
   for (let i = 0; i < path.length; i++) {
     if (!current.children || !current.children[path[i]]) return null;
     current = current.children[path[i]];
@@ -64,38 +46,18 @@ function getNodeByPath(data, path) {
   return current;
 }
 
-function getPathOfNode(data, targetNode) {
-  // Single-root
-  if (!isMultiRoot(data)) {
-    function search(node, path) {
-      if (node === targetNode) return path;
-      if (node.children) {
-        for (let i = 0; i < node.children.length; i++) {
-          const result = search(node.children[i], [...path, i]);
-          if (result) return result;
-        }
+function getPathOfNode(root, targetNode) {
+  function search(node, path) {
+    if (node === targetNode) return path;
+    if (node.children) {
+      for (let i = 0; i < node.children.length; i++) {
+        const result = search(node.children[i], [...path, i]);
+        if (result) return result;
       }
-      return null;
     }
-    return search(data, []);
+    return null;
   }
-  
-  // Multi-root
-  for (let rootIdx = 0; rootIdx < data.length; rootIdx++) {
-    function search(node, path) {
-      if (node === targetNode) return [rootIdx, ...path];
-      if (node.children) {
-        for (let i = 0; i < node.children.length; i++) {
-          const result = search(node.children[i], [...path, i]);
-          if (result) return result;
-        }
-      }
-      return null;
-    }
-    const result = search(data[rootIdx], []);
-    if (result) return result;
-  }
-  return null;
+  return search(root, []);
 }
 
 function escapeHtml(str) {
@@ -119,17 +81,10 @@ let isAdmin = false;
 async function loadTree() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
-    let data = await res.json();
-    
+    const data = await res.json();
     currentTreeData = data;
     resetSiblingColors();
-    
-    if (isMultiRoot(currentTreeData)) {
-      currentTreeData.forEach(root => assignSiblingGroups(root));
-    } else {
-      assignSiblingGroups(currentTreeData);
-    }
-    
+    assignSiblingGroups(currentTreeData);
     renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
@@ -147,60 +102,18 @@ function renderTree() {
   
   container.innerHTML = "";
   
-  // Jika multi-root
-  if (isMultiRoot(currentTreeData) && currentTreeData.length > 1) {
-    const forestContainer = document.createElement("div");
-    forestContainer.style.display = "flex";
-    forestContainer.style.flexDirection = "row";
-    forestContainer.style.justifyContent = "center";
-    forestContainer.style.alignItems = "flex-start";
-    forestContainer.style.gap = "50px";
-    forestContainer.style.flexWrap = "wrap";
-    forestContainer.style.padding = "20px";
-    
-    currentTreeData.forEach((root, idx) => {
-      const treeContainer = document.createElement("div");
-      treeContainer.style.display = "inline-block";
-      treeContainer.style.verticalAlign = "top";
-      
-      const tempDiv = document.createElement("div");
-      tempDiv.id = `temp-tree-${idx}`;
-      treeContainer.appendChild(tempDiv);
-      
-      forestContainer.appendChild(treeContainer);
-      
-      // Konversi root ke struktur Treant dengan path yang menyertakan root index
-      new Treant({
-        chart: {
-          container: `#temp-tree-${idx}`,
-          rootOrientation: "NORTH",
-          connectors: { type: "step" },
-          animateOnInit: false,
-          levelSeparation: 12,
-          siblingSeparation: 8,
-          subTeeSeparation: 8
-        },
-        nodeStructure: convert(root, [idx], 1)
-      });
-    });
-    
-    container.appendChild(forestContainer);
-  } else {
-    // Single-root
-    const singleRoot = isMultiRoot(currentTreeData) ? currentTreeData[0] : currentTreeData;
-    new Treant({
-      chart: {
-        container: "#tree",
-        rootOrientation: "NORTH",
-        connectors: { type: "step" },
-        animateOnInit: false,
-        levelSeparation: 12,
-        siblingSeparation: 8,
-        subTeeSeparation: 8
-      },
-      nodeStructure: convert(singleRoot, [], 1)
-    });
-  }
+  new Treant({
+    chart: {
+      container: "#tree",
+      rootOrientation: "NORTH",
+      connectors: { type: "step" },
+      animateOnInit: false,
+      levelSeparation: 12,
+      siblingSeparation: 8,
+      subTeeSeparation: 8
+    },
+    nodeStructure: convert(currentTreeData, [], 1)
+  });
   
   setTimeout(() => {
     if (wrapper) {
@@ -367,64 +280,11 @@ async function hapus(path) {
   } catch (err) { alert("Error: " + err.message); }
 }
 
-// ========== TAMBAH ROOT / KELUARGA BARU ==========
-async function addNewFamily() {
-  if (!isAdmin) {
-    alert("Hanya admin yang dapat menambah keluarga baru!");
-    return;
-  }
-  
-  const familyName = document.getElementById("new-family-name").value.trim();
-  if (!familyName) {
-    document.getElementById("family-error").innerText = "Nama keluarga tidak boleh kosong!";
-    return;
-  }
-  
-  document.getElementById("family-error").innerText = "";
-  closeAddFamilyModal();
-  
-  try {
-    let currentData = currentTreeData;
-    
-    // Jika masih single-root, konversi ke array
-    if (!isMultiRoot(currentData)) {
-      currentData = [currentData];
-    }
-    
-    const newRoot = {
-      name: familyName,
-      children: []
-    };
-    currentData.push(newRoot);
-    
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        action: "replace", 
-        data: currentData 
-      })
-    });
-    const result = await res.json();
-    if (result.success) {
-      alert("Keluarga baru berhasil ditambahkan!");
-      await loadTree();
-    } else {
-      alert("Gagal: " + (result.error || "Error"));
-    }
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
-}
-
+// ========== TAMBAH KELUARGA (SEMENTARA DINONAKTIFKAN) ==========
+// Fitur tambah keluarga baru akan diperbaiki nanti
 function showAddFamilyModal() {
-  if (!isAdmin) return;
-  document.getElementById("add-family-modal").style.display = "block";
-  document.getElementById("new-family-name").value = "";
-  document.getElementById("family-error").innerText = "";
-  setTimeout(() => document.getElementById("new-family-name").focus(), 100);
+  alert("Fitur tambah keluarga baru sedang dalam perbaikan. Silakan coba lagi nanti.");
 }
 
-function closeAddFamilyModal() {
-  document.getElementById("add-family-modal").style.display = "none";
-}
+function closeAddFamilyModal() {}
+async function addNewFamily() {}
