@@ -1,57 +1,23 @@
-/* Dark Mode */
+/* Dark Mode - Menggunakan Invert */
 body.dark-mode {
-  background: #1a1a2e;
+  filter: invert(1) hue-rotate(180deg);
 }
 
-body.dark-mode .app-container {
-  background: #1a1a2e;
+/* Kecualikan gambar dan video dari invert (opsional) */
+body.dark-mode img,
+body.dark-mode video,
+body.dark-mode iframe {
+  filter: invert(1) hue-rotate(180deg);
 }
 
-body.dark-mode .header,
-body.dark-mode .tree-wrapper {
-  background: #1a1a2e;
+/* Perbaiki warna FAB di dark mode (jadi normal) */
+body.dark-mode .fab-main,
+body.dark-mode .fab-item {
+  filter: invert(1) hue-rotate(180deg);
 }
 
-body.dark-mode h2,
-body.dark-mode .node-name {
-  color: #eee;
-}
-
-body.dark-mode .node-box {
-  background: #2d2d44;
-  border-color: #444;
-  color: #eee;
-}
-
-body.dark-mode .active-node {
-  background: #3d3d5c !important;
-}
-
+/* Perbaiki warna modal di dark mode */
 body.dark-mode .modal-content,
 body.dark-mode .custom-popup-content {
-  background: #2d2d44;
-  color: #eee;
-}
-
-body.dark-mode .modal-header {
-  background: #0b7dda;
-}
-
-body.dark-mode .pin-input {
-  background: #1a1a2e;
-  border-color: #444;
-  color: #eee;
-}
-
-body.dark-mode .info-section {
-  border-bottom-color: #444;
-}
-
-body.dark-mode .info-value {
-  color: #ccc;
-}
-
-body.dark-mode .close,
-body.dark-mode .close-info {
-  color: #eee;
+  filter: invert(1) hue-rotate(180deg);
 }
