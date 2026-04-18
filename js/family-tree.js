@@ -314,6 +314,7 @@ function convert(node, path = [], generation = 1) {
     `;
   }
   else if (isActiveNode && isAdmin) {
+    // TANPA UNDO/REDO DI SINI
     innerHTML = `
       <div class="node-box active-node" style="border-left: 4px solid ${borderColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
@@ -323,10 +324,6 @@ function convert(node, path = [], generation = 1) {
           <button onclick='hapusWithOption(${JSON.stringify(path)})'>❌ Hapus</button>
           <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Tambah Parent</button>
           <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Ubah Urutan</button>
-        </div>
-        <div class="undo-redo-buttons">
-          <button onclick='undoAction()'>↩️ Undo</button>
-          <button onclick='redoAction()'>↪️ Redo</button>
         </div>
       </div>
     `;
