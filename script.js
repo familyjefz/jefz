@@ -8,45 +8,57 @@ let isAdmin = false;
 const ADMIN_PIN = "00";
 const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
 
-// Fungsi untuk mendapatkan warna berdasarkan kelompok saudara (bukan generasi)
-function getSiblingGroupColor(siblingGroupId) {
-  const hue = (siblingGroupId * 37) % 360;
-  return `hsl(${hue}, 75%, 65%)`;
+// ========== WARNA PER SAUDARA KANDUNG ==========
+// Setiap node akan diberi warna berdasarkan kelompok saudara
+let siblingColorMap = new Map(); // key: siblingGroupId, value: warna
+let nextSiblingGroupId = 1;
+
+function resetSiblingColors() {
+  siblingColorMap.clear();
+  nextSiblingGroupId = 1;
 }
 
-// Fungsi untuk menandai setiap node dengan ID kelompok saudara
-function assignSiblingGroupIds(node, parentSiblingGroupId = null, path = []) {
+function getOrCreateSiblingColor(siblingGroupId) {
+  if (siblingColorMap.has(siblingGroupId)) {
+    return siblingColorMap.get(siblingGroupId);
+  }
+  // Buat warna baru berdasarkan ID kelompok
+  const hue = (siblingGroupId * 37) % 360;
+  const color = `hsl(${hue}, 75%, 65%)`;
+  siblingColorMap.set(siblingGroupId, color);
+  return color;
+}
+
+function assignSiblingGroups(node, parentNode = null, siblingGroupId = null) {
   if (!node) return;
   
-  // Jika node memiliki parent, gunakan kelompok saudara dari parent
-  // Setiap kelompok saudara punya ID unik
-  if (parentSiblingGroupId === null) {
-    // Root node
-    node._siblingGroupId = 0;
+  // Jika node adalah root atau tidak punya parent
+  if (!parentNode) {
+    node._siblingGroupId = null; // Root tidak punya kelompok saudara
   } else {
-    // Anak-anak dari parent yang sama punya kelompok saudara yang sama
-    node._siblingGroupId = parentSiblingGroupId;
+    // Cari parent di tree
+    // Node mendapatkan kelompok saudara dari parent-nya
+    // Tapi yang penting: anak-anak dari parent yang SAMA punya kelompok saudara yang SAMA
   }
   
-  // Proses anak-anak
+  // Proses anak-anak: semua anak dari parent yang SAMA punya ID kelompok yang SAMA
   if (node.children && node.children.length > 0) {
-    // Setiap parent punya ID kelompok yang berbeda untuk anak-anaknya
-    const childGroupId = node._siblingGroupId * 100 + 1;
-    node.children.forEach((child, index) => {
-      // Anak-anak dari parent yang sama punya kelompok saudara yang SAMA
-      child._siblingGroupId = childGroupId;
-      assignSiblingGroupIds(child, childGroupId, [...path, index]);
+    // Buat ID kelompok baru untuk anak-anak ini
+    const childrenGroupId = nextSiblingGroupId++;
+    
+    node.children.forEach(child => {
+      child._siblingGroupId = childrenGroupId;
+      assignSiblingGroups(child, node, childrenGroupId);
     });
   }
 }
 
-// Fungsi untuk mendapatkan warna dari node berdasarkan kelompok saudara
 function getNodeColor(node) {
-  if (!node || node._siblingGroupId === undefined) {
+  if (!node || node._siblingGroupId === undefined || node._siblingGroupId === null) {
+    // Root node pakai warna default
     return `hsl(0, 75%, 65%)`;
   }
-  const hue = (node._siblingGroupId * 37) % 360;
-  return `hsl(${hue}, 75%, 65%)`;
+  return getOrCreateSiblingColor(node._siblingGroupId);
 }
 
 async function loadTree() {
@@ -55,8 +67,9 @@ async function loadTree() {
     const data = await res.json();
     currentTreeData = data;
     
-    // Assign sibling group IDs ke semua node
-    assignSiblingGroupIds(currentTreeData);
+    // Reset dan assign ulang kelompok saudara
+    resetSiblingColors();
+    assignSiblingGroups(currentTreeData);
     
     renderTree();
   } catch (err) {
@@ -104,7 +117,6 @@ function renderTree() {
 
 function convert(node, path = [], generation = 1) {
   const isActiveNode = isActive(path);
-  // Gunakan warna berdasarkan kelompok saudara
   const borderColor = getNodeColor(node);
   const inputId = `input-${path.join("-")}`;
   
@@ -296,11 +308,17 @@ async function showInfo(path) {
 }
 
 function generateFamilyInfo(treeData, path, node) {
-  // Cari parent
+  // Cari parent (orang tua dari node ini)
   const parentPath = path.slice(0, -1);
-  const parent = parentPath.length === 0 ? null : getNodeByPath(treeData, parentPath);
+  let parent = null;
   
-  // Saudara kandung - PERBAIKAN: ambil semua anak parent kecuali dirinya sendiri
+  if (parentPath.length === 0) {
+    parent = null; // Root node
+  } else {
+    parent = getNodeByPath(treeData, parentPath);
+  }
+  
+  // SAUDARA KANDUNG: semua anak dari parent yang SAMA, kecuali diri sendiri
   let siblings = [];
   if (parent && parent.children) {
     siblings = parent.children.filter((_, idx) => idx !== path[path.length - 1]);
@@ -308,18 +326,15 @@ function generateFamilyInfo(treeData, path, node) {
   
   // Pasangan (dari nama yang mengandung "|")
   let spouse = null;
-  let spouseName = null;
   if (node.name && node.name.includes("|")) {
     const parts = node.name.split("|");
     if (parts.length > 1 && parts[1].trim()) {
-      spouseName = parts[1].trim();
-      spouse = spouseName;
+      spouse = parts[1].trim();
     }
   }
   
-  // Ipar (saudara dari pasangan) - untuk sementara data statis
+  // Ipar - untuk sementara data statis
   let inLaws = null;
-  // Mertua (orang tua pasangan) - untuk sementara data statis
   let parentsInLaw = null;
   
   // Anak-anak
@@ -329,7 +344,7 @@ function generateFamilyInfo(treeData, path, node) {
     ? children.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
-  // Menantu (pasangan dari anak) - ambil dari nama anak yang mengandung "|"
+  // Menantu (pasangan dari anak)
   let sonInLawDaughterInLaw = [];
   children.forEach(child => {
     if (child.name && child.name.includes("|")) {
@@ -343,7 +358,7 @@ function generateFamilyInfo(treeData, path, node) {
     ? sonInLawDaughterInLaw.join('<br>')
     : null;
   
-  // Besan (orang tua dari menantu) - untuk sementara data statis
+  // Besan - data statis
   let inLawsParents = null;
   
   // Cucu
@@ -358,7 +373,7 @@ function generateFamilyInfo(treeData, path, node) {
     ? grandchildren.map((gc, i) => `${i + 1}. ${gc.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
-  // Orang tua
+  // Orang Tua
   const parents = parent ? parent.name.replace(/\n/g, '<br>') : null;
   
   // Kakek/nenek
