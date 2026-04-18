@@ -1,0 +1,58 @@
+/* Floating Action Button */
+.fab-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999;
+}
+
+.fab-main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #2196f3;
+  color: white;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.fab-main:hover {
+  transform: scale(1.05);
+  background: #0b7dda;
+}
+
+.fab-menu {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+}
+
+.fab-menu.hidden {
+  display: none;
+}
+
+.fab-item {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #607d8b;
+  color: white;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.2s;
+}
+
+.fab-item:hover {
+  transform: scale(1.05);
+  background: #455a64;
+}
