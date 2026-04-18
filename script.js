@@ -9,8 +9,7 @@ const ADMIN_PIN = "00";
 const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
 
 // ========== WARNA PER SAUDARA KANDUNG ==========
-// Setiap node akan diberi warna berdasarkan kelompok saudara
-let siblingColorMap = new Map(); // key: siblingGroupId, value: warna
+let siblingColorMap = new Map();
 let nextSiblingGroupId = 1;
 
 function resetSiblingColors() {
@@ -22,40 +21,34 @@ function getOrCreateSiblingColor(siblingGroupId) {
   if (siblingColorMap.has(siblingGroupId)) {
     return siblingColorMap.get(siblingGroupId);
   }
-  // Buat warna baru berdasarkan ID kelompok
   const hue = (siblingGroupId * 37) % 360;
   const color = `hsl(${hue}, 75%, 65%)`;
   siblingColorMap.set(siblingGroupId, color);
   return color;
 }
 
-function assignSiblingGroups(node, parentNode = null, siblingGroupId = null) {
+function assignSiblingGroups(node, siblingGroupId = null) {
   if (!node) return;
   
-  // Jika node adalah root atau tidak punya parent
-  if (!parentNode) {
-    node._siblingGroupId = null; // Root tidak punya kelompok saudara
-  } else {
-    // Cari parent di tree
-    // Node mendapatkan kelompok saudara dari parent-nya
-    // Tapi yang penting: anak-anak dari parent yang SAMA punya kelompok saudara yang SAMA
+  // Set kelompok saudara untuk node ini
+  if (siblingGroupId !== null) {
+    node._siblingGroupId = siblingGroupId;
   }
   
   // Proses anak-anak: semua anak dari parent yang SAMA punya ID kelompok yang SAMA
   if (node.children && node.children.length > 0) {
-    // Buat ID kelompok baru untuk anak-anak ini
+    // Buat ID kelompok baru untuk semua anak dari node ini
     const childrenGroupId = nextSiblingGroupId++;
     
     node.children.forEach(child => {
       child._siblingGroupId = childrenGroupId;
-      assignSiblingGroups(child, node, childrenGroupId);
+      assignSiblingGroups(child, childrenGroupId);
     });
   }
 }
 
 function getNodeColor(node) {
-  if (!node || node._siblingGroupId === undefined || node._siblingGroupId === null) {
-    // Root node pakai warna default
+  if (!node || node._siblingGroupId === undefined) {
     return `hsl(0, 75%, 65%)`;
   }
   return getOrCreateSiblingColor(node._siblingGroupId);
@@ -313,7 +306,8 @@ function generateFamilyInfo(treeData, path, node) {
   let parent = null;
   
   if (parentPath.length === 0) {
-    parent = null; // Root node
+    // Node ini adalah anak langsung dari root
+    parent = treeData;
   } else {
     parent = getNodeByPath(treeData, parentPath);
   }
@@ -321,7 +315,23 @@ function generateFamilyInfo(treeData, path, node) {
   // SAUDARA KANDUNG: semua anak dari parent yang SAMA, kecuali diri sendiri
   let siblings = [];
   if (parent && parent.children) {
-    siblings = parent.children.filter((_, idx) => idx !== path[path.length - 1]);
+    // Dapatkan index node ini di parent.children
+    let currentNodeIndex = -1;
+    if (parentPath.length === 0) {
+      // Node adalah anak root, cari berdasarkan nama
+      currentNodeIndex = parent.children.findIndex(c => c.name === node.name);
+    } else {
+      // Node bukan anak root, gunakan path terakhir
+      const lastIndex = path[path.length - 1];
+      currentNodeIndex = lastIndex;
+    }
+    
+    if (currentNodeIndex !== -1) {
+      siblings = parent.children.filter((_, idx) => idx !== currentNodeIndex);
+    } else {
+      // Fallback: filter berdasarkan nama
+      siblings = parent.children.filter(c => c.name !== node.name);
+    }
   }
   
   // Pasangan (dari nama yang mengandung "|")
@@ -384,6 +394,9 @@ function generateFamilyInfo(treeData, path, node) {
     if (grandparentNode) {
       grandparent = grandparentNode.name.replace(/\n/g, '<br>');
     }
+  } else if (parent === treeData && treeData.name) {
+    // Parent adalah root, maka kakek/nenek tidak ada
+    grandparent = null;
   }
   
   // 7 keturunan ke atas
@@ -391,11 +404,17 @@ function generateFamilyInfo(treeData, path, node) {
   let currentParent = parent;
   let gen = 1;
   while (currentParent && gen <= 7) {
-    ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
+    if (currentParent !== treeData || (currentParent === treeData && gen === 1)) {
+      ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
+    }
     const currentPath = getPathOfNode(treeData, currentParent);
     if (currentPath && currentPath.length > 0) {
       const newParentPath = currentPath.slice(0, -1);
       currentParent = newParentPath.length === 0 ? treeData : getNodeByPath(treeData, newParentPath);
+      if (currentParent === treeData && newParentPath.length === 0) {
+        // Sudah sampai root, berhenti
+        break;
+      }
     } else {
       currentParent = null;
     }
@@ -411,7 +430,7 @@ function generateFamilyInfo(treeData, path, node) {
   // Paman/bibi (saudara dari orang tua)
   let auntsUncles = [];
   if (parent) {
-    const parentParentPath = parentPath.slice(0, -1);
+    const parentParentPath = parentPath.length > 0 ? parentPath.slice(0, -1) : [];
     const grandparentNode = parentParentPath.length === 0 ? treeData : getNodeByPath(treeData, parentParentPath);
     if (grandparentNode && grandparentNode.children) {
       auntsUncles = grandparentNode.children.filter(p => p !== parent);
