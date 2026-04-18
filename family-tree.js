@@ -36,33 +36,37 @@ function getNodeColor(node) {
 }
 
 // ========== FUNGSI BANTU ==========
-function getNodeByPath(nodes, path) {
+function isMultiRoot(data) {
+  return Array.isArray(data) && data.length > 0 && data[0].hasOwnProperty('name');
+}
+
+function getNodeByPath(data, path) {
   if (!path || path.length === 0) return null;
   
-  // Jika nodes adalah array (multi-root) dan path[0] adalah index root
-  if (Array.isArray(nodes) && typeof path[0] === 'number') {
-    const rootIndex = path[0];
-    if (!nodes[rootIndex]) return null;
-    let current = nodes[rootIndex];
-    for (let i = 1; i < path.length; i++) {
+  // Jika single-root
+  if (!isMultiRoot(data)) {
+    let current = data;
+    for (let i = 0; i < path.length; i++) {
       if (!current.children || !current.children[path[i]]) return null;
       current = current.children[path[i]];
     }
     return current;
   }
   
-  // Single root
-  let current = nodes;
-  for (let i = 0; i < path.length; i++) {
+  // Multi-root
+  const rootIndex = path[0];
+  if (!data[rootIndex]) return null;
+  let current = data[rootIndex];
+  for (let i = 1; i < path.length; i++) {
     if (!current.children || !current.children[path[i]]) return null;
     current = current.children[path[i]];
   }
   return current;
 }
 
-function getPathOfNode(nodes, targetNode) {
-  // Single root
-  if (!Array.isArray(nodes)) {
+function getPathOfNode(data, targetNode) {
+  // Single-root
+  if (!isMultiRoot(data)) {
     function search(node, path) {
       if (node === targetNode) return path;
       if (node.children) {
@@ -73,11 +77,11 @@ function getPathOfNode(nodes, targetNode) {
       }
       return null;
     }
-    return search(nodes, []);
+    return search(data, []);
   }
   
   // Multi-root
-  for (let rootIdx = 0; rootIdx < nodes.length; rootIdx++) {
+  for (let rootIdx = 0; rootIdx < data.length; rootIdx++) {
     function search(node, path) {
       if (node === targetNode) return [rootIdx, ...path];
       if (node.children) {
@@ -88,7 +92,7 @@ function getPathOfNode(nodes, targetNode) {
       }
       return null;
     }
-    const result = search(nodes[rootIdx], []);
+    const result = search(data[rootIdx], []);
     if (result) return result;
   }
   return null;
@@ -117,10 +121,11 @@ async function loadTree() {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
     let data = await res.json();
     
+    // Biarkan data apa adanya (single-root atau multi-root)
     currentTreeData = data;
     resetSiblingColors();
     
-    if (Array.isArray(currentTreeData)) {
+    if (isMultiRoot(currentTreeData)) {
       currentTreeData.forEach(root => assignSiblingGroups(root));
     } else {
       assignSiblingGroups(currentTreeData);
@@ -144,7 +149,7 @@ function renderTree() {
   container.innerHTML = "";
   
   // Jika multi-root
-  if (Array.isArray(currentTreeData) && currentTreeData.length > 1) {
+  if (isMultiRoot(currentTreeData) && currentTreeData.length > 1) {
     const forestContainer = document.createElement("div");
     forestContainer.style.display = "flex";
     forestContainer.style.flexDirection = "row";
@@ -180,8 +185,8 @@ function renderTree() {
     
     container.appendChild(forestContainer);
   } else {
-    // Single root
-    const singleRoot = Array.isArray(currentTreeData) ? currentTreeData[0] : currentTreeData;
+    // Single-root
+    const singleRoot = isMultiRoot(currentTreeData) ? currentTreeData[0] : currentTreeData;
     new Treant({
       chart: {
         container: "#tree",
@@ -192,7 +197,7 @@ function renderTree() {
         siblingSeparation: 8,
         subTeeSeparation: 8
       },
-      nodeStructure: convert(singleRoot, [0], 1)
+      nodeStructure: convert(singleRoot, [], 1)
     });
   }
   
@@ -211,7 +216,7 @@ function renderTree() {
 }
 
 function convert(node, path = [], generation = 1) {
-  const isActiveNode = isActive(path);
+  const isActiveNode = activePath && JSON.stringify(path) === JSON.stringify(activePath);
   const borderColor = getNodeColor(node);
   const inputId = `input-${path.join("-")}`;
   
@@ -272,11 +277,6 @@ function convert(node, path = [], generation = 1) {
     innerHTML: innerHTML,
     children: node.children?.map((child, i) => convert(child, [...path, i], generation + 1))
   };
-}
-
-function isActive(path) {
-  if (!activePath) return false;
-  return JSON.stringify(path) === JSON.stringify(activePath);
 }
 
 function getCurrentScroll() {
@@ -384,7 +384,9 @@ async function addNewFamily() {
   
   try {
     let currentData = currentTreeData;
-    if (!Array.isArray(currentData)) {
+    
+    // Jika masih single-root, konversi ke array
+    if (!isMultiRoot(currentData)) {
       currentData = [currentData];
     }
     
