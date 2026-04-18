@@ -167,35 +167,52 @@ function generateFamilyInfo(treeData, path, node) {
   // Orang Tua
   const parents = parent ? parent.name.replace(/\n/g, '<br>') : null;
   
-  // Kakek/nenek
+  // Kakek/nenek (2 generasi ke atas)
   let grandparent = null;
   if (parentPath.length > 0) {
     const grandparentPath = parentPath.slice(0, -1);
     const grandparentNode = grandparentPath.length === 0 ? treeData : getNodeByPath(treeData, grandparentPath);
-    if (grandparentNode) {
+    if (grandparentNode && grandparentNode !== node && grandparentNode !== parent) {
       grandparent = grandparentNode.name.replace(/\n/g, '<br>');
     }
   }
   
-  // 7 ke atas
+  // ========== 7 KETURUNAN KE ATAS (DIPERBAIKI) ==========
   let ancestors = [];
   let currentParent = parent;
   let gen = 1;
-  while (currentParent && gen <= 7) {
+  let maxGen = 7;
+  
+  while (currentParent && gen <= maxGen) {
+    // Tambahkan parent ke daftar ancestors
     ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
-    const currentPath = getPathOfNode(treeData, currentParent);
-    if (currentPath && currentPath.length > 0) {
-      const newParentPath = currentPath.slice(0, -1);
-      currentParent = newParentPath.length === 0 ? treeData : getNodeByPath(treeData, newParentPath);
-      if (currentParent === treeData && newParentPath.length === 0) break;
+    
+    // Cari parent selanjutnya (ke atas)
+    const currentParentPath = getPathOfNode(treeData, currentParent);
+    
+    if (currentParentPath && currentParentPath.length > 0) {
+      // Parent saat ini memiliki parent
+      const newParentPath = currentParentPath.slice(0, -1);
+      if (newParentPath.length === 0) {
+        // Parent berikutnya adalah root
+        currentParent = treeData;
+        // Cegah infinite loop jika root sudah ditambahkan
+        if (currentParent === treeData && ancestors.length > 0 && ancestors[ancestors.length-1].includes(treeData.name)) {
+          break;
+        }
+      } else {
+        currentParent = getNodeByPath(treeData, newParentPath);
+      }
     } else {
-      currentParent = null;
+      // Tidak ada parent lagi
+      break;
     }
     gen++;
   }
+  
   const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
   
-  // 7 ke bawah
+  // ========== 7 KETURUNAN KE BAWAH ==========
   let descendants = [];
   let queue = [{ node: node, level: 1 }];
   while (queue.length > 0) {
