@@ -33,9 +33,6 @@ function checkPin() {
     isAdmin = true;
     closeLoginModal();
     alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
-    // Tampilkan tombol tambah keluarga
-    const addFamilyBtn = document.getElementById("add-family-btn");
-    if (addFamilyBtn) addFamilyBtn.style.display = "inline-block";
     renderTree();
   } else {
     document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
@@ -64,20 +61,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
     if (e.key === "Enter") checkPin();
   });
-  
-  // Tombol tambah keluarga (sembunyikan dulu sampai login)
-  const addFamilyBtn = document.getElementById("add-family-btn");
-  if (addFamilyBtn) {
-    addFamilyBtn.style.display = "none";
-    addFamilyBtn.addEventListener("click", showAddFamilyModal);
-  }
-  
-  // Event untuk modal tambah keluarga
-  document.querySelector(".close-family")?.addEventListener("click", closeAddFamilyModal);
-  document.getElementById("submit-family")?.addEventListener("click", addNewFamily);
-  document.getElementById("new-family-name")?.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") addNewFamily();
-  });
 });
 
 window.addEventListener("click", (e) => {
@@ -86,9 +69,6 @@ window.addEventListener("click", (e) => {
   }
   if (e.target === document.getElementById("info-modal")) {
     closeInfoModal();
-  }
-  if (e.target === document.getElementById("add-family-modal")) {
-    closeAddFamilyModal();
   }
 });
 
