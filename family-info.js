@@ -12,14 +12,22 @@ async function showInfo(path) {
     }
   }
   
-  const node = getNodeByPath(currentTreeData, parsedPath);
+  // Untuk single-root, path adalah array biasa [0,1,2,...]
+  // Jika path[0] adalah angka dan currentTreeData bukan array, maka path tidak perlu root index
+  let actualPath = parsedPath;
+  if (!Array.isArray(currentTreeData) && parsedPath.length > 0 && typeof parsedPath[0] === 'number') {
+    // Single-root, path langsung digunakan tanpa root index
+    actualPath = parsedPath;
+  }
+  
+  const node = getNodeByPath(currentTreeData, actualPath);
   if (!node) {
-    console.error("Node tidak ditemukan untuk path:", parsedPath);
+    console.error("Node tidak ditemukan untuk path:", actualPath);
     alert("Gagal memuat info. Silakan coba lagi.");
     return;
   }
   
-  const info = generateFamilyInfo(currentTreeData, parsedPath, node);
+  const info = generateFamilyInfo(currentTreeData, actualPath, node);
   
   const modal = document.getElementById("info-modal");
   const title = document.getElementById("info-title");
@@ -100,26 +108,43 @@ async function showInfo(path) {
 }
 
 function generateFamilyInfo(treeData, path, node) {
-  // Cari parent
+  // Cari parent (orang tua)
+  // Untuk single-root, path adalah array index biasa
   const parentPath = path.slice(0, -1);
   let parent = null;
   
   if (path.length === 0) {
     parent = null;
+  } else if (parentPath.length === 0) {
+    // Parent adalah root
+    parent = treeData;
   } else {
     parent = getNodeByPath(treeData, parentPath);
   }
   
-  // SAUDARA KANDUNG
+  // SAUDARA KANDUNG: semua anak dari parent yang SAMA, kecuali diri sendiri
   let siblings = [];
-  if (parent && parent.children && path.length > 0) {
-    const currentNodeIndex = path[path.length - 1];
-    if (currentNodeIndex !== undefined && currentNodeIndex < parent.children.length) {
+  let currentNodeIndex = -1;
+  
+  if (parent && parent.children) {
+    // Dapatkan index node ini di parent.children
+    if (parentPath.length === 0) {
+      // Node adalah anak root: cari berdasarkan nama
+      currentNodeIndex = parent.children.findIndex(c => c.name === node.name);
+    } else {
+      // Node bukan anak root: gunakan index dari path
+      currentNodeIndex = path[path.length - 1];
+    }
+    
+    if (currentNodeIndex !== -1) {
       siblings = parent.children.filter((_, idx) => idx !== currentNodeIndex);
+    } else {
+      // Fallback: filter berdasarkan nama
+      siblings = parent.children.filter(c => c.name !== node.name);
     }
   }
   
-  // PONAKAN
+  // PONAKAN (anak dari saudara kandung)
   let nephews = [];
   siblings.forEach(sibling => {
     if (sibling.children && sibling.children.length > 0) {
@@ -127,22 +152,28 @@ function generateFamilyInfo(treeData, path, node) {
     }
   });
   
-  // PAMAN/BIBI
+  // PAMAN/BIBI (saudara dari orang tua)
   let auntsUncles = [];
-  if (parent && parentPath.length > 0) {
-    const grandparentPath = parentPath.slice(0, -1);
+  if (parent) {
+    // Cari kakek/nenek (parent dari parent)
     let grandparent = null;
-    if (grandparentPath.length === 0) {
+    if (parentPath.length === 0) {
+      // Parent adalah root, tidak punya parent lagi
+      grandparent = null;
+    } else if (parentPath.length === 1) {
+      // Parent adalah anak root
       grandparent = treeData;
     } else {
+      const grandparentPath = parentPath.slice(0, -1);
       grandparent = getNodeByPath(treeData, grandparentPath);
     }
+    
     if (grandparent && grandparent.children) {
       auntsUncles = grandparent.children.filter(p => p !== parent);
     }
   }
   
-  // SEPUPU
+  // SEPUPU (anak dari paman/bibi)
   let cousins = [];
   auntsUncles.forEach(au => {
     if (au.children && au.children.length > 0) {
@@ -179,7 +210,7 @@ function generateFamilyInfo(treeData, path, node) {
   // Orang Tua
   const parents = parent ? parent.name.replace(/\n/g, '<br>') : null;
   
-  // Kakek/nenek
+  // Kakek/nenek (2 generasi ke atas)
   let grandparent = null;
   if (parentPath.length > 0) {
     const grandparentPath = parentPath.slice(0, -1);
@@ -194,7 +225,7 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
-  // 7 KETURUNAN KE ATAS
+  // ========== 7 KETURUNAN KE ATAS ==========
   let ancestors = [];
   let currentParent = parent;
   let gen = 1;
@@ -203,12 +234,16 @@ function generateFamilyInfo(treeData, path, node) {
   while (currentParent && gen <= maxGen) {
     ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
     
+    // Cari parent selanjutnya
     const currentParentPath = getPathOfNode(treeData, currentParent);
     if (currentParentPath && currentParentPath.length > 0) {
       const newParentPath = currentParentPath.slice(0, -1);
       if (newParentPath.length === 0) {
-        currentParent = null;
-        break;
+        // Parent berikutnya adalah root
+        currentParent = treeData;
+        if (currentParent === treeData && ancestors.length > 0 && ancestors[ancestors.length-1].includes(treeData.name)) {
+          break;
+        }
       } else {
         currentParent = getNodeByPath(treeData, newParentPath);
       }
@@ -219,7 +254,7 @@ function generateFamilyInfo(treeData, path, node) {
   }
   const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
   
-  // 7 KETURUNAN KE BAWAH
+  // ========== 7 KETURUNAN KE BAWAH ==========
   let descendants = [];
   let queue = [{ node: node, level: 1 }];
   while (queue.length > 0) {
