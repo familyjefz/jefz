@@ -15,11 +15,28 @@
       <button id="zoom-in" title="Perbesar">🔍+</button>
       <button id="zoom-out" title="Perkecil">🔍-</button>
       <button id="zoom-reset" title="Reset">⟳</button>
+      <button id="login-btn" class="login-btn">👤 Login Admin</button>
     </div>
   </div>
   <div class="tree-wrapper" id="tree-wrapper">
     <div class="tree-zoom-container" id="tree-zoom-container">
       <div id="tree"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Login -->
+<div id="login-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Login Admin</h3>
+      <span class="close">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Masukkan PIN untuk mengakses menu edit:</p>
+      <input type="password" id="pin-input" class="pin-input" placeholder="Masukkan PIN">
+      <div id="pin-error" class="pin-error"></div>
+      <button id="submit-pin" class="pin-submit">Login</button>
     </div>
   </div>
 </div>
