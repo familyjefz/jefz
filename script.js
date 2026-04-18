@@ -8,8 +8,44 @@ let isAdmin = false;
 const ADMIN_PIN = "00";
 const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
 
-function getGenerationColor(generation) {
-  const hue = (generation * 37) % 360;
+// Fungsi untuk mendapatkan warna berdasarkan kelompok saudara (bukan generasi)
+function getSiblingGroupColor(siblingGroupId) {
+  const hue = (siblingGroupId * 37) % 360;
+  return `hsl(${hue}, 75%, 65%)`;
+}
+
+// Fungsi untuk menandai setiap node dengan ID kelompok saudara
+function assignSiblingGroupIds(node, parentSiblingGroupId = null, path = []) {
+  if (!node) return;
+  
+  // Jika node memiliki parent, gunakan kelompok saudara dari parent
+  // Setiap kelompok saudara punya ID unik
+  if (parentSiblingGroupId === null) {
+    // Root node
+    node._siblingGroupId = 0;
+  } else {
+    // Anak-anak dari parent yang sama punya kelompok saudara yang sama
+    node._siblingGroupId = parentSiblingGroupId;
+  }
+  
+  // Proses anak-anak
+  if (node.children && node.children.length > 0) {
+    // Setiap parent punya ID kelompok yang berbeda untuk anak-anaknya
+    const childGroupId = node._siblingGroupId * 100 + 1;
+    node.children.forEach((child, index) => {
+      // Anak-anak dari parent yang sama punya kelompok saudara yang SAMA
+      child._siblingGroupId = childGroupId;
+      assignSiblingGroupIds(child, childGroupId, [...path, index]);
+    });
+  }
+}
+
+// Fungsi untuk mendapatkan warna dari node berdasarkan kelompok saudara
+function getNodeColor(node) {
+  if (!node || node._siblingGroupId === undefined) {
+    return `hsl(0, 75%, 65%)`;
+  }
+  const hue = (node._siblingGroupId * 37) % 360;
   return `hsl(${hue}, 75%, 65%)`;
 }
 
@@ -18,6 +54,10 @@ async function loadTree() {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
     const data = await res.json();
     currentTreeData = data;
+    
+    // Assign sibling group IDs ke semua node
+    assignSiblingGroupIds(currentTreeData);
+    
     renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
@@ -64,7 +104,8 @@ function renderTree() {
 
 function convert(node, path = [], generation = 1) {
   const isActiveNode = isActive(path);
-  const genColor = getGenerationColor(generation);
+  // Gunakan warna berdasarkan kelompok saudara
+  const borderColor = getNodeColor(node);
   const inputId = `input-${path.join("-")}`;
   
   let innerHTML = "";
@@ -78,7 +119,7 @@ function convert(node, path = [], generation = 1) {
     else if (activeMode === "order") placeholder = "Masukkan nomor urutan (0=pertama)";
     
     innerHTML = `
-      <div class="node-box active-node" style="border-left: 4px solid ${genColor};">
+      <div class="node-box active-node" style="border-left: 4px solid ${borderColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <textarea class="node-input" id="${inputId}" 
           placeholder="${placeholder}" rows="2">${escapeHtml(inputValue)}</textarea>
@@ -91,7 +132,7 @@ function convert(node, path = [], generation = 1) {
   }
   else if (isActiveNode && isAdmin) {
     innerHTML = `
-      <div class="node-box active-node" style="border-left: 4px solid ${genColor};">
+      <div class="node-box active-node" style="border-left: 4px solid ${borderColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
         <div class="node-menu">
           <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah Anak</button>
@@ -111,7 +152,7 @@ function convert(node, path = [], generation = 1) {
     }
     
     innerHTML = `
-      <div class="node-box" style="border-left: 4px solid ${genColor};">
+      <div class="node-box" style="border-left: 4px solid ${borderColor};">
         <div class="node-name">${displayName}</div>
         <div class="node-buttons">
           ${buttons}
@@ -259,7 +300,7 @@ function generateFamilyInfo(treeData, path, node) {
   const parentPath = path.slice(0, -1);
   const parent = parentPath.length === 0 ? null : getNodeByPath(treeData, parentPath);
   
-  // Saudara kandung
+  // Saudara kandung - PERBAIKAN: ambil semua anak parent kecuali dirinya sendiri
   let siblings = [];
   if (parent && parent.children) {
     siblings = parent.children.filter((_, idx) => idx !== path[path.length - 1]);
@@ -347,12 +388,12 @@ function generateFamilyInfo(treeData, path, node) {
   }
   const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
   
-  // Saudara kandung
+  // Saudara kandung (format tampilan)
   const siblingsList = siblings.length > 0
     ? siblings.map((s, i) => `${i + 1}. ${s.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
-  // Paman/bibi
+  // Paman/bibi (saudara dari orang tua)
   let auntsUncles = [];
   if (parent) {
     const parentParentPath = parentPath.slice(0, -1);
