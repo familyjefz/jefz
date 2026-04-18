@@ -11,7 +11,6 @@ async function showInfo(path) {
     }
   }
   
-  // Handle path kosong (root node)
   let node = null;
   if (!parsedPath || parsedPath.length === 0) {
     node = currentTreeData;
@@ -106,20 +105,18 @@ async function showInfo(path) {
 }
 
 function generateFamilyInfo(treeData, path, node) {
-  // Cari parent
   let parent = null;
   let parentPath = [];
   
   if (path && path.length > 0) {
     parentPath = path.slice(0, -1);
     if (parentPath.length === 0) {
-      parent = null; // Node adalah root
+      parent = null;
     } else {
       parent = getNodeByPath(treeData, parentPath);
     }
   }
   
-  // SAUDARA KANDUNG
   let siblings = [];
   if (parent && parent.children && path && path.length > 0) {
     const currentNodeIndex = path[path.length - 1];
@@ -128,7 +125,6 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
-  // PONAKAN
   let nephews = [];
   siblings.forEach(sibling => {
     if (sibling.children && sibling.children.length > 0) {
@@ -136,13 +132,12 @@ function generateFamilyInfo(treeData, path, node) {
     }
   });
   
-  // PAMAN/BIBI
   let auntsUncles = [];
   if (parent && parentPath.length > 0) {
     const grandparentPath = parentPath.slice(0, -1);
     let grandparent = null;
     if (grandparentPath.length === 0) {
-      grandparent = isMultiRoot(treeData) ? treeData[0] : treeData;
+      grandparent = treeData;
     } else {
       grandparent = getNodeByPath(treeData, grandparentPath);
     }
@@ -151,7 +146,6 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
-  // SEPUPU
   let cousins = [];
   auntsUncles.forEach(au => {
     if (au.children && au.children.length > 0) {
@@ -159,7 +153,6 @@ function generateFamilyInfo(treeData, path, node) {
     }
   });
   
-  // Pasangan
   let spouse = null;
   if (node.name && node.name.includes("|")) {
     const parts = node.name.split("|");
@@ -168,13 +161,11 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
-  // Anak-anak
   const children = node.children || [];
   const childrenList = children.length > 0 
     ? children.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
-  // Cucu
   let grandchildren = [];
   children.forEach(child => {
     if (child.children && child.children.length > 0) {
@@ -185,16 +176,14 @@ function generateFamilyInfo(treeData, path, node) {
     ? grandchildren.map((gc, i) => `${i + 1}. ${gc.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
   
-  // Orang Tua
   const parents = parent ? parent.name.replace(/\n/g, '<br>') : null;
   
-  // Kakek/nenek
   let grandparent = null;
   if (parentPath.length > 1) {
     const grandparentPath = parentPath.slice(0, -1);
     let grandparentNode = null;
     if (grandparentPath.length === 0) {
-      grandparentNode = isMultiRoot(treeData) ? treeData[0] : treeData;
+      grandparentNode = treeData;
     } else {
       grandparentNode = getNodeByPath(treeData, grandparentPath);
     }
@@ -203,7 +192,6 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   
-  // 7 KETURUNAN KE ATAS
   let ancestors = [];
   let currentParent = parent;
   let gen = 1;
@@ -211,11 +199,10 @@ function generateFamilyInfo(treeData, path, node) {
   
   while (currentParent && gen <= maxGen) {
     ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
-    
     const currentParentPath = getPathOfNode(treeData, currentParent);
-    if (currentParentPath && currentParentPath.length > 1) {
+    if (currentParentPath && currentParentPath.length > 0) {
       const newParentPath = currentParentPath.slice(0, -1);
-      if (newParentPath.length === 1) {
+      if (newParentPath.length === 0) {
         currentParent = null;
         break;
       } else {
@@ -228,7 +215,6 @@ function generateFamilyInfo(treeData, path, node) {
   }
   const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
   
-  // 7 KETURUNAN KE BAWAH
   let descendants = [];
   let queue = [{ node: node, level: 1 }];
   while (queue.length > 0) {
