@@ -4,9 +4,8 @@ let currentTreeData = null;
 let isFirstLoad = true;
 let currentZoom = 1;
 
-// CREDENTIALS SUPABASE ANDA
+// CREDENTIALS SUPABASE ANDA (Verify JWT = OFF, jadi tidak pakai Authorization header)
 const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0eXJvcmx6ZHlpc3V2bndtcnFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MDM5NjIsImV4cCI6MjA5MjA3OTk2Mn0.ZkXEOkE6KRZlN0YW1usfu7bDff6GlFp50Jru3h9NkKQ";
 
 function getGenerationColor(generation) {
   const hue = (generation * 37) % 360;
@@ -15,9 +14,8 @@ function getGenerationColor(generation) {
 
 async function loadTree() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`, {
-      headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
-    });
+    // Tidak pakai Authorization header karena Verify JWT sudah OFF
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
     const data = await res.json();
     currentTreeData = data;
     renderTree();
@@ -189,10 +187,7 @@ async function submitInline(path) {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action, ...body })
     });
     const result = await res.json();
@@ -208,10 +203,7 @@ async function hapus(path) {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", path })
     });
     const result = await res.json();
