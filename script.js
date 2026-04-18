@@ -3,12 +3,9 @@ let activeMode = null;
 let currentTreeData = null;
 let isFirstLoad = true;
 let currentZoom = 1;
-let isAdmin = false;  // Status login admin
+let isAdmin = false;
 
-// PIN Admin (ganti sesuai keinginan Anda)
 const ADMIN_PIN = "00";
-
-// CREDENTIALS SUPABASE
 const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
 
 function getGenerationColor(generation) {
@@ -68,23 +65,24 @@ function renderTree() {
 function convert(node, path = [], generation = 1) {
   const isActiveNode = isActive(path);
   const genColor = getGenerationColor(generation);
+  const inputId = `input-${path.join("-")}`;
   
   let innerHTML = "";
   
-  // Jika admin, tampilkan menu edit. Jika user, hanya tombol Option tanpa menu
   if (isActiveNode && activeMode && isAdmin) {
     let inputValue = "";
     let placeholder = "";
-    if (activeMode === "edit") { inputValue = node.name; placeholder = "Nama baru"; }
-    else if (activeMode === "add") placeholder = "Nama anak baru";
-    else if (activeMode === "parent") placeholder = "Nama parent baru";
-    else if (activeMode === "order") placeholder = "Urutan (0=pertama)";
+    if (activeMode === "edit") { inputValue = node.name; placeholder = "Tulis nama (Enter untuk baris baru)"; }
+    else if (activeMode === "add") placeholder = "Tulis nama anak (Enter untuk baris baru)";
+    else if (activeMode === "parent") placeholder = "Tulis nama parent (Enter untuk baris baru)";
+    else if (activeMode === "order") placeholder = "Masukkan nomor urutan (0=pertama)";
     
+    // Gunakan textarea (bisa multi baris, Enter = new line)
     innerHTML = `
       <div class="node-box active-node" style="border-left: 4px solid ${genColor};">
         <div class="node-name">${escapeHtml(node.name)}</div>
-        <input class="node-input" id="input-${path.join("-")}" 
-          placeholder="${placeholder}" value="${escapeHtml(inputValue)}" autofocus />
+        <textarea class="node-input" id="${inputId}" 
+          placeholder="${placeholder}" rows="2">${escapeHtml(inputValue)}</textarea>
         <div class="node-actions">
           <button onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
           <button onclick='cancelInline()'>✖ Batal</button>
@@ -107,9 +105,11 @@ function convert(node, path = [], generation = 1) {
     `;
   }
   else {
+    // Tampilkan nama dengan baris baru (split menjadi beberapa baris)
+    const displayName = escapeHtml(node.name).replace(/\n/g, '<br>');
     innerHTML = `
       <div class="node-box" style="border-left: 4px solid ${genColor};">
-        <div class="node-name">${escapeHtml(node.name)}</div>
+        <div class="node-name">${displayName}</div>
         ${isAdmin ? `<button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>` : ''}
       </div>
     `;
@@ -240,6 +240,7 @@ function showLoginModal() {
   document.getElementById("login-modal").style.display = "block";
   document.getElementById("pin-input").value = "";
   document.getElementById("pin-error").innerText = "";
+  setTimeout(() => document.getElementById("pin-input").focus(), 100);
 }
 
 function closeLoginModal() {
@@ -252,24 +253,15 @@ function checkPin() {
     isAdmin = true;
     closeLoginModal();
     alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
-    // Refresh tree untuk menampilkan tombol option
     renderTree();
   } else {
     document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
   }
 }
 
-function logout() {
-  isAdmin = false;
-  activePath = null;
-  activeMode = null;
-  renderTree();
-  alert("Anda telah logout dari mode Admin.");
-}
-
 // Event listeners
 document.addEventListener("click", (e) => {
-  if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "INPUT") {
+  if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
     const scroll = getCurrentScroll();
     activePath = null;
     activeMode = null;
@@ -288,7 +280,6 @@ document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
   if (e.key === "Enter") checkPin();
 });
 
-// Klik luar modal
 window.addEventListener("click", (e) => {
   if (e.target === document.getElementById("login-modal")) {
     closeLoginModal();
