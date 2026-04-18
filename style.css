@@ -37,6 +37,7 @@ h2 {
 .zoom-controls {
   display: flex;
   gap: 6px;
+  align-items: center;
 }
 
 .zoom-controls button {
@@ -52,6 +53,14 @@ h2 {
 
 .zoom-controls button:hover {
   background: #455a64;
+}
+
+.login-btn {
+  background: #4caf50 !important;
+}
+
+.login-btn:hover {
+  background: #45a049 !important;
 }
 
 .tree-wrapper {
@@ -161,3 +170,86 @@ h2 {
 
 .node-actions button:first-child { background: #4caf50; }
 .node-actions button:last-child { background: #f44336; }
+
+/* Modal Login */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background-color: white;
+  margin: 15% auto;
+  padding: 0;
+  width: 90%;
+  max-width: 350px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  padding: 15px;
+  background: #4caf50;
+  color: white;
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+}
+
+.close {
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #ddd;
+}
+
+.modal-body {
+  padding: 20px;
+  text-align: center;
+}
+
+.pin-input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.pin-submit {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+}
+
+.pin-submit:hover {
+  background: #45a049;
+}
+
+.pin-error {
+  color: red;
+  font-size: 12px;
+  margin: 5px 0;
+}
