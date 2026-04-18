@@ -106,20 +106,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load theme
   loadTheme();
   
-  // FAB Events - hanya induk yang toggle (tanpa auto close)
+  // FAB Events
   const fabMain = document.getElementById("fab-main");
   if (fabMain) {
     fabMain.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       toggleFabMenu();
     });
   }
   
-  // Tombol FAB lainnya - TIDAK menutup menu, hanya jalankan aksi
+  // Tombol FAB lainnya
   const fabUndo = document.getElementById("fab-undo");
   if (fabUndo) {
     fabUndo.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       undoAction();
     });
   }
@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fabRedo = document.getElementById("fab-redo");
   if (fabRedo) {
     fabRedo.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       redoAction();
     });
   }
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fabZoomIn = document.getElementById("fab-zoom-in");
   if (fabZoomIn) {
     fabZoomIn.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       zoomIn();
     });
   }
@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fabZoomOut = document.getElementById("fab-zoom-out");
   if (fabZoomOut) {
     fabZoomOut.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       zoomOut();
     });
   }
@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fabZoomReset = document.getElementById("fab-zoom-reset");
   if (fabZoomReset) {
     fabZoomReset.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       zoomReset();
     });
   }
@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fabLogin = document.getElementById("fab-login");
   if (fabLogin) {
     fabLogin.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       showLoginModal();
     });
   }
@@ -167,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fabLogout = document.getElementById("fab-logout");
   if (fabLogout) {
     fabLogout.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       logout();
     });
   }
@@ -175,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fabTheme = document.getElementById("fab-theme");
   if (fabTheme) {
     fabTheme.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       toggleTheme();
     });
   }
@@ -195,7 +195,6 @@ document.addEventListener("DOMContentLoaded", () => {
     isFabMenuVisible = false;
   }
   
-  // Update FAB buttons after login check
   updateFabButtons();
 });
 
@@ -211,5 +210,4 @@ window.addEventListener("click", (e) => {
   }
 });
 
-// Start
 loadTree();
