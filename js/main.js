@@ -26,11 +26,12 @@ function toggleFabMenu() {
   }
 }
 
-// Tutup FAB menu jika klik di luar
+// Tutup FAB menu jika klik di luar FAB container
 document.addEventListener("click", (e) => {
   const fabContainer = document.querySelector(".fab-container");
   if (fabContainer && !fabContainer.contains(e.target) && isFabMenuVisible) {
-    toggleFabMenu();
+    fabMenu.classList.add("hidden");
+    isFabMenuVisible = false;
   }
 });
 
@@ -156,6 +157,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
     if (e.key === "Enter") checkPin();
   });
+  
+  // FAB awal hidden
+  const fabMenu = document.getElementById("fab-menu");
+  if (fabMenu) {
+    fabMenu.classList.add("hidden");
+    isFabMenuVisible = false;
+  }
   
   // Update FAB buttons after login check
   updateFabButtons();
