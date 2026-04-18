@@ -39,22 +39,21 @@ function getNodeColor(node) {
 function getNodeByPath(nodes, path) {
   if (!path || path.length === 0) return null;
   
-  // Jika nodes masih berupa object single root
-  if (!Array.isArray(nodes)) {
-    let current = nodes;
-    for (let i = 0; i < path.length; i++) {
+  // Jika nodes adalah array (multi-root) dan path[0] adalah index root
+  if (Array.isArray(nodes) && typeof path[0] === 'number') {
+    const rootIndex = path[0];
+    if (!nodes[rootIndex]) return null;
+    let current = nodes[rootIndex];
+    for (let i = 1; i < path.length; i++) {
       if (!current.children || !current.children[path[i]]) return null;
       current = current.children[path[i]];
     }
     return current;
   }
   
-  // Multi-root
-  const rootIndex = path[0];
-  if (!nodes[rootIndex]) return null;
-  
-  let current = nodes[rootIndex];
-  for (let i = 1; i < path.length; i++) {
+  // Single root
+  let current = nodes;
+  for (let i = 0; i < path.length; i++) {
     if (!current.children || !current.children[path[i]]) return null;
     current = current.children[path[i]];
   }
@@ -62,7 +61,7 @@ function getNodeByPath(nodes, path) {
 }
 
 function getPathOfNode(nodes, targetNode) {
-  // Jika nodes masih berupa object single root
+  // Single root
   if (!Array.isArray(nodes)) {
     function search(node, path) {
       if (node === targetNode) return path;
@@ -118,12 +117,9 @@ async function loadTree() {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
     let data = await res.json();
     
-    // Jika data masih berupa object single root, biarkan saja
-    // Jangan konversi ke array untuk menghindari error render
     currentTreeData = data;
     resetSiblingColors();
     
-    // Assign sibling groups (support single root atau multi-root)
     if (Array.isArray(currentTreeData)) {
       currentTreeData.forEach(root => assignSiblingGroups(root));
     } else {
@@ -147,9 +143,8 @@ function renderTree() {
   
   container.innerHTML = "";
   
-  // Jika multi-root, buat forest
+  // Jika multi-root
   if (Array.isArray(currentTreeData) && currentTreeData.length > 1) {
-    // Buat beberapa tree terpisah secara horizontal
     const forestContainer = document.createElement("div");
     forestContainer.style.display = "flex";
     forestContainer.style.flexDirection = "row";
@@ -169,7 +164,6 @@ function renderTree() {
       
       forestContainer.appendChild(treeContainer);
       
-      // Render tree individual
       new Treant({
         chart: {
           container: `#temp-tree-${idx}`,
@@ -342,7 +336,6 @@ async function submitInline(path) {
   else return;
   
   try {
-    // Untuk multi-root, path sudah include root index
     const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -390,22 +383,17 @@ async function addNewFamily() {
   closeAddFamilyModal();
   
   try {
-    // Ambil data saat ini
     let currentData = currentTreeData;
-    
-    // Jika masih object, konversi ke array
     if (!Array.isArray(currentData)) {
       currentData = [currentData];
     }
     
-    // Tambahkan root baru
     const newRoot = {
       name: familyName,
       children: []
     };
     currentData.push(newRoot);
     
-    // Update ke database dengan action replace
     const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
