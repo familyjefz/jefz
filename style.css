@@ -205,7 +205,6 @@ h2 {
 .node-actions button:first-child { background: #4caf50; }
 .node-actions button:last-child { background: #f44336; }
 
-/* Modal */
 .modal {
   display: none;
   position: fixed;
@@ -298,7 +297,6 @@ h2 {
   margin: 5px 0;
 }
 
-/* Info grid */
 .info-grid-2col {
   display: grid;
   grid-template-columns: 1fr 1fr;
