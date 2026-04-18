@@ -30,6 +30,7 @@ function toggleFabMenu() {
 document.addEventListener("click", (e) => {
   const fabContainer = document.querySelector(".fab-container");
   if (fabContainer && !fabContainer.contains(e.target) && isFabMenuVisible) {
+    const fabMenu = document.getElementById("fab-menu");
     fabMenu.classList.add("hidden");
     isFabMenuVisible = false;
   }
@@ -118,35 +119,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // FAB Events
   document.getElementById("fab-main")?.addEventListener("click", toggleFabMenu);
   document.getElementById("fab-undo")?.addEventListener("click", () => {
-    toggleFabMenu();
+    if (isFabMenuVisible) toggleFabMenu();
     undoAction();
   });
   document.getElementById("fab-redo")?.addEventListener("click", () => {
-    toggleFabMenu();
+    if (isFabMenuVisible) toggleFabMenu();
     redoAction();
   });
   document.getElementById("fab-zoom-in")?.addEventListener("click", () => {
-    toggleFabMenu();
+    if (isFabMenuVisible) toggleFabMenu();
     zoomIn();
   });
   document.getElementById("fab-zoom-out")?.addEventListener("click", () => {
-    toggleFabMenu();
+    if (isFabMenuVisible) toggleFabMenu();
     zoomOut();
   });
   document.getElementById("fab-zoom-reset")?.addEventListener("click", () => {
-    toggleFabMenu();
+    if (isFabMenuVisible) toggleFabMenu();
     zoomReset();
   });
   document.getElementById("fab-login")?.addEventListener("click", () => {
-    toggleFabMenu();
+    if (isFabMenuVisible) toggleFabMenu();
     showLoginModal();
   });
   document.getElementById("fab-logout")?.addEventListener("click", () => {
-    toggleFabMenu();
+    if (isFabMenuVisible) toggleFabMenu();
     logout();
   });
   document.getElementById("fab-theme")?.addEventListener("click", () => {
-    toggleFabMenu();
+    if (isFabMenuVisible) toggleFabMenu();
     toggleTheme();
   });
   
