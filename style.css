@@ -348,3 +348,24 @@ h2 {
     font-size: 11px;
   }
 }
+/* Tambahkan di style.css */
+
+/* Grid 2 kolom untuk info */
+.info-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 15px;
+}
+
+.info-section {
+  margin-bottom: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Untuk HP jadi 1 kolom */
+@media (max-width: 600px) {
+  .info-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
