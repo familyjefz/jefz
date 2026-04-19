@@ -63,6 +63,24 @@ h2 {
   background: #00a8f7 !important;
 }
 
+.undo-btn, .redo-btn {
+  background: #000000 !important;
+  color: white !important;
+}
+
+.undo-btn:hover, .redo-btn:hover {
+  background: #00a8f7 !important;
+}
+
+.invert-btn {
+  background: #000000 !important;
+  color: white !important;
+}
+
+.invert-btn:hover {
+  background: #00a8f7 !important;
+}
+
 .tree-wrapper {
   flex: 1;
   overflow: auto;
@@ -245,7 +263,7 @@ h2 {
 }
 
 .info-header {
-  background: #8cabe5
+  background: #8cabe5;
 }
 
 .modal-header h3 {
@@ -336,7 +354,7 @@ h2 {
   }
 }
 
-/* Custom Popup - sama seperti modal info */
+/* Custom Popup */
 .custom-popup {
   display: none;
   position: fixed;
@@ -412,12 +430,8 @@ h2 {
 .custom-popup-buttons button:hover {
   opacity: 0.85;
 }
-/* Tambahkan di akhir file style.css */
 
-.undo-btn, .redo-btn {
-  background: #9c27b0 !important;
-}
-
-.undo-btn:hover, .redo-btn:hover {
-  background: #7b1fa2 !important;
+/* Invert mode - murni tanpa pengecualian */
+body.invert-mode {
+  filter: invert(1);
 }
