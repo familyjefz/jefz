@@ -160,7 +160,7 @@ function convert(node, path = [], generation = 1) {
         <div class="node-menu">
           <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah Anak</button>
           <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah Nama</button>
-          <button onclick='hapusWithPopup(${JSON.stringify(path)})'>❌ Hapus</button>
+          <button onclick='showHapusPopup(${JSON.stringify(path)})'>❌ Hapus</button>
           <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Tambah Parent</button>
           <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Ubah Urutan</button>
         </div>
@@ -253,6 +253,8 @@ async function submitInline(path) {
   else return;
   
   try {
+    saveToUndo(currentTreeData);
+    
     const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -271,51 +273,5 @@ async function submitInline(path) {
   }
 }
 
-// Fungsi hapus dengan popup custom
-async function hapusWithPopup(path) {
-  if (!isAdmin) return;
-  
-  showCustomPopup("Apakah Anda yakin ingin menghapus node ini?", "Konfirmasi Hapus", async () => {
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", path })
-      });
-      const result = await res.json();
-      if (result.success) {
-        activePath = null; activeMode = null;
-        await loadTree();
-        showCustomPopup("Node berhasil dihapus!", "Sukses");
-      } else {
-        showCustomPopup("Gagal hapus: " + (result.error || "Error"), "Error");
-      }
-    } catch (err) {
-      showCustomPopup("Error: " + err.message, "Error");
-    }
-  }, true);
-}
-
-// Hapus lama (biarkan untuk kompatibilitas)
-async function hapus(path) {
-  if (!isAdmin) return;
-  showCustomPopup("Apakah Anda yakin ingin menghapus node ini?", "Konfirmasi Hapus", async () => {
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", path })
-      });
-      const result = await res.json();
-      if (result.success) {
-        activePath = null; activeMode = null;
-        await loadTree();
-        showCustomPopup("Node berhasil dihapus!", "Sukses");
-      } else {
-        showCustomPopup("Gagal hapus: " + (result.error || "Error"), "Error");
-      }
-    } catch (err) {
-      showCustomPopup("Error: " + err.message, "Error");
-    }
-  }, true);
-}
+// Catatan: fungsi hapus sudah diganti dengan showHapusPopup di menu
+// fungsi hapusWithChildren dan hapusNodeOnly ada di main.js
