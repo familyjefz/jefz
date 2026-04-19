@@ -1,3 +1,4 @@
+// ========== ZOOM FUNCTIONS ==========
 function setZoom(zoom) {
   currentZoom = zoom;
   const zoomContainer = document.getElementById("tree-zoom-container");
@@ -10,6 +11,7 @@ function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
+// ========== LOGIN MODAL ==========
 function showLoginModal() {
   document.getElementById("login-modal").style.display = "block";
   document.getElementById("pin-input").value = "";
@@ -25,18 +27,38 @@ function closeInfoModal() {
   document.getElementById("info-modal").style.display = "none";
 }
 
-function checkPin() {
+// ========== CEK PIN KE SUPABASE ==========
+async function checkPin() {
   const pin = document.getElementById("pin-input").value;
-  if (pin === ADMIN_PIN) {
-    isAdmin = true;
-    closeLoginModal();
-    alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
-    renderTree();
-  } else {
-    document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
+  
+  if (!pin) {
+    document.getElementById("pin-error").innerText = "Masukkan PIN!";
+    return;
+  }
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/check-pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin: pin })
+    });
+    const result = await res.json();
+    
+    if (result.success) {
+      isAdmin = true;
+      closeLoginModal();
+      alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
+      renderTree();
+    } else {
+      document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
+    }
+  } catch (err) {
+    console.error("Error:", err);
+    document.getElementById("pin-error").innerText = "Gagal verifikasi. Periksa koneksi.";
   }
 }
 
+// ========== EVENT LISTENERS ==========
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
     const scroll = getCurrentScroll();
