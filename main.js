@@ -13,6 +13,12 @@ function zoomReset() { setZoom(1); }
 // ========== CUSTOM POPUP ==========
 function showCustomPopup(message, title = "Informasi", onConfirm = null, showCancel = false) {
   const popup = document.getElementById("custom-popup");
+  if (!popup) {
+    alert(message);
+    if (onConfirm) onConfirm();
+    return;
+  }
+  
   const popupTitle = document.getElementById("popup-title");
   const popupMessage = document.getElementById("popup-message");
   const popupButtons = document.getElementById("popup-buttons");
@@ -47,10 +53,15 @@ function showCustomPopup(message, title = "Informasi", onConfirm = null, showCan
   }
   
   popup.style.display = "block";
+  
+  setTimeout(() => {
+    popup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 50);
 }
 
 function closeCustomPopup() {
-  document.getElementById("custom-popup").style.display = "none";
+  const popup = document.getElementById("custom-popup");
+  if (popup) popup.style.display = "none";
 }
 
 // ========== LOGIN MODAL ==========
@@ -58,7 +69,11 @@ function showLoginModal() {
   document.getElementById("login-modal").style.display = "block";
   document.getElementById("pin-input").value = "";
   document.getElementById("pin-error").innerText = "";
-  setTimeout(() => document.getElementById("pin-input").focus(), 100);
+  setTimeout(() => {
+    document.getElementById("pin-input").focus();
+    const modal = document.getElementById("login-modal");
+    if (modal) modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
 }
 
 function closeLoginModal() {
