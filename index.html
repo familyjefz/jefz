@@ -2,17 +2,128 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Silsilah Keluarga</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
   <style>
+    /* ========== CSS ANDA YANG SUDAH DIEDIT ========== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #4374d6;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: #8cabe5;
+      flex-shrink: 0;
+      border-bottom: 1px solid #ddd;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .family-selector {
+      padding: 4px 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      background: white;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .zoom-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .zoom-controls button {
+      background: #000000;
+      color: white;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .zoom-controls button:hover {
+      background: #00a8f7;
+    }
+
+    .login-btn {
+      background: #000000 !important;
+    }
+
+    .login-btn:hover {
+      background: #00a8f7 !important;
+    }
+
+    .add-family-btn {
+      background: #ff9800 !important;
+    }
+
+    .add-family-btn:hover {
+      background: #e68900 !important;
+    }
+
+    .tree-wrapper {
+      flex: 1;
+      overflow: auto;
+      background: #f1fcff;
+      position: relative;
+    }
+
+    .tree-zoom-container {
+      transform-origin: center center;
+      transition: transform 0.1s ease;
+      width: fit-content;
+      height: fit-content;
+    }
+
+    /* Forest container untuk multi-tree */
     .forest-container {
       display: flex;
       flex-direction: row;
       justify-content: center;
+      align-items: flex-start;
       gap: 50px;
       flex-wrap: wrap;
       padding: 20px;
     }
+
     .tree-container {
       display: inline-block;
       vertical-align: top;
@@ -21,6 +132,7 @@
       padding: 10px;
       background: rgba(255,255,255,0.5);
     }
+
     .tree-title {
       text-align: center;
       font-weight: bold;
@@ -29,60 +141,272 @@
       background: #f0f0f0;
       border-radius: 5px;
     }
-    .node-box { 
-      background: white; 
-      border: 1px solid #ccc; 
-      padding: 10px; 
-      min-width: 100px; 
+
+    .node-box {
+      background: #d3d2d29d;
+      border: 1px solid #888888;
+      border-radius: 5px;
+      padding: 4px 6px;
+      min-width: 70px;
       text-align: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
       position: relative;
+    }
+
+    .active-node {
+      border: 2px solid #2196f3 !important;
+      background: #e3f2fd !important;
+    }
+
+    .node-name {
+      font-weight: bold;
+      font-size: 9px;
+      margin-bottom: 4px;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.3;
+    }
+
+    .node-buttons {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+      justify-content: center;
+    }
+
+    .node-buttons button {
+      flex: 1;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 7px;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s;
+    }
+
+    .node-buttons button:hover {
+      opacity: 0.85;
+    }
+
+    .btn-option {
+      background: #717a7c;
+      color: #f1fcff;
+    }
+
+    .btn-option:hover {
+      background: #455a64;
+    }
+
+    .btn-info {
+      background: #5391c4;
+      color: #000000fd;
+    }
+
+    .btn-info:hover {
+      background: #0b7dda;
+    }
+
+    .node-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 4px;
+    }
+
+    .node-menu button {
+      font-size: 7px;
+      padding: 2px;
+      border-radius: 3px;
+      border: none;
+      color: white;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .node-menu button:hover {
+      opacity: 0.85;
+    }
+
+    .node-menu button:nth-child(1) { background: #4caf50; }
+    .node-menu button:nth-child(2) { background: #2196f3; }
+    .node-menu button:nth-child(3) { background: #f44336; }
+    .node-menu button:nth-child(4) { background: #ff9800; }
+    .node-menu button:nth-child(5) { background: #9c27b0; }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      margin: 10% auto;
+      padding: 0;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgb(158, 232, 255);
+    }
+
+    .info-modal-content {
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: 15px;
+      background: #76abc4;
+      color: black;
+      border-radius: 10px 10px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .info-header {
+      background: #8cabe5;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .close, .close-info, .close-edit, .close-family {
+      color: rgba(0, 0, 0, 0.979);
+      font-size: 28px;
+      font-weight: bold;
       cursor: pointer;
     }
-    .node-name { font-weight: bold; }
-    .node-buttons { margin-top: 5px; display: flex; gap: 5px; justify-content: center; }
-    .node-buttons button { font-size: 10px; padding: 2px 5px; margin: 0; background: #2196f3; color: white; border: none; border-radius: 3px; cursor: pointer; }
-    .node-buttons button:hover { opacity: 0.85; }
-    .controls { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .family-selector { padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
-    button { padding: 8px 12px; border-radius: 5px; border: none; cursor: pointer; background: #333; color: white; }
-    .login-btn { background: #4caf50; }
-    .add-family-btn { background: #ff9800; }
-    
-    /* Modal */
-    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-    .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 10px; max-height: 80vh; overflow-y: auto; }
-    .modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
-    .close { cursor: pointer; font-size: 24px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .info-label { font-weight: bold; color: #2196f3; }
-    .info-value { margin-bottom: 10px; }
-    .empty-info { color: #999; font-style: italic; }
-    .pin-input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-    .pin-submit { width: 100%; background: #4caf50; color: white; }
-    .pin-error { color: red; font-size: 12px; }
-    textarea.node-input { width: 100%; padding: 8px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; font-family: inherit; resize: vertical; }
-    .node-actions { display: flex; gap: 10px; justify-content: center; }
-    .node-actions button { padding: 5px 15px; }
-    .node-menu { display: flex; flex-direction: column; gap: 5px; margin-top: 5px; }
-    .node-menu button { font-size: 10px; padding: 3px 6px; background: #607d8b; }
+
+    .close:hover, .close-info:hover, .close-edit:hover, .close-family:hover {
+      color: #ddd;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .pin-input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 5px;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    .pin-submit {
+      background: #52525254;
+      color: rgb(0, 0, 0);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .pin-submit:hover {
+      background: #5f5f5f4b;
+    }
+
+    .pin-error {
+      color: red;
+      font-size: 12px;
+      margin: 5px 0;
+    }
+
+    textarea.node-input {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-family: Arial, sans-serif;
+      resize: vertical;
+      background: rgba(255,255,255,0.9);
+    }
+
+    .node-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .node-actions button {
+      padding: 5px 15px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* Info grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 15px;
+    }
+
+    .info-label {
+      font-weight: bold;
+      color: #2196f3;
+      font-size: 12px;
+    }
+
+    .info-value {
+      color: #333;
+      font-size: 11px;
+      line-height: 1.4;
+      margin-top: 3px;
+    }
+
+    .empty-info {
+      color: #999;
+      font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
-
-<h2>Silsilah Keluarga</h2>
-
-<div class="controls">
-  <select id="family-selector" class="family-selector">
-    <option value="all">-- Semua Keluarga --</option>
-  </select>
-  <button id="add-family-btn" class="add-family-btn" style="display:none;">➕ Tambah Keluarga</button>
-  <button id="zoom-in">🔍+</button>
-  <button id="zoom-out">🔍-</button>
-  <button id="zoom-reset">⟳</button>
-  <button id="login-btn" class="login-btn">👤 Login Admin</button>
+<div class="app-container">
+  <div class="header">
+    <h2>Silsilah Keluarga</h2>
+    <div class="controls">
+      <select id="family-selector" class="family-selector">
+        <option value="all">-- Semua Keluarga --</option>
+      </select>
+      <div class="zoom-controls">
+        <button id="add-family-btn" class="add-family-btn" style="display:none;">➕ Tambah Keluarga</button>
+        <button id="zoom-in">🔍+</button>
+        <button id="zoom-out">🔍-</button>
+        <button id="zoom-reset">⟳</button>
+        <button id="login-btn" class="login-btn">👤 Login Admin</button>
+      </div>
+    </div>
+  </div>
+  <div class="tree-wrapper" id="tree-wrapper">
+    <div class="tree-zoom-container" id="tree-zoom-container">
+      <div id="tree-container"></div>
+    </div>
+  </div>
 </div>
-
-<div id="forest-container" class="forest-container"></div>
 
 <!-- Modal Login -->
 <div id="login-modal" class="modal">
@@ -101,8 +425,8 @@
 
 <!-- Modal Info -->
 <div id="info-modal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
+  <div class="modal-content info-modal-content">
+    <div class="modal-header info-header">
       <h3 id="info-title">Informasi</h3>
       <span class="close-info">&times;</span>
     </div>
@@ -120,8 +444,8 @@
     <div class="modal-body">
       <textarea id="edit-input" class="node-input" rows="3" placeholder="Tulis nama (Enter untuk baris baru)"></textarea>
       <div class="node-actions">
-        <button id="save-edit" style="background:#4caf50">✔ Simpan</button>
-        <button id="cancel-edit" style="background:#f44336">✖ Batal</button>
+        <button id="save-edit" style="background:#4caf50; color:white;">✔ Simpan</button>
+        <button id="cancel-edit" style="background:#f44336; color:white;">✖ Batal</button>
       </div>
     </div>
   </div>
@@ -145,42 +469,33 @@
 <script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
 <script>
-// ========== DATA KELUARGA ==========
-let FAMILIES = [
-  {
-    id: 1,
-    name: "Sekghor",
-    data: {
-      name: ">Sekghor |",
-      children: [
-        { name: ">Salama | Tohin", children: [] },
-        { name: ">Ryfan |", children: [] },
-        { name: ">Abd Hary |", children: [] }
-      ]
-    }
-  },
-  {
-    id: 2,
-    name: "Budi",
-    data: {
-      name: ">Budi |",
-      children: []
-    }
-  }
-];
-
+// ========== CONFIG ==========
+const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
 let currentView = "all";
 let currentZoom = 1;
 let isAdmin = false;
 let currentEditPath = null;
 let currentEditFamilyId = null;
 
+// ========== DATA DARI SUPABASE ==========
+let FAMILIES = [];
+
+// ========== FUNGSI BANTU ==========
 function escapeHtml(str) {
   if (!str) return "";
   return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
 }
 
-// ========== GET NODE BY PATH ==========
+function cleanData(node) {
+  if (!node) return node;
+  const cleanNode = { ...node };
+  delete cleanNode._siblingGroupId;
+  if (cleanNode.children && Array.isArray(cleanNode.children)) {
+    cleanNode.children = cleanNode.children.map(child => cleanData(child));
+  }
+  return cleanNode;
+}
+
 function getNodeByPath(node, path) {
   if (!path || path.length === 0) return node;
   let current = node;
@@ -189,6 +504,75 @@ function getNodeByPath(node, path) {
     current = current.children[path[i]];
   }
   return current;
+}
+
+// ========== LOAD DARI SUPABASE ==========
+async function loadFromSupabase() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-all-families`);
+    const data = await res.json();
+    console.log("Data dari Supabase:", data);
+    
+    if (Array.isArray(data) && data.length > 0) {
+      FAMILIES = data.map((family, idx) => ({
+        id: idx + 1,
+        name: family.name ? (family.name.includes("|") ? family.name.split("|")[0].trim() : family.name) : `Keluarga ${idx + 1}`,
+        data: cleanData(family)
+      }));
+    } else {
+      // Data default jika kosong
+      FAMILIES = [
+        {
+          id: 1,
+          name: "Sekghor",
+          data: {
+            name: ">Sekghor |",
+            children: [
+              { name: ">Salama | Tohin", children: [] },
+              { name: ">Ryfan |", children: [] },
+              { name: ">Abd Hary |", children: [] }
+            ]
+          }
+        }
+      ];
+    }
+    updateFamilySelector();
+    render();
+  } catch (err) {
+    console.error("Gagal load dari Supabase:", err);
+    // Fallback data default
+    FAMILIES = [
+      {
+        id: 1,
+        name: "Sekghor",
+        data: {
+          name: ">Sekghor |",
+          children: [
+            { name: ">Salama | Tohin", children: [] },
+            { name: ">Ryfan |", children: [] },
+            { name: ">Abd Hary |", children: [] }
+          ]
+        }
+      }
+    ];
+    updateFamilySelector();
+    render();
+  }
+}
+
+// ========== SAVE KE SUPABASE ==========
+async function saveToSupabase() {
+  // Simpan hanya data (tanpa id dan name display)
+  const dataToSave = FAMILIES.map(f => f.data);
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "replace", data: dataToSave })
+    });
+  } catch (err) {
+    console.error("Gagal save ke Supabase:", err);
+  }
 }
 
 // ========== GENERATE INFO ==========
@@ -210,21 +594,26 @@ function generateInfo(node, familyName) {
   
   return `
     <div class="info-grid">
-      <div><span class="info-label">👤 Nama</span><br>${escapeHtml(node.name.split("|")[0].trim())}</div>
-      <div><span class="info-label">💑 Pasangan</span><br>${spouse || '<span class="empty-info">-</span>'}</div>
-      <div><span class="info-label">👶 Anak</span><br>${childrenList || '<span class="empty-info">-</span>'}</div>
-      <div><span class="info-label">👶 Cucu</span><br>${grandchildrenList || '<span class="empty-info">-</span>'}</div>
-      <div><span class="info-label">🏠 Keluarga</span><br>${familyName}</div>
+      <div><div class="info-label">👤 Nama</div><div class="info-value">${escapeHtml(node.name.split("|")[0].trim())}</div></div>
+      <div><div class="info-label">💑 Pasangan</div><div class="info-value">${spouse ? escapeHtml(spouse) : '<span class="empty-info">-</span>'}</div></div>
+      <div><div class="info-label">👶 Anak</div><div class="info-value">${childrenList ? escapeHtml(childrenList).replace(/\n/g,'<br>') : '<span class="empty-info">-</span>'}</div></div>
+      <div><div class="info-label">👶 Cucu</div><div class="info-value">${grandchildrenList ? escapeHtml(grandchildrenList).replace(/\n/g,'<br>') : '<span class="empty-info">-</span>'}</div></div>
+      <div><div class="info-label">🏠 Keluarga</div><div class="info-value">${escapeHtml(familyName)}</div></div>
     </div>
   `;
 }
 
 // ========== RENDER TREE ==========
 function render() {
-  const container = document.getElementById("forest-container");
+  const container = document.getElementById("tree-container");
+  if (!container) return;
+  
   container.innerHTML = "";
   
   if (currentView === "all") {
+    const forestDiv = document.createElement("div");
+    forestDiv.className = "forest-container";
+    
     FAMILIES.forEach(family => {
       const treeDiv = document.createElement("div");
       treeDiv.className = "tree-container";
@@ -238,7 +627,7 @@ function render() {
       tempDiv.id = `tree-${family.id}`;
       treeDiv.appendChild(tempDiv);
       
-      container.appendChild(treeDiv);
+      forestDiv.appendChild(treeDiv);
       
       new Treant({
         chart: {
@@ -252,12 +641,14 @@ function render() {
         nodeStructure: convertWithButtons(family.data, family.id, [])
       });
     });
+    
+    container.appendChild(forestDiv);
   } else {
     const family = FAMILIES.find(f => f.id == currentView);
     if (family) {
       new Treant({
         chart: {
-          container: "#forest-container",
+          container: "#tree-container",
           rootOrientation: "NORTH",
           connectors: { type: "step" },
           animateOnInit: false,
@@ -277,12 +668,12 @@ function convertWithButtons(node, familyId, path) {
   let buttonsHtml = '';
   if (isAdmin) {
     buttonsHtml = `<div class="node-buttons">
-      <button onclick="showEdit('${familyId}', '${JSON.stringify(currentPath)}', \`${escapeHtml(node.name)}\`)">✏️</button>
-      <button onclick="showDelete('${familyId}', '${JSON.stringify(currentPath)}')">🗑️</button>
-      <button onclick="showAddChild('${familyId}', '${JSON.stringify(currentPath)}')">➕</button>
+      <button onclick='showEdit(${familyId}, ${JSON.stringify(currentPath)}, \`${escapeHtml(node.name).replace(/`/g, '\\`')}\`)' style="background:#2196f3">✏️</button>
+      <button onclick='showDelete(${familyId}, ${JSON.stringify(currentPath)})' style="background:#f44336">🗑️</button>
+      <button onclick='showAddChild(${familyId}, ${JSON.stringify(currentPath)})' style="background:#4caf50">➕</button>
     </div>`;
   }
-  buttonsHtml += `<div class="node-buttons"><button onclick="showInfo('${familyId}', '${JSON.stringify(currentPath)}')">📄 Info</button></div>`;
+  buttonsHtml += `<div class="node-buttons"><button onclick='showInfo(${familyId}, ${JSON.stringify(currentPath)})' style="background:#5391c4">📄 Info</button></div>`;
   
   return {
     innerHTML: `<div class="node-box"><div class="node-name">${escapeHtml(node.name)}</div>${buttonsHtml}</div>`,
@@ -307,7 +698,7 @@ function showInfo(familyId, pathStr) {
 // ========== EDIT ==========
 function showEdit(familyId, pathStr, currentName) {
   if (!isAdmin) return;
-  currentEditFamilyId = parseInt(familyId);
+  currentEditFamilyId = familyId;
   currentEditPath = JSON.parse(pathStr);
   document.getElementById("edit-input").value = currentName;
   document.getElementById("edit-modal").style.display = "block";
@@ -325,6 +716,7 @@ function saveEdit() {
   }
   closeEditModal();
   render();
+  saveToSupabase();
   alert("Nama berhasil diubah!");
 }
 
@@ -343,6 +735,7 @@ function showDelete(familyId, pathStr) {
       if (idx !== -1) FAMILIES.splice(idx, 1);
       updateFamilySelector();
       render();
+      saveToSupabase();
     }
     return;
   }
@@ -353,6 +746,7 @@ function showDelete(familyId, pathStr) {
   if (parent && parent.children) {
     parent.children.splice(childIndex, 1);
     render();
+    saveToSupabase();
   }
 }
 
@@ -370,6 +764,7 @@ function showAddChild(familyId, pathStr) {
     if (!node.children) node.children = [];
     node.children.push({ name: newName, children: [] });
     render();
+    saveToSupabase();
   }
 }
 
@@ -391,6 +786,7 @@ function addNewFamily() {
   closeAddFamilyModal();
   updateFamilySelector();
   render();
+  saveToSupabase();
   alert("Keluarga baru ditambahkan!");
 }
 
@@ -416,7 +812,7 @@ function onFamilyChange() {
 // ========== ZOOM ==========
 function setZoom(z) {
   currentZoom = z;
-  const container = document.getElementById("forest-container");
+  const container = document.getElementById("tree-container");
   container.style.transform = `scale(${z})`;
   container.style.transformOrigin = "top left";
 }
@@ -468,9 +864,8 @@ window.addEventListener("click", (e) => {
   if (e.target === document.getElementById("add-family-modal")) closeAddFamilyModal();
 });
 
-// Inisialisasi
-updateFamilySelector();
-render();
+// ========== START ==========
+loadFromSupabase();
 </script>
 </body>
 </html>
