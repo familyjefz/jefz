@@ -85,7 +85,7 @@ async function loadTree() {
     renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
-    alert("Gagal memuat data. Periksa koneksi.");
+    showCustomPopup("Gagal memuat data. Periksa koneksi.", "Error");
   }
 }
 
@@ -160,7 +160,7 @@ function convert(node, path = [], generation = 1) {
         <div class="node-menu">
           <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah Anak</button>
           <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah Nama</button>
-          <button onclick='hapus(${JSON.stringify(path)})'>❌ Hapus</button>
+          <button onclick='hapusWithPopup(${JSON.stringify(path)})'>❌ Hapus</button>
           <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Tambah Parent</button>
           <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Ubah Urutan</button>
         </div>
@@ -237,13 +237,19 @@ async function submitInline(path) {
   const input = document.getElementById(`input-${path.join("-")}`);
   if (!input) return;
   const val = input.value.trim();
-  if (activeMode !== "order" && !val) { alert("Tidak boleh kosong!"); return; }
+  if (activeMode !== "order" && !val) { 
+    showCustomPopup("Nama tidak boleh kosong!", "Peringatan");
+    return; 
+  }
   
   let action, body = { path };
   if (activeMode === "add") { action = "add"; body.name = val; }
   else if (activeMode === "edit") { action = "edit"; body.name = val; }
   else if (activeMode === "parent") { action = "addParent"; body.name = val; }
-  else if (activeMode === "order") { action = "reorder"; body.position = parseInt(val); if (isNaN(body.position)) { alert("Masukkan angka!"); return; } }
+  else if (activeMode === "order") { action = "reorder"; body.position = parseInt(val); if (isNaN(body.position)) { 
+    showCustomPopup("Masukkan angka untuk urutan!", "Peringatan");
+    return; 
+  } }
   else return;
   
   try {
@@ -256,23 +262,60 @@ async function submitInline(path) {
     if (result.success) {
       activePath = null; activeMode = null;
       await loadTree();
-    } else alert("Gagal: " + (result.error || "Error"));
-  } catch (err) { alert("Error: " + err.message); }
+      showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
+    } else {
+      showCustomPopup("Gagal: " + (result.error || "Error"), "Error");
+    }
+  } catch (err) { 
+    showCustomPopup("Error: " + err.message, "Error");
+  }
 }
 
+// Fungsi hapus dengan popup custom
+async function hapusWithPopup(path) {
+  if (!isAdmin) return;
+  
+  showCustomPopup("Apakah Anda yakin ingin menghapus node ini?", "Konfirmasi Hapus", async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", path })
+      });
+      const result = await res.json();
+      if (result.success) {
+        activePath = null; activeMode = null;
+        await loadTree();
+        showCustomPopup("Node berhasil dihapus!", "Sukses");
+      } else {
+        showCustomPopup("Gagal hapus: " + (result.error || "Error"), "Error");
+      }
+    } catch (err) {
+      showCustomPopup("Error: " + err.message, "Error");
+    }
+  }, true);
+}
+
+// Hapus lama (biarkan untuk kompatibilitas)
 async function hapus(path) {
   if (!isAdmin) return;
-  if (!confirm("Hapus node ini?")) return;
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", path })
-    });
-    const result = await res.json();
-    if (result.success) {
-      activePath = null; activeMode = null;
-      await loadTree();
-    } else alert("Gagal hapus");
-  } catch (err) { alert("Error: " + err.message); }
+  showCustomPopup("Apakah Anda yakin ingin menghapus node ini?", "Konfirmasi Hapus", async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", path })
+      });
+      const result = await res.json();
+      if (result.success) {
+        activePath = null; activeMode = null;
+        await loadTree();
+        showCustomPopup("Node berhasil dihapus!", "Sukses");
+      } else {
+        showCustomPopup("Gagal hapus: " + (result.error || "Error"), "Error");
+      }
+    } catch (err) {
+      showCustomPopup("Error: " + err.message, "Error");
+    }
+  }, true);
 }
