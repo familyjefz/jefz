@@ -84,17 +84,9 @@ function showCustomPopup(message, title = "Informasi", onConfirm = null, showCan
     popupButtons.appendChild(confirmBtn);
   }
   
-  popup.style.display = "block";
-  
-  // Posisikan popup di tengah layar
-  setTimeout(() => {
-    const popupContent = document.querySelector(".custom-popup-content");
-    if (popupContent) {
-      popupContent.style.top = "50%";
-      popupContent.style.left = "50%";
-      popupContent.style.transform = "translate(-50%, -50%)";
-    }
-  }, 10);
+  popup.style.display = "flex";
+  popup.style.alignItems = "center";
+  popup.style.justifyContent = "center";
 }
 
 function closeCustomPopup() {
@@ -105,20 +97,12 @@ function closeCustomPopup() {
 // ========== LOGIN/LOGOUT SATU TOMBOL ==========
 function showLoginModal() {
   const modal = document.getElementById("login-modal");
-  modal.style.display = "block";
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
   document.getElementById("pin-input").value = "";
   document.getElementById("pin-error").innerText = "";
-  
-  // Posisikan modal di tengah layar
-  setTimeout(() => {
-    const modalContent = document.querySelector("#login-modal .modal-content");
-    if (modalContent) {
-      modalContent.style.top = "50%";
-      modalContent.style.left = "50%";
-      modalContent.style.transform = "translate(-50%, -50%)";
-    }
-    document.getElementById("pin-input").focus();
-  }, 10);
+  setTimeout(() => document.getElementById("pin-input").focus(), 100);
 }
 
 function closeLoginModal() {
@@ -126,24 +110,14 @@ function closeLoginModal() {
 }
 
 function closeInfoModal() {
-  const modal = document.getElementById("info-modal");
-  modal.style.display = "none";
+  document.getElementById("info-modal").style.display = "none";
 }
 
 function showInfoModal() {
   const modal = document.getElementById("info-modal");
-  modal.style.display = "block";
-  
-  // Posisikan modal info di tengah layar
-  setTimeout(() => {
-    const modalContent = document.querySelector("#info-modal .modal-content");
-    if (modalContent) {
-      modalContent.style.top = "50%";
-      modalContent.style.left = "50%";
-      modalContent.style.transform = "translate(-50%, -50%)";
-      modalContent.style.margin = "0";
-    }
-  }, 10);
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
 }
 
 async function checkPin() {
@@ -324,17 +298,9 @@ function showHapusPopup(path) {
   popupButtons.appendChild(btnKeturunan);
   popupButtons.appendChild(btnBatal);
   
-  popup.style.display = "block";
-  
-  // Posisikan di tengah
-  setTimeout(() => {
-    const popupContent = document.querySelector(".custom-popup-content");
-    if (popupContent) {
-      popupContent.style.top = "50%";
-      popupContent.style.left = "50%";
-      popupContent.style.transform = "translate(-50%, -50%)";
-    }
-  }, 10);
+  popup.style.display = "flex";
+  popup.style.alignItems = "center";
+  popup.style.justifyContent = "center";
 }
 
 async function hapusNodeOnly(path) {
@@ -501,6 +467,60 @@ async function saveToSupabase() {
   }
 }
 
+// ========== SHOW INFO ==========
+async function showInfo(path) {
+  let parsedPath = path;
+  if (typeof path === 'string') {
+    try {
+      parsedPath = JSON.parse(path);
+    } catch(e) {
+      showCustomPopup("Gagal memuat info. Silakan coba lagi.", "Error");
+      return;
+    }
+  }
+  
+  let node = null;
+  if (!parsedPath || parsedPath.length === 0) {
+    node = currentTreeData;
+  } else {
+    node = getNodeByPath(currentTreeData, parsedPath);
+  }
+  
+  if (!node) {
+    showCustomPopup("Gagal memuat info. Silakan coba lagi.", "Error");
+    return;
+  }
+  
+  const info = generateFamilyInfo(currentTreeData, parsedPath || [], node);
+  
+  let displayName = node.name;
+  if (displayName && displayName.includes("|")) {
+    displayName = displayName.split("|")[0].trim();
+  }
+  
+  document.getElementById("info-title").innerHTML = `📋 Info: ${escapeHtml(displayName).replace(/\n/g, '<br>')}`;
+  
+  let bodyHtml = `
+    <div class="info-grid-2col">
+      <div><div class="info-label">👤 Nama</div><div class="info-value">${escapeHtml(displayName).replace(/\n/g, '<br>')}</div></div>
+      <div><div class="info-label">💑 Pasangan</div><div class="info-value">${info.spouse || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👶 Anak</div><div class="info-value">${info.childrenList || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👶 Cucu</div><div class="info-value">${info.grandchildrenList || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👨‍👩‍👧‍👦 Orang Tua</div><div class="info-value">${info.parents || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👴👵 Kakek/Nenek</div><div class="info-value">${info.grandparents || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👨‍👩‍👧‍👦 Saudara Kandung</div><div class="info-value">${info.siblings || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👶 Ponakan</div><div class="info-value">${info.nephews || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👨‍👩‍👧‍👦 Paman/Bibi</div><div class="info-value">${info.auntsUncles || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👨‍👩‍👧‍👦 Sepupu</div><div class="info-value">${info.cousins || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">📜 7 Keturunan ke Atas</div><div class="info-value">${info.ancestors7 || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">📜 7 Keturunan ke Bawah</div><div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+    </div>
+  `;
+  
+  document.getElementById("info-body").innerHTML = bodyHtml;
+  showInfoModal();
+}
+
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
     const scroll = getCurrentScroll();
@@ -512,7 +532,6 @@ document.addEventListener("click", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Load invert setting
   loadInvertSetting();
   
   if (isLoggedIn()) {
