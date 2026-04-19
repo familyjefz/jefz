@@ -54,8 +54,13 @@ function showCustomPopup(message, title = "Informasi", onConfirm = null, showCan
   
   popup.style.display = "block";
   
+  // Scroll popup ke tengah layar (TANPA menyentuh tree)
   setTimeout(() => {
-    popup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const popupElement = document.getElementById("custom-popup");
+    if (popupElement) {
+      // Scroll popup ke tengah viewport
+      popupElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }, 50);
 }
 
@@ -72,7 +77,9 @@ function showLoginModal() {
   setTimeout(() => {
     document.getElementById("pin-input").focus();
     const modal = document.getElementById("login-modal");
-    if (modal) modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (modal) {
+      modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }, 100);
 }
 
