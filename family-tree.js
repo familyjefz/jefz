@@ -97,7 +97,14 @@ function renderTree() {
   const savedLeft = wrapper ? wrapper.scrollLeft : 800;
   const savedTop = wrapper ? wrapper.scrollTop : 400;
   
+  // Simpan zoom saat ini
+  const currentScale = currentZoom;
+  
   container.innerHTML = "";
+  
+  // Reset transform sebelum render
+  container.style.transform = `scale(${currentScale})`;
+  container.style.transformOrigin = "top left";
   
   new Treant({
     chart: {
