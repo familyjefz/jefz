@@ -32,6 +32,7 @@ body {
 h2 {
   margin: 0;
   font-size: 16px;
+  color: #fff;
 }
 
 .zoom-controls {
@@ -70,11 +71,17 @@ h2 {
   position: relative;
 }
 
+/* Container untuk zoom tree saja */
 .tree-zoom-container {
-  transform-origin: center center;
+  transform-origin: 0 0;
   transition: transform 0.1s ease;
   width: fit-content;
   height: fit-content;
+}
+
+/* Pastikan header dan kontrol tidak ikut zoom */
+.header, .zoom-controls, .login-btn {
+  transform: none !important;
 }
 
 #tree {
@@ -213,13 +220,12 @@ h2 {
   top: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.014);
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
-  background: rgba(255, 255, 255, 0);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   margin: 10% auto;
   padding: 0;
   width: 90%;
@@ -245,7 +251,7 @@ h2 {
 }
 
 .info-header {
-  background: #8cabe5
+  background: #8cabe5;
 }
 
 .modal-header h3 {
@@ -273,7 +279,7 @@ h2 {
   padding: 10px;
   margin: 10px 0;
   border: 1px solid #ddd;
-  background: rgba(255, 255, 255, 0);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 5px;
   font-size: 16px;
   text-align: center;
@@ -300,22 +306,15 @@ h2 {
   margin: 5px 0;
 }
 
-.info-grid-2col {
+.info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 15px;
 }
 
-.info-section {
-  margin-bottom: 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
-}
-
 .info-label {
   font-weight: bold;
   color: #2196f3;
-  margin-bottom: 5px;
   font-size: 12px;
 }
 
@@ -323,6 +322,7 @@ h2 {
   color: #333;
   font-size: 11px;
   line-height: 1.4;
+  margin-top: 3px;
 }
 
 .empty-info {
@@ -331,7 +331,7 @@ h2 {
 }
 
 @media (max-width: 600px) {
-  .info-grid-2col {
+  .info-grid {
     grid-template-columns: 1fr;
   }
 }
