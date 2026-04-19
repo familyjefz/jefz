@@ -2,61 +2,61 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Silsilah Keluarga</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f5f7fb; height: 100vh; overflow: hidden; }
-    .header { background: #fff; padding: 10px; text-align: center; border-bottom: 1px solid #ddd; }
-    .tree-wrapper { height: calc(100vh - 50px); overflow: auto; padding: 20px; }
-    .node-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px; min-width: 100px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .node-name { font-weight: bold; font-size: 12px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="header">
-  <h2>Silsilah Keluarga</h2>
+<div class="app-container">
+  <div class="header">
+    <h2>Silsilah Keluarga</h2>
+    <div class="zoom-controls">
+      <button id="zoom-in">🔍+</button>
+      <button id="zoom-out">🔍-</button>
+      <button id="zoom-reset">⟳</button>
+      <button id="login-btn" class="login-btn">👤 Login Admin</button>
+    </div>
+  </div>
+  <div class="tree-wrapper" id="tree-wrapper">
+    <div class="tree-zoom-container" id="tree-zoom-container">
+      <div id="tree"></div>
+    </div>
+  </div>
 </div>
-<div class="tree-wrapper" id="tree-wrapper">
-  <div id="tree"></div>
+
+<!-- Modal Login -->
+<div id="login-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Login Admin</h3>
+      <span class="close">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Masukkan PIN untuk mengakses menu edit:</p>
+      <input type="password" id="pin-input" class="pin-input" placeholder="Masukkan PIN">
+      <div id="pin-error" class="pin-error"></div>
+      <button id="submit-pin" class="pin-submit">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Info -->
+<div id="info-modal" class="modal">
+  <div class="modal-content info-modal-content">
+    <div class="modal-header info-header">
+      <h3 id="info-title">Informasi</h3>
+      <span class="close-info">&times;</span>
+    </div>
+    <div class="modal-body" id="info-body"></div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
-<script>
-const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
-
-async function loadTree() {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
-    const data = await res.json();
-    
-    function convert(node) {
-      return {
-        innerHTML: `<div class="node-box"><div class="node-name">${node.name}</div></div>`,
-        children: node.children?.map(child => convert(child)) || []
-      };
-    }
-    
-    new Treant({
-      chart: {
-        container: "#tree",
-        rootOrientation: "NORTH",
-        connectors: { type: "step" },
-        animateOnInit: false,
-        levelSeparation: 40,
-        siblingSeparation: 40
-      },
-      nodeStructure: convert(data)
-    });
-  } catch (err) {
-    console.error("Error:", err);
-    document.getElementById("tree").innerHTML = `<p style="color:red;padding:20px;">Gagal memuat data: ${err.message}</p>`;
-  }
-}
-
-loadTree();
-</script>
+<script src="config.js"></script>
+<script src="family-tree.js"></script>
+<script src="family-info.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
