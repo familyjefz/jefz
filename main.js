@@ -1,23 +1,14 @@
 function setZoom(zoom) {
   currentZoom = zoom;
-  const treeContainer = document.getElementById("tree");
-  if (treeContainer) {
-    treeContainer.style.transform = `scale(${currentZoom})`;
-    treeContainer.style.transformOrigin = "top left";
+  const zoomContainer = document.getElementById("tree-zoom-container");
+  if (zoomContainer) {
+    zoomContainer.style.transform = `scale(${currentZoom})`;
   }
 }
 
-function zoomIn() { 
-  setZoom(currentZoom + 0.1); 
-}
-
-function zoomOut() { 
-  setZoom(currentZoom - 0.1); 
-}
-
-function zoomReset() { 
-  setZoom(1); 
-}
+function zoomIn() { setZoom(currentZoom + 0.1); }
+function zoomOut() { setZoom(currentZoom - 0.1); }
+function zoomReset() { setZoom(1); }
 
 function showLoginModal() {
   document.getElementById("login-modal").style.display = "block";
