@@ -1,3 +1,4 @@
+// ========== ZOOM FUNCTIONS ==========
 function setZoom(zoom) {
   currentZoom = zoom;
   const zoomContainer = document.getElementById("tree-zoom-container");
@@ -9,6 +10,21 @@ function setZoom(zoom) {
 function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
+
+// ========== SESSION LOGIN ==========
+const SESSION_KEY = "silsilah_admin_logged_in";
+
+function saveLoginSession() {
+  localStorage.setItem(SESSION_KEY, "true");
+}
+
+function clearLoginSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function isLoggedIn() {
+  return localStorage.getItem(SESSION_KEY) === "true";
+}
 
 // ========== CUSTOM POPUP ==========
 function showCustomPopup(message, title = "Informasi", onConfirm = null, showCancel = false) {
@@ -60,7 +76,7 @@ function closeCustomPopup() {
   if (popup) popup.style.display = "none";
 }
 
-// ========== LOGIN MODAL ==========
+// ========== LOGIN/LOGOUT SATU TOMBOL ==========
 function showLoginModal() {
   document.getElementById("login-modal").style.display = "block";
   document.getElementById("pin-input").value = "";
@@ -89,7 +105,10 @@ async function checkPin() {
     
     if (result.success) {
       isAdmin = true;
+      saveLoginSession();
       closeLoginModal();
+      updateLoginButton();
+      updateUndoRedoButtons();
       showCustomPopup("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.", "Sukses");
       renderTree();
     } else {
@@ -97,6 +116,238 @@ async function checkPin() {
     }
   } catch (err) {
     document.getElementById("pin-error").innerText = "Gagal verifikasi. Periksa koneksi.";
+  }
+}
+
+function logout() {
+  isAdmin = false;
+  clearLoginSession();
+  activePath = null;
+  activeMode = null;
+  updateLoginButton();
+  updateUndoRedoButtons();
+  showCustomPopup("Anda telah logout dari mode Admin.", "Info");
+  renderTree();
+}
+
+function updateLoginButton() {
+  const loginBtn = document.getElementById("login-btn");
+  if (loginBtn) {
+    if (isAdmin) {
+      loginBtn.innerHTML = "🚪 Logout";
+      loginBtn.classList.add("logout-btn");
+      loginBtn.classList.remove("login-btn");
+    } else {
+      loginBtn.innerHTML = "👤 Login Admin";
+      loginBtn.classList.add("login-btn");
+      loginBtn.classList.remove("logout-btn");
+    }
+  }
+}
+
+function updateUndoRedoButtons() {
+  const undoBtn = document.getElementById("undo-btn");
+  const redoBtn = document.getElementById("redo-btn");
+  
+  if (isAdmin) {
+    if (undoBtn) undoBtn.style.display = "inline-block";
+    if (redoBtn) redoBtn.style.display = "inline-block";
+  } else {
+    if (undoBtn) undoBtn.style.display = "none";
+    if (redoBtn) redoBtn.style.display = "none";
+  }
+}
+
+function onLoginLogoutClick() {
+  if (isAdmin) {
+    logout();
+  } else {
+    showLoginModal();
+  }
+}
+
+// ========== UNDO/REDO ==========
+let undoStack = [];
+let redoStack = [];
+
+function saveToUndo(data) {
+  if (data && isAdmin) {
+    undoStack.push(JSON.parse(JSON.stringify(data)));
+    redoStack = [];
+    if (undoStack.length > 50) undoStack.shift();
+  }
+}
+
+function undo() {
+  if (undoStack.length === 0) {
+    showCustomPopup("Tidak ada aksi yang bisa di-undo", "Info", null, false);
+    return false;
+  }
+  const previousData = undoStack.pop();
+  redoStack.push(JSON.parse(JSON.stringify(currentTreeData)));
+  return previousData;
+}
+
+function redo() {
+  if (redoStack.length === 0) {
+    showCustomPopup("Tidak ada aksi yang bisa di-redo", "Info", null, false);
+    return false;
+  }
+  const nextData = redoStack.pop();
+  undoStack.push(JSON.parse(JSON.stringify(currentTreeData)));
+  return nextData;
+}
+
+async function undoAction() {
+  if (!isAdmin) return;
+  const previousData = undo();
+  if (previousData) {
+    currentTreeData = previousData;
+    resetSiblingColors();
+    assignSiblingGroups(currentTreeData);
+    renderTree();
+    await saveToSupabase();
+    showCustomPopup("Undo berhasil!", "Sukses");
+  }
+}
+
+async function redoAction() {
+  if (!isAdmin) return;
+  const nextData = redo();
+  if (nextData) {
+    currentTreeData = nextData;
+    resetSiblingColors();
+    assignSiblingGroups(currentTreeData);
+    renderTree();
+    await saveToSupabase();
+    showCustomPopup("Redo berhasil!", "Sukses");
+  }
+}
+
+// ========== POPUP HAPUS 3 PILIHAN ==========
+let pendingHapusPath = null;
+
+function showHapusPopup(path) {
+  pendingHapusPath = path;
+  
+  const popup = document.getElementById("custom-popup");
+  const popupTitle = document.getElementById("popup-title");
+  const popupMessage = document.getElementById("popup-message");
+  const popupButtons = document.getElementById("popup-buttons");
+  
+  popupTitle.textContent = "Hapus Node";
+  popupMessage.innerHTML = "Pilih opsi hapus:";
+  
+  popupButtons.innerHTML = "";
+  
+  const btnSaja = document.createElement("button");
+  btnSaja.textContent = "Hapus ini saja";
+  btnSaja.style.background = "#ff9800";
+  btnSaja.style.color = "white";
+  btnSaja.onclick = () => {
+    popup.style.display = "none";
+    hapusNodeOnly(pendingHapusPath);
+  };
+  
+  const btnKeturunan = document.createElement("button");
+  btnKeturunan.textContent = "Hapus dengan keturunan";
+  btnKeturunan.style.background = "#f44336";
+  btnKeturunan.style.color = "white";
+  btnKeturunan.onclick = () => {
+    popup.style.display = "none";
+    hapusWithChildren(pendingHapusPath);
+  };
+  
+  const btnBatal = document.createElement("button");
+  btnBatal.textContent = "Batal";
+  btnBatal.style.background = "#607d8b";
+  btnBatal.style.color = "white";
+  btnBatal.onclick = () => {
+    popup.style.display = "none";
+  };
+  
+  popupButtons.appendChild(btnSaja);
+  popupButtons.appendChild(btnKeturunan);
+  popupButtons.appendChild(btnBatal);
+  
+  popup.style.display = "block";
+}
+
+async function hapusNodeOnly(path) {
+  if (!isAdmin) return;
+  
+  try {
+    saveToUndo(currentTreeData);
+    
+    const parentPath = path.slice(0, -1);
+    const nodeIndex = path[path.length - 1];
+    let parent = null;
+    
+    if (parentPath.length === 0) {
+      parent = currentTreeData;
+    } else {
+      parent = getNodeByPath(currentTreeData, parentPath);
+    }
+    
+    if (!parent || !parent.children) return;
+    
+    const nodeToDelete = parent.children[nodeIndex];
+    if (!nodeToDelete) return;
+    
+    const grandchildren = nodeToDelete.children || [];
+    
+    parent.children.splice(nodeIndex, 1);
+    
+    if (grandchildren.length > 0) {
+      parent.children.splice(nodeIndex, 0, ...grandchildren);
+    }
+    
+    await saveToSupabase();
+    activePath = null;
+    activeMode = null;
+    await loadTree();
+    showCustomPopup("Node berhasil dihapus (anak-anak naik ke parent)", "Sukses");
+  } catch (err) {
+    showCustomPopup("Error: " + err.message, "Error");
+  }
+}
+
+async function hapusWithChildren(path) {
+  if (!isAdmin) return;
+  
+  try {
+    saveToUndo(currentTreeData);
+    
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", path })
+    });
+    const result = await res.json();
+    
+    if (result.success) {
+      activePath = null; activeMode = null;
+      await loadTree();
+      showCustomPopup("Node dan semua keturunannya berhasil dihapus", "Sukses");
+    } else {
+      showCustomPopup("Gagal hapus: " + (result.error || "Error"), "Error");
+    }
+  } catch (err) {
+    showCustomPopup("Error: " + err.message, "Error");
+  }
+}
+
+// ========== SAVE TO SUPABASE ==========
+async function saveToSupabase() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "replace", data: currentTreeData })
+    });
+    await res.json();
+  } catch (err) {
+    console.error("Gagal save ke Supabase:", err);
   }
 }
 
@@ -111,10 +362,19 @@ document.addEventListener("click", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Cek session login
+  if (isLoggedIn()) {
+    isAdmin = true;
+    updateLoginButton();
+    updateUndoRedoButtons();
+  }
+  
   document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
   document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
-  document.getElementById("login-btn")?.addEventListener("click", showLoginModal);
+  document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
+  document.getElementById("undo-btn")?.addEventListener("click", undoAction);
+  document.getElementById("redo-btn")?.addEventListener("click", redoAction);
   document.querySelector(".close")?.addEventListener("click", closeLoginModal);
   document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
   document.getElementById("submit-pin")?.addEventListener("click", checkPin);
