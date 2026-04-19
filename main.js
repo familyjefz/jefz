@@ -48,6 +48,7 @@ async function checkPin() {
       isAdmin = true;
       closeLoginModal();
       alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
+      updateAddFamilyButton();
       renderTree();
     } else {
       document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
@@ -55,6 +56,13 @@ async function checkPin() {
   } catch (err) {
     console.error("Error:", err);
     document.getElementById("pin-error").innerText = "Gagal verifikasi. Periksa koneksi.";
+  }
+}
+
+function updateAddFamilyButton() {
+  const addBtn = document.getElementById("add-family-btn");
+  if (addBtn) {
+    addBtn.style.display = isAdmin ? "inline-block" : "none";
   }
 }
 
@@ -70,6 +78,10 @@ document.addEventListener("click", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Cek session login (opsional, bisa ditambahkan nanti)
+  isAdmin = false;
+  updateAddFamilyButton();
+  
   document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
   document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
@@ -80,6 +92,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
     if (e.key === "Enter") checkPin();
   });
+  
+  // Event untuk keluarga
+  document.getElementById("family-selector")?.addEventListener("change", onFamilyChange);
+  document.getElementById("add-family-btn")?.addEventListener("click", showAddFamilyModal);
+  document.querySelector(".close-family")?.addEventListener("click", closeAddFamilyModal);
+  document.getElementById("submit-family")?.addEventListener("click", addNewFamily);
+  document.getElementById("new-family-name")?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") addNewFamily();
+  });
 });
 
 window.addEventListener("click", (e) => {
@@ -88,6 +109,9 @@ window.addEventListener("click", (e) => {
   }
   if (e.target === document.getElementById("info-modal")) {
     closeInfoModal();
+  }
+  if (e.target === document.getElementById("add-family-modal")) {
+    closeAddFamilyModal();
   }
 });
 
