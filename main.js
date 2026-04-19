@@ -28,11 +28,6 @@ function closeInfoModal() {
 async function checkPin() {
   const pin = document.getElementById("pin-input").value;
   
-  if (!pin) {
-    document.getElementById("pin-error").innerText = "Masukkan PIN!";
-    return;
-  }
-  
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/check-pin`, {
       method: "POST",
