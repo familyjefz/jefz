@@ -11,6 +11,11 @@ function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
+// ========== INVERT COLOR ==========
+function toggleInvert() {
+  document.body.classList.toggle("invert-mode");
+}
+
 // ========== SESSION LOGIN ==========
 const SESSION_KEY = "silsilah_admin_logged_in";
 
@@ -279,9 +284,7 @@ async function hapusNodeOnly(path) {
   try {
     saveToUndo(currentTreeData);
     
-    // Jika path kosong (root node)
     if (!path || path.length === 0) {
-      // Root node dihapus, anak pertama (paling kiri) menjadi root baru
       if (!currentTreeData.children || currentTreeData.children.length === 0) {
         showCustomPopup("Tidak ada anak yang bisa menjadi root baru!", "Peringatan");
         return;
@@ -290,10 +293,8 @@ async function hapusNodeOnly(path) {
       const anakPertama = currentTreeData.children[0];
       const sisaAnak = currentTreeData.children.slice(1);
       
-      // Root baru adalah anak pertama
       currentTreeData = anakPertama;
       
-      // Tambahkan sisa anak ke root baru
       if (sisaAnak.length > 0) {
         if (!currentTreeData.children) currentTreeData.children = [];
         currentTreeData.children.push(...sisaAnak);
@@ -318,7 +319,6 @@ async function hapusNodeOnly(path) {
       return;
     }
     
-    // Untuk node non-root
     const parentPath = path.slice(0, -1);
     const nodeIndex = path[path.length - 1];
     let parent = null;
@@ -378,7 +378,6 @@ async function hapusWithChildren(path) {
   try {
     saveToUndo(currentTreeData);
     
-    // Jika path kosong (root node)
     if (!path || path.length === 0) {
       showCustomPopup("Apakah Anda yakin ingin menghapus seluruh silsilah?", "Konfirmasi Hapus Semua", async () => {
         try {
@@ -454,7 +453,6 @@ document.addEventListener("click", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Cek session login
   if (isLoggedIn()) {
     isAdmin = true;
     updateLoginButton();
@@ -464,6 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
   document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
+  document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
   document.getElementById("undo-btn")?.addEventListener("click", undoAction);
   document.getElementById("redo-btn")?.addEventListener("click", redoAction);
