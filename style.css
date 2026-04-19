@@ -76,7 +76,6 @@ h2 {
   transition: transform 0.1s ease;
   width: fit-content;
   height: fit-content;
-  padding: 50px;
 }
 
 #tree {
@@ -207,7 +206,6 @@ h2 {
 .node-actions button:first-child { background: #4caf50; }
 .node-actions button:last-child { background: #f44336; }
 
-/* Modal */
 .modal {
   display: none;
   position: fixed;
@@ -302,7 +300,6 @@ h2 {
   margin: 5px 0;
 }
 
-/* Info grid */
 .info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
