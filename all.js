@@ -1,10 +1,10 @@
 // ========== CONFIG ==========
+const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
 let currentView = "all";
 let currentZoom = 1;
 let isAdmin = false;
 let currentEditPath = null;
 let currentEditFamilyId = null;
-let currentEditMode = null;
 let FAMILIES = [];
 
 // ========== FUNGSI BANTU ==========
@@ -37,8 +37,8 @@ function getNodeByPath(node, path) {
 async function loadFromSupabase() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-all-families`);
-    if (!res.ok) throw new Error("HTTP error");
     const data = await res.json();
+    console.log("Data dari Supabase:", data);
     
     if (Array.isArray(data) && data.length > 0) {
       FAMILIES = data.map((family, idx) => ({
@@ -47,31 +47,14 @@ async function loadFromSupabase() {
         data: cleanData(family)
       }));
     } else {
-      useStaticData();
+      FAMILIES = [];
     }
+    updateFamilySelector();
+    render();
   } catch (err) {
-    console.error("Gagal load dari Supabase, pakai data statis:", err);
-    useStaticData();
+    console.error("Gagal load dari Supabase:", err);
+    alert("Gagal memuat data dari Supabase");
   }
-  updateFamilySelector();
-  render();
-}
-
-function useStaticData() {
-  FAMILIES = [
-    {
-      id: 1,
-      name: "Sekghor",
-      data: {
-        name: ">Sekghor |",
-        children: [
-          { name: ">Salama | Tohin", children: [] },
-          { name: ">Ryfan |", children: [] },
-          { name: ">Abd Hary |", children: [] }
-        ]
-      }
-    }
-  ];
 }
 
 // ========== SAVE KE SUPABASE ==========
@@ -123,7 +106,7 @@ function render() {
   
   container.innerHTML = "";
   
-  if (currentView === "all") {
+  if (currentView === "all" && FAMILIES.length > 1) {
     const forestDiv = document.createElement("div");
     forestDiv.className = "forest-container";
     
@@ -157,7 +140,7 @@ function render() {
     
     container.appendChild(forestDiv);
   } else {
-    const family = FAMILIES.find(f => f.id == currentView);
+    const family = currentView === "all" ? FAMILIES[0] : FAMILIES.find(f => f.id == currentView);
     if (family) {
       new Treant({
         chart: {
@@ -212,7 +195,6 @@ function showEdit(familyId, pathStr, currentName) {
   if (!isAdmin) return;
   currentEditFamilyId = familyId;
   currentEditPath = JSON.parse(pathStr);
-  currentEditMode = "edit";
   document.getElementById("edit-input").value = currentName;
   document.getElementById("edit-modal").style.display = "block";
 }
@@ -266,31 +248,19 @@ function showDelete(familyId, pathStr) {
 // ========== ADD CHILD ==========
 function showAddChild(familyId, pathStr) {
   if (!isAdmin) return;
-  currentEditFamilyId = familyId;
-  currentEditPath = JSON.parse(pathStr);
-  currentEditMode = "add";
-  document.getElementById("edit-input").value = "";
-  document.getElementById("edit-title").innerHTML = "➕ Tambah Anak";
-  document.getElementById("edit-modal").style.display = "block";
-}
-
-function saveAddChild() {
-  if (!isAdmin) return;
-  const newName = document.getElementById("edit-input").value.trim();
-  if (!newName) { alert("Nama tidak boleh kosong!"); return; }
+  const newName = prompt("Masukkan nama anak baru:");
+  if (!newName) return;
   
-  const family = FAMILIES.find(f => f.id === currentEditFamilyId);
-  if (family) {
-    const node = currentEditPath.length === 0 ? family.data : getNodeByPath(family.data, currentEditPath);
-    if (node) {
-      if (!node.children) node.children = [];
-      node.children.push({ name: newName, children: [] });
-    }
+  const family = FAMILIES.find(f => f.id == familyId);
+  if (!family) return;
+  const path = JSON.parse(pathStr);
+  const node = path.length === 0 ? family.data : getNodeByPath(family.data, path);
+  if (node) {
+    if (!node.children) node.children = [];
+    node.children.push({ name: newName, children: [] });
+    render();
+    saveToSupabase();
   }
-  closeEditModal();
-  render();
-  saveToSupabase();
-  alert("Anak berhasil ditambahkan!");
 }
 
 // ========== TAMBAH KELUARGA ==========
@@ -360,25 +330,38 @@ function zoomReset() { setZoom(1); }
 function showLoginModal() { document.getElementById("login-modal").style.display = "block"; }
 function closeLoginModal() { document.getElementById("login-modal").style.display = "none"; }
 function closeInfoModal() { document.getElementById("info-modal").style.display = "none"; }
-function closeEditModal() { 
-  document.getElementById("edit-modal").style.display = "none";
-  document.getElementById("edit-title").innerHTML = "Edit Nama";
-}
+function closeEditModal() { document.getElementById("edit-modal").style.display = "none"; }
 function closeAddFamilyModal() { document.getElementById("add-family-modal").style.display = "none"; }
 function showAddFamilyModal() { if (isAdmin) document.getElementById("add-family-modal").style.display = "block"; }
 
-function checkPin() {
+async function checkPin() {
   const pin = document.getElementById("pin-input").value;
-  if (pin === "00") {
-    isAdmin = true;
-    closeLoginModal();
-    alert("Login sebagai Admin berhasil!");
-    document.getElementById("add-family-btn").style.display = "inline-block";
-    render();
-  } else {
-    document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/check-pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin: pin })
+    });
+    const result = await res.json();
+    
+    if (result.success) {
+      isAdmin = true;
+      closeLoginModal();
+      alert("Login sebagai Admin berhasil!");
+      document.getElementById("add-family-btn").style.display = "inline-block";
+      render();
+    } else {
+      document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
+    }
+  } catch (err) {
+    document.getElementById("pin-error").innerText = "Gagal verifikasi.";
   }
 }
+
+// ========== MODAL EDIT UNTUK ADD CHILD ==========
+// Modal edit sudah ada di HTML, kita gunakan untuk add child juga
+// Fungsi showAddChild menggunakan prompt, biar sederhana
 
 // ========== EVENT ==========
 document.getElementById("family-selector")?.addEventListener("change", onFamilyChange);
@@ -393,10 +376,7 @@ document.querySelector(".close-family")?.addEventListener("click", closeAddFamil
 document.getElementById("submit-pin")?.addEventListener("click", checkPin);
 document.getElementById("add-family-btn")?.addEventListener("click", showAddFamilyModal);
 document.getElementById("submit-family")?.addEventListener("click", addNewFamily);
-document.getElementById("save-edit")?.addEventListener("click", () => {
-  if (currentEditMode === "add") saveAddChild();
-  else saveEdit();
-});
+document.getElementById("save-edit")?.addEventListener("click", saveEdit);
 document.getElementById("cancel-edit")?.addEventListener("click", closeEditModal);
 
 window.addEventListener("click", (e) => {
