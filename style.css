@@ -71,17 +71,11 @@ h2 {
   position: relative;
 }
 
-/* Container untuk zoom tree saja */
 .tree-zoom-container {
-  transform-origin: 0 0;
+  transform-origin: center center;
   transition: transform 0.1s ease;
   width: fit-content;
   height: fit-content;
-}
-
-/* Pastikan header dan kontrol tidak ikut zoom */
-.header, .zoom-controls, .login-btn {
-  transform: none !important;
 }
 
 #tree {
@@ -334,4 +328,15 @@ h2 {
   .info-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ========== TAMBAHAN ZOOM - HANYA TREE YANG ZOOM ========== */
+.tree-zoom-container {
+  transform-origin: center center !important;
+  transition: transform 0.1s ease;
+}
+
+/* Pastikan header tidak ikut zoom */
+.header, .zoom-controls, .login-btn, h2 {
+  transform: none !important;
 }
