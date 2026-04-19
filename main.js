@@ -1,118 +1,62 @@
-// ========== ZOOM FUNCTIONS ==========
-function setZoom(zoom) {
-  currentZoom = zoom;
-  const zoomContainer = document.getElementById("tree-zoom-container");
-  if (zoomContainer) {
-    zoomContainer.style.transform = `scale(${currentZoom})`;
-  }
-}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Silsilah Keluarga</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-container">
+  <div class="header">
+    <h2>Silsilah Keluarga</h2>
+    <div class="zoom-controls">
+      <button id="zoom-in">🔍+</button>
+      <button id="zoom-out">🔍-</button>
+      <button id="zoom-reset">⟳</button>
+      <button id="login-btn" class="login-btn">👤 Login Admin</button>
+    </div>
+  </div>
+  <div class="tree-wrapper" id="tree-wrapper">
+    <div class="tree-zoom-container" id="tree-zoom-container">
+      <div id="tree"></div>
+    </div>
+  </div>
+</div>
 
-function zoomIn() { setZoom(currentZoom + 0.1); }
-function zoomOut() { setZoom(currentZoom - 0.1); }
-function zoomReset() { setZoom(1); }
+<!-- Modal Login -->
+<div id="login-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Login Admin</h3>
+      <span class="close">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Masukkan PIN untuk mengakses menu edit:</p>
+      <input type="password" id="pin-input" class="pin-input" placeholder="Masukkan PIN">
+      <div id="pin-error" class="pin-error"></div>
+      <button id="submit-pin" class="pin-submit">Login</button>
+    </div>
+  </div>
+</div>
 
-// ========== LOGIN MODAL ==========
-function showLoginModal() {
-  document.getElementById("login-modal").style.display = "block";
-  document.getElementById("pin-input").value = "";
-  document.getElementById("pin-error").innerText = "";
-  setTimeout(() => document.getElementById("pin-input").focus(), 100);
-}
+<!-- Modal Info -->
+<div id="info-modal" class="modal">
+  <div class="modal-content info-modal-content">
+    <div class="modal-header info-header">
+      <h3 id="info-title">Informasi</h3>
+      <span class="close-info">&times;</span>
+    </div>
+    <div class="modal-body" id="info-body"></div>
+  </div>
+</div>
 
-function closeLoginModal() {
-  document.getElementById("login-modal").style.display = "none";
-}
-
-function closeInfoModal() {
-  document.getElementById("info-modal").style.display = "none";
-}
-
-// ========== CEK PIN KE SUPABASE ==========
-async function checkPin() {
-  const pin = document.getElementById("pin-input").value;
-  
-  if (!pin) {
-    document.getElementById("pin-error").innerText = "Masukkan PIN!";
-    return;
-  }
-  
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/check-pin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pin: pin })
-    });
-    const result = await res.json();
-    
-    if (result.success) {
-      isAdmin = true;
-      closeLoginModal();
-      alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
-      updateAddFamilyButton();
-      renderTree();
-    } else {
-      document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
-    }
-  } catch (err) {
-    console.error("Error:", err);
-    document.getElementById("pin-error").innerText = "Gagal verifikasi. Periksa koneksi.";
-  }
-}
-
-function updateAddFamilyButton() {
-  const addBtn = document.getElementById("add-family-btn");
-  if (addBtn) {
-    addBtn.style.display = isAdmin ? "inline-block" : "none";
-  }
-}
-
-// ========== EVENT LISTENERS ==========
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
-    const scroll = getCurrentScroll();
-    activePath = null;
-    activeMode = null;
-    renderTree();
-    restoreScroll(scroll.left, scroll.top);
-  }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Cek session login (opsional, bisa ditambahkan nanti)
-  isAdmin = false;
-  updateAddFamilyButton();
-  
-  document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
-  document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
-  document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
-  document.getElementById("login-btn")?.addEventListener("click", showLoginModal);
-  document.querySelector(".close")?.addEventListener("click", closeLoginModal);
-  document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
-  document.getElementById("submit-pin")?.addEventListener("click", checkPin);
-  document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") checkPin();
-  });
-  
-  // Event untuk keluarga
-  document.getElementById("family-selector")?.addEventListener("change", onFamilyChange);
-  document.getElementById("add-family-btn")?.addEventListener("click", showAddFamilyModal);
-  document.querySelector(".close-family")?.addEventListener("click", closeAddFamilyModal);
-  document.getElementById("submit-family")?.addEventListener("click", addNewFamily);
-  document.getElementById("new-family-name")?.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") addNewFamily();
-  });
-});
-
-window.addEventListener("click", (e) => {
-  if (e.target === document.getElementById("login-modal")) {
-    closeLoginModal();
-  }
-  if (e.target === document.getElementById("info-modal")) {
-    closeInfoModal();
-  }
-  if (e.target === document.getElementById("add-family-modal")) {
-    closeAddFamilyModal();
-  }
-});
-
-loadTree();
+<script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
+<script src="config.js"></script>
+<script src="family-tree.js"></script>
+<script src="family-info.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
