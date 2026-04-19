@@ -77,7 +77,7 @@ let isAdmin = false;
 
 async function loadTree() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
     const data = await res.json();
     currentTreeData = data;
     resetSiblingColors();

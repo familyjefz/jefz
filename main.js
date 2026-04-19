@@ -25,15 +25,27 @@ function closeInfoModal() {
   document.getElementById("info-modal").style.display = "none";
 }
 
-function checkPin() {
+async function checkPin() {
   const pin = document.getElementById("pin-input").value;
-  if (pin === ADMIN_PIN) {
-    isAdmin = true;
-    closeLoginModal();
-    alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
-    renderTree();
-  } else {
-    document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/check-pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin: pin })
+    });
+    const result = await res.json();
+    
+    if (result.success) {
+      isAdmin = true;
+      closeLoginModal();
+      alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
+      renderTree();
+    } else {
+      document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
+    }
+  } catch (err) {
+    document.getElementById("pin-error").innerText = "Gagal verifikasi. Periksa koneksi.";
   }
 }
 

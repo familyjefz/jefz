@@ -4,7 +4,6 @@ async function showInfo(path) {
     try {
       parsedPath = JSON.parse(path);
     } catch(e) {
-      console.error("Gagal parse path:", e);
       alert("Gagal memuat info. Silakan coba lagi.");
       return;
     }
@@ -18,89 +17,38 @@ async function showInfo(path) {
   }
   
   if (!node) {
-    console.error("Node tidak ditemukan untuk path:", parsedPath);
     alert("Gagal memuat info. Silakan coba lagi.");
     return;
   }
   
   const info = generateFamilyInfo(currentTreeData, parsedPath || [], node);
   
-  const modal = document.getElementById("info-modal");
-  const title = document.getElementById("info-title");
-  const body = document.getElementById("info-body");
-  
   let displayName = node.name;
   if (displayName && displayName.includes("|")) {
     displayName = displayName.split("|")[0].trim();
   }
   
-  title.innerHTML = `📋 Info: ${escapeHtml(displayName).replace(/\n/g, '<br>')}`;
+  document.getElementById("info-title").innerHTML = `📋 Info: ${escapeHtml(displayName).replace(/\n/g, '<br>')}`;
   
-  body.innerHTML = `
-    <div class="info-grid-2col">
-      <div class="info-section">
-        <div class="info-label">👤 Nama</div>
-        <div class="info-value">${escapeHtml(displayName).replace(/\n/g, '<br>')}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">💑 Pasangan</div>
-        <div class="info-value">${info.spouse || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">👶 Anak</div>
-        <div class="info-value">${info.childrenList || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">👶 Cucu</div>
-        <div class="info-value">${info.grandchildrenList || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">👨‍👩‍👧‍👦 Orang Tua</div>
-        <div class="info-value">${info.parents || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">👴👵 Kakek/Nenek</div>
-        <div class="info-value">${info.grandparents || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">👨‍👩‍👧‍👦 Saudara Kandung</div>
-        <div class="info-value">${info.siblings || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">👶 Ponakan</div>
-        <div class="info-value">${info.nephews || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">👨‍👩‍👧‍👦 Paman/Bibi</div>
-        <div class="info-value">${info.auntsUncles || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">👨‍👩‍👧‍👦 Sepupu</div>
-        <div class="info-value">${info.cousins || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">📜 7 Keturunan ke Atas</div>
-        <div class="info-value">${info.ancestors7 || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
-      
-      <div class="info-section">
-        <div class="info-label">📜 7 Keturunan ke Bawah</div>
-        <div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada</span>'}</div>
-      </div>
+  let bodyHtml = `
+    <div class="info-grid">
+      <div><div class="info-label">👤 Nama</div><div class="info-value">${escapeHtml(displayName).replace(/\n/g, '<br>')}</div></div>
+      <div><div class="info-label">💑 Pasangan</div><div class="info-value">${info.spouse || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👶 Anak</div><div class="info-value">${info.childrenList || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👶 Cucu</div><div class="info-value">${info.grandchildrenList || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👨‍👩‍👧‍👦 Orang Tua</div><div class="info-value">${info.parents || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👴👵 Kakek/Nenek</div><div class="info-value">${info.grandparents || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👨‍👩‍👧‍👦 Saudara Kandung</div><div class="info-value">${info.siblings || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👶 Ponakan</div><div class="info-value">${info.nephews || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👨‍👩‍👧‍👦 Paman/Bibi</div><div class="info-value">${info.auntsUncles || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">👨‍👩‍👧‍👦 Sepupu</div><div class="info-value">${info.cousins || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">📜 7 Keturunan ke Atas</div><div class="info-value">${info.ancestors7 || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">📜 7 Keturunan ke Bawah</div><div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada</span>'}</div></div>
     </div>
   `;
   
-  modal.style.display = "block";
+  document.getElementById("info-body").innerHTML = bodyHtml;
+  document.getElementById("info-modal").style.display = "block";
 }
 
 function generateFamilyInfo(treeData, path, node) {
@@ -251,4 +199,4 @@ function generateFamilyInfo(treeData, path, node) {
     cousins: cousins.length > 0 ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
     descendants7
   };
-}
+    }
