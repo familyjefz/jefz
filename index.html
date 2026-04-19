@@ -11,17 +11,11 @@
 <div class="app-container">
   <div class="header">
     <h2>Silsilah Keluarga</h2>
-    <div class="controls">
-      <select id="family-selector" class="family-selector">
-        <option value="all">-- Semua Keluarga --</option>
-      </select>
-      <div class="zoom-controls">
-        <button id="add-family-btn" class="add-family-btn" style="display:none;">➕ Tambah Keluarga</button>
-        <button id="zoom-in">🔍+</button>
-        <button id="zoom-out">🔍-</button>
-        <button id="zoom-reset">⟳</button>
-        <button id="login-btn" class="login-btn">👤 Login Admin</button>
-      </div>
+    <div class="zoom-controls">
+      <button id="zoom-in">🔍+</button>
+      <button id="zoom-out">🔍-</button>
+      <button id="zoom-reset">⟳</button>
+      <button id="login-btn" class="login-btn">👤 Login Admin</button>
     </div>
   </div>
   <div class="tree-wrapper" id="tree-wrapper">
@@ -55,22 +49,6 @@
       <span class="close-info">&times;</span>
     </div>
     <div class="modal-body" id="info-body"></div>
-  </div>
-</div>
-
-<!-- Modal Tambah Keluarga -->
-<div id="add-family-modal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>➕ Tambah Keluarga Baru</h3>
-      <span class="close-family">&times;</span>
-    </div>
-    <div class="modal-body">
-      <p>Masukkan nama kepala keluarga (root):</p>
-      <input type="text" id="new-family-name" class="pin-input" placeholder="Contoh: >Budi |">
-      <div id="family-error" class="pin-error"></div>
-      <button id="submit-family" class="pin-submit">Tambah Keluarga</button>
-    </div>
   </div>
 </div>
 
