@@ -9,15 +9,15 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: Arial, sans-serif;
-      background: #f1fcff;
+      background: transparent;
       overflow: auto;
       min-height: 100vh;
-      padding: 50px;
     }
     #tree {
       position: relative;
       width: 2000px;
       height: 1500px;
+      margin: 20px;
     }
     .node-box {
       background: #d3d2d29d;
@@ -251,7 +251,7 @@ function convert(node, path = [], generation = 1) {
     const displayName = escapeHtml(node.name).replace(/\n/g, '<br>');
     let buttons = `<div class="node-buttons"><button class="btn-info" onclick='showInfo(${JSON.stringify(path)})'>📄 Info</button></div>`;
     if (isAdmin) {
-      buttons = `<div class="node-buttons"><button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>${buttons}</div>`;
+      buttons = `<div class="node-buttons"><button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button></div>${buttons}`;
     }
     
     innerHTML = `
