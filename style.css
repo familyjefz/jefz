@@ -336,7 +336,7 @@ h2 {
   }
 }
 
-/* Custom Popup - sama seperti modal login */
+/* Custom Popup - sama seperti modal info */
 .custom-popup {
   display: none;
   position: fixed;
@@ -345,7 +345,7 @@ h2 {
   top: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.014);
 }
 
 .custom-popup-content {
@@ -357,7 +357,7 @@ h2 {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 90%;
-  max-width: 350px;
+  max-width: 400px;
   border-radius: 10px;
   box-shadow: 0 4px 20px rgb(158, 232, 255);
   overflow: hidden;
