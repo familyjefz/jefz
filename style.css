@@ -35,24 +35,6 @@ h2 {
   color: #fff;
 }
 
-.controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  width: 100%;
-}
-
-.family-selector {
-  padding: 4px 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  background: white;
-  font-size: 12px;
-  cursor: pointer;
-}
-
 .zoom-controls {
   display: flex;
   gap: 6px;
@@ -82,14 +64,6 @@ h2 {
   background: #00a8f7 !important;
 }
 
-.add-family-btn {
-  background: #ff9800 !important;
-}
-
-.add-family-btn:hover {
-  background: #e68900 !important;
-}
-
 .tree-wrapper {
   flex: 1;
   overflow: auto;
@@ -107,8 +81,8 @@ h2 {
 
 #tree {
   position: relative;
-  min-width: max-content;
-  min-height: max-content;
+  width: 2000px;
+  height: 1500px;
 }
 
 .node-box {
@@ -233,34 +207,6 @@ h2 {
 .node-actions button:first-child { background: #4caf50; }
 .node-actions button:last-child { background: #f44336; }
 
-/* Forest container untuk multi-tree */
-.forest-container {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 50px;
-  flex-wrap: wrap;
-}
-
-.tree-container {
-  display: inline-block;
-  vertical-align: top;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 10px;
-  background: rgba(255,255,255,0.5);
-}
-
-.tree-title {
-  text-align: center;
-  font-weight: bold;
-  margin-bottom: 10px;
-  padding: 5px;
-  background: #f0f0f0;
-  border-radius: 5px;
-}
-
 /* Modal */
 .modal {
   display: none;
@@ -309,14 +255,14 @@ h2 {
   font-size: 18px;
 }
 
-.close, .close-info, .close-family {
+.close, .close-info {
   color: rgba(0, 0, 0, 0.979);
   font-size: 28px;
   font-weight: bold;
   cursor: pointer;
 }
 
-.close:hover, .close-info:hover, .close-family:hover {
+.close:hover, .close-info:hover {
   color: #ddd;
 }
 
