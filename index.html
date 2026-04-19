@@ -2,31 +2,40 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Silsilah Keluarga</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
   <style>
-    body { font-family: Arial; margin: 0; padding: 20px; background: #f5f5f5; }
+    .forest-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      gap: 50px;
+      flex-wrap: wrap;
+      padding: 20px;
+    }
+    .tree-container {
+      display: inline-block;
+      vertical-align: top;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.5);
+    }
+    .tree-title {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+      padding: 5px;
+      background: #f0f0f0;
+      border-radius: 5px;
+    }
+    .node-box { background: white; border: 1px solid #ccc; padding: 10px; min-width: 100px; text-align: center; }
+    .node-name { font-weight: bold; }
     .controls { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .family-selector { padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
     button { padding: 8px 12px; border-radius: 5px; border: none; cursor: pointer; background: #333; color: white; }
-    button:hover { opacity: 0.85; }
     .login-btn { background: #4caf50; }
     .add-family-btn { background: #ff9800; }
-    .forest-container { display: flex; flex-direction: row; justify-content: center; gap: 50px; flex-wrap: wrap; padding: 20px; }
-    .tree-container { display: inline-block; vertical-align: top; border: 1px solid #ddd; border-radius: 10px; padding: 10px; background: white; }
-    .tree-title { text-align: center; font-weight: bold; margin-bottom: 10px; padding: 5px; background: #f0f0f0; border-radius: 5px; }
-    .node-box { background: white; border: 1px solid #ccc; border-radius: 8px; padding: 10px 15px; min-width: 100px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .node-name { font-weight: bold; }
-    
-    /* Modal sederhana */
-    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-    .modal-content { background: white; margin: 10% auto; padding: 20px; width: 90%; max-width: 400px; border-radius: 10px; }
-    .modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
-    .close { cursor: pointer; font-size: 24px; }
-    .pin-input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-    .pin-submit { width: 100%; background: #4caf50; color: white; }
-    .pin-error { color: red; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -36,6 +45,8 @@
 <div class="controls">
   <select id="family-selector" class="family-selector">
     <option value="all">-- Semua Keluarga --</option>
+    <option value="1">Sekghor</option>
+    <option value="2">Budi</option>
   </select>
   <button id="add-family-btn" class="add-family-btn" style="display:none;">➕ Tambah Keluarga</button>
   <button id="zoom-in">🔍+</button>
@@ -44,73 +55,37 @@
   <button id="login-btn" class="login-btn">👤 Login Admin</button>
 </div>
 
-<div id="tree-container"></div>
-
-<!-- Modal Login -->
-<div id="login-modal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>Login Admin</h3>
-      <span class="close">&times;</span>
-    </div>
-    <div class="modal-body">
-      <input type="password" id="pin-input" class="pin-input" placeholder="Masukkan PIN">
-      <div id="pin-error" class="pin-error"></div>
-      <button id="submit-pin" class="pin-submit">Login</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Info -->
-<div id="info-modal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="info-title">Informasi</h3>
-      <span class="close-info">&times;</span>
-    </div>
-    <div class="modal-body" id="info-body"></div>
-  </div>
-</div>
-
-<!-- Modal Tambah Keluarga -->
-<div id="add-family-modal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3>➕ Tambah Keluarga Baru</h3>
-      <span class="close-family">&times;</span>
-    </div>
-    <div class="modal-body">
-      <input type="text" id="new-family-name" class="pin-input" placeholder="Contoh: >Budi |">
-      <div id="family-error" class="pin-error"></div>
-      <button id="submit-family" class="pin-submit">Tambah Keluarga</button>
-    </div>
-  </div>
-</div>
+<div id="forest-container" class="forest-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
 <script>
-// ========== CONFIG ==========
-const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
-let currentFamilyId = "all";
-let currentZoom = 1;
-let isAdmin = false;
-
-// ========== DATA STATIS ==========
-const FAMILIES_DATA = [
+// ========== DATA KELUARGA ==========
+const FAMILIES = [
   {
-    name: ">Sekghor |",
-    children: [
-      { name: ">Salama | Tohin", children: [] },
-      { name: ">Ryfan |", children: [] },
-      { name: ">Abd Hary |", children: [] }
-    ]
+    id: 1,
+    name: "Sekghor",
+    data: {
+      name: ">Sekghor |",
+      children: [
+        { name: ">Salama | Tohin", children: [] },
+        { name: ">Ryfan |", children: [] },
+        { name: ">Abd Hary |", children: [] }
+      ]
+    }
   },
   {
-    name: ">Budi |",
-    children: []
+    id: 2,
+    name: "Budi",
+    data: {
+      name: ">Budi |",
+      children: []
+    }
   }
 ];
+
+let currentView = "all"; // "all" atau id keluarga
+let currentZoom = 1;
 
 function escapeHtml(str) {
   if (!str) return "";
@@ -124,157 +99,116 @@ function convert(node) {
   };
 }
 
-function renderTree() {
-  const container = document.getElementById("tree-container");
-  if (!container) return;
-  
+function render() {
+  const container = document.getElementById("forest-container");
   container.innerHTML = "";
   
-  if (Array.isArray(currentTreeData) && currentTreeData.length > 0) {
-    const forestDiv = document.createElement("div");
-    forestDiv.className = "forest-container";
-    
-    currentTreeData.forEach((root, idx) => {
+  if (currentView === "all") {
+    // Tampilkan semua keluarga
+    FAMILIES.forEach(family => {
       const treeDiv = document.createElement("div");
       treeDiv.className = "tree-container";
       
       const title = document.createElement("div");
       title.className = "tree-title";
-      let displayName = root.name;
-      if (displayName && displayName.includes("|")) displayName = displayName.split("|")[0].trim();
-      title.innerText = displayName;
+      title.innerText = family.name;
       treeDiv.appendChild(title);
       
       const tempDiv = document.createElement("div");
-      tempDiv.id = `temp-tree-${idx}`;
+      tempDiv.id = `tree-${family.id}`;
       treeDiv.appendChild(tempDiv);
       
-      forestDiv.appendChild(treeDiv);
+      container.appendChild(treeDiv);
       
       new Treant({
         chart: {
-          container: `#temp-tree-${idx}`,
+          container: `#tree-${family.id}`,
           rootOrientation: "NORTH",
           connectors: { type: "step" },
           animateOnInit: false,
           levelSeparation: 30,
           siblingSeparation: 30
         },
-        nodeStructure: convert(root)
+        nodeStructure: convert(family.data)
       });
     });
-    
-    container.appendChild(forestDiv);
-  } else if (currentTreeData) {
-    new Treant({
-      chart: {
-        container: "#tree-container",
-        rootOrientation: "NORTH",
-        connectors: { type: "step" },
-        animateOnInit: false,
-        levelSeparation: 30,
-        siblingSeparation: 30
-      },
-      nodeStructure: convert(currentTreeData)
-    });
-  }
-}
-
-let currentTreeData = null;
-
-async function loadTree() {
-  if (currentFamilyId === "all") {
-    currentTreeData = FAMILIES_DATA;
   } else {
-    const idx = parseInt(currentFamilyId) - 1;
-    currentTreeData = FAMILIES_DATA[idx];
+    // Tampilkan satu keluarga
+    const family = FAMILIES.find(f => f.id == currentView);
+    if (family) {
+      new Treant({
+        chart: {
+          container: "#forest-container",
+          rootOrientation: "NORTH",
+          connectors: { type: "step" },
+          animateOnInit: false,
+          levelSeparation: 30,
+          siblingSeparation: 30
+        },
+        nodeStructure: convert(family.data)
+      });
+    }
   }
-  renderTree();
-  updateFamilySelector();
-}
-
-function updateFamilySelector() {
-  const selector = document.getElementById("family-selector");
-  if (!selector) return;
-  while (selector.options.length > 1) selector.remove(1);
-  FAMILIES_DATA.forEach((family, idx) => {
-    const opt = document.createElement("option");
-    opt.value = idx + 1;
-    let name = family.name;
-    if (name && name.includes("|")) name = name.split("|")[0].trim();
-    opt.text = name || `Keluarga ${idx + 1}`;
-    selector.appendChild(opt);
-  });
-  selector.value = currentFamilyId;
 }
 
 function onFamilyChange() {
-  currentFamilyId = document.getElementById("family-selector").value;
-  loadTree();
+  currentView = document.getElementById("family-selector").value;
+  render();
 }
 
 // Zoom
-function setZoom(z) { currentZoom = z; document.getElementById("tree-container").style.transform = `scale(${z})`; }
+function setZoom(z) {
+  currentZoom = z;
+  document.getElementById("forest-container").style.transform = `scale(${z})`;
+  document.getElementById("forest-container").style.transformOrigin = "top left";
+}
 function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
-// Login
-function showLoginModal() { document.getElementById("login-modal").style.display = "block"; }
-function closeLoginModal() { document.getElementById("login-modal").style.display = "none"; }
-function closeInfoModal() { document.getElementById("info-modal").style.display = "none"; }
-
-async function checkPin() {
-  const pin = document.getElementById("pin-input").value;
+// Login (sementara)
+let isAdmin = false;
+function showLoginModal() {
+  const pin = prompt("Masukkan PIN Admin:");
   if (pin === "00") {
     isAdmin = true;
-    closeLoginModal();
     alert("Login berhasil!");
     document.getElementById("add-family-btn").style.display = "inline-block";
   } else {
-    document.getElementById("pin-error").innerText = "PIN salah!";
+    alert("PIN salah!");
   }
 }
 
-// Tambah keluarga
-function showAddFamilyModal() { if (isAdmin) document.getElementById("add-family-modal").style.display = "block"; }
-function closeAddFamilyModal() { document.getElementById("add-family-modal").style.display = "none"; }
 function addNewFamily() {
-  const name = document.getElementById("new-family-name").value.trim();
-  if (!name) { document.getElementById("family-error").innerText = "Nama tidak boleh kosong!"; return; }
-  FAMILIES_DATA.push({ name: name, children: [] });
-  closeAddFamilyModal();
-  loadTree();
-  alert("Keluarga baru ditambahkan!");
-}
-
-// Info
-function showInfo(path) {
-  document.getElementById("info-title").innerHTML = "📋 Info";
-  document.getElementById("info-body").innerHTML = `<p>Path: ${JSON.stringify(path)}</p><p>Fitur info lengkap akan segera hadir.</p>`;
-  document.getElementById("info-modal").style.display = "block";
+  const name = prompt("Masukkan nama kepala keluarga baru (contoh: >Cahyo |):");
+  if (name) {
+    const newId = FAMILIES.length + 1;
+    FAMILIES.push({
+      id: newId,
+      name: name.split("|")[0].trim(),
+      data: { name: name, children: [] }
+    });
+    // Update dropdown
+    const selector = document.getElementById("family-selector");
+    const opt = document.createElement("option");
+    opt.value = newId;
+    opt.text = name.split("|")[0].trim();
+    selector.appendChild(opt);
+    render();
+    alert("Keluarga baru ditambahkan!");
+  }
 }
 
 // Event
+document.getElementById("family-selector")?.addEventListener("change", onFamilyChange);
 document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
 document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
 document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
 document.getElementById("login-btn")?.addEventListener("click", showLoginModal);
-document.querySelector(".close")?.addEventListener("click", closeLoginModal);
-document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
-document.getElementById("submit-pin")?.addEventListener("click", checkPin);
-document.getElementById("family-selector")?.addEventListener("change", onFamilyChange);
-document.getElementById("add-family-btn")?.addEventListener("click", showAddFamilyModal);
-document.querySelector(".close-family")?.addEventListener("click", closeAddFamilyModal);
-document.getElementById("submit-family")?.addEventListener("click", addNewFamily);
+document.getElementById("add-family-btn")?.addEventListener("click", addNewFamily);
 
-window.addEventListener("click", (e) => {
-  if (e.target === document.getElementById("login-modal")) closeLoginModal();
-  if (e.target === document.getElementById("info-modal")) closeInfoModal();
-  if (e.target === document.getElementById("add-family-modal")) closeAddFamilyModal();
-});
-
-loadTree();
+// Render awal
+render();
 </script>
 </body>
 </html>
