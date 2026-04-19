@@ -335,3 +335,80 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Custom Popup - sama seperti modal login */
+.custom-popup {
+  display: none;
+  position: fixed;
+  z-index: 1001;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.custom-popup-content {
+  background: rgba(255, 255, 255, 0);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 350px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgb(158, 232, 255);
+  overflow: hidden;
+}
+
+.custom-popup-header {
+  padding: 15px;
+  background: #76abc4;
+  color: black;
+  text-align: center;
+}
+
+.custom-popup-header h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.custom-popup-body {
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+}
+
+.custom-popup-buttons {
+  display: flex;
+  gap: 10px;
+  padding: 0 20px 20px 20px;
+}
+
+.custom-popup-buttons button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  background: #52525254;
+  color: black;
+}
+
+.custom-popup-buttons button:first-child {
+  background: #4caf50;
+  color: white;
+}
+
+.custom-popup-buttons button:last-child {
+  background: #f44336;
+  color: white;
+}
+
+.custom-popup-buttons button:hover {
+  opacity: 0.85;
+}
