@@ -11,9 +11,20 @@ function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
-// ========== INVERT COLOR ==========
+// ========== INVERT COLOR dengan localStorage ==========
+const INVERT_KEY = "silsilah_invert_mode";
+
 function toggleInvert() {
   document.body.classList.toggle("invert-mode");
+  const isInvert = document.body.classList.contains("invert-mode");
+  localStorage.setItem(INVERT_KEY, isInvert ? "true" : "false");
+}
+
+function loadInvertSetting() {
+  const savedInvert = localStorage.getItem(INVERT_KEY);
+  if (savedInvert === "true") {
+    document.body.classList.add("invert-mode");
+  }
 }
 
 // ========== SESSION LOGIN ==========
@@ -74,6 +85,16 @@ function showCustomPopup(message, title = "Informasi", onConfirm = null, showCan
   }
   
   popup.style.display = "block";
+  
+  // Posisikan popup di tengah layar
+  setTimeout(() => {
+    const popupContent = document.querySelector(".custom-popup-content");
+    if (popupContent) {
+      popupContent.style.top = "50%";
+      popupContent.style.left = "50%";
+      popupContent.style.transform = "translate(-50%, -50%)";
+    }
+  }, 10);
 }
 
 function closeCustomPopup() {
@@ -83,10 +104,21 @@ function closeCustomPopup() {
 
 // ========== LOGIN/LOGOUT SATU TOMBOL ==========
 function showLoginModal() {
-  document.getElementById("login-modal").style.display = "block";
+  const modal = document.getElementById("login-modal");
+  modal.style.display = "block";
   document.getElementById("pin-input").value = "";
   document.getElementById("pin-error").innerText = "";
-  setTimeout(() => document.getElementById("pin-input").focus(), 100);
+  
+  // Posisikan modal di tengah layar
+  setTimeout(() => {
+    const modalContent = document.querySelector("#login-modal .modal-content");
+    if (modalContent) {
+      modalContent.style.top = "50%";
+      modalContent.style.left = "50%";
+      modalContent.style.transform = "translate(-50%, -50%)";
+    }
+    document.getElementById("pin-input").focus();
+  }, 10);
 }
 
 function closeLoginModal() {
@@ -94,7 +126,24 @@ function closeLoginModal() {
 }
 
 function closeInfoModal() {
-  document.getElementById("info-modal").style.display = "none";
+  const modal = document.getElementById("info-modal");
+  modal.style.display = "none";
+}
+
+function showInfoModal() {
+  const modal = document.getElementById("info-modal");
+  modal.style.display = "block";
+  
+  // Posisikan modal info di tengah layar
+  setTimeout(() => {
+    const modalContent = document.querySelector("#info-modal .modal-content");
+    if (modalContent) {
+      modalContent.style.top = "50%";
+      modalContent.style.left = "50%";
+      modalContent.style.transform = "translate(-50%, -50%)";
+      modalContent.style.margin = "0";
+    }
+  }, 10);
 }
 
 async function checkPin() {
@@ -276,6 +325,16 @@ function showHapusPopup(path) {
   popupButtons.appendChild(btnBatal);
   
   popup.style.display = "block";
+  
+  // Posisikan di tengah
+  setTimeout(() => {
+    const popupContent = document.querySelector(".custom-popup-content");
+    if (popupContent) {
+      popupContent.style.top = "50%";
+      popupContent.style.left = "50%";
+      popupContent.style.transform = "translate(-50%, -50%)";
+    }
+  }, 10);
 }
 
 async function hapusNodeOnly(path) {
@@ -453,6 +512,9 @@ document.addEventListener("click", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Load invert setting
+  loadInvertSetting();
+  
   if (isLoggedIn()) {
     isAdmin = true;
     updateLoginButton();
