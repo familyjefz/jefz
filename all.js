@@ -75,51 +75,11 @@ function escapeHtml(str) {
   });
 }
 
-// ========== DATA TEST + SUPABASE ==========
-let currentTreeData = null;
+// ========== RENDER TREE ==========
 let activePath = null;
 let activeMode = null;
+let currentTreeData = null;
 let isFirstLoad = true;
-
-// DATA TEST (fallback jika Supabase gagal)
-const TEST_DATA = {
-  name: ">Sekghor |",
-  children: [
-    { name: ">Salama | Tohin", children: [] },
-    { name: ">Ryfan |", children: [] },
-    { name: ">Abd Hary |", children: [] }
-  ]
-};
-
-async function loadFromSupabase() {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
-    if (!res.ok) throw new Error("HTTP error");
-    const data = await res.json();
-    return data;
-  } catch (err) {
-    console.error("Gagal load dari Supabase, pakai data test:", err);
-    return null;
-  }
-}
-
-async function loadTree() {
-  console.log("loadTree mulai");
-  
-  // Coba ambil dari Supabase
-  let data = await loadFromSupabase();
-  
-  // Jika gagal, pakai data test
-  if (!data) {
-    console.log("Pakai data test");
-    data = TEST_DATA;
-  }
-  
-  currentTreeData = data;
-  resetSiblingColors();
-  assignSiblingGroups(currentTreeData);
-  renderTree();
-}
 
 function renderTree() {
   const container = document.getElementById("tree");
@@ -131,19 +91,77 @@ function renderTree() {
   
   container.innerHTML = "";
   
-  if (currentTreeData) {
-    new Treant({
-      chart: {
-        container: "#tree",
-        rootOrientation: "NORTH",
-        connectors: { type: "step" },
-        animateOnInit: false,
-        levelSeparation: 12,
-        siblingSeparation: 8,
-        subTeeSeparation: 8
-      },
-      nodeStructure: convert(currentTreeData, [], 1)
+  // Multi-family (array dengan lebih dari 1 keluarga)
+  if (Array.isArray(currentTreeData) && currentTreeData.length > 1) {
+    const forestContainer = document.createElement("div");
+    forestContainer.style.display = "flex";
+    forestContainer.style.flexDirection = "row";
+    forestContainer.style.justifyContent = "center";
+    forestContainer.style.alignItems = "flex-start";
+    forestContainer.style.gap = "50px";
+    forestContainer.style.flexWrap = "wrap";
+    forestContainer.style.padding = "20px";
+    
+    currentTreeData.forEach((root, idx) => {
+      const treeContainer = document.createElement("div");
+      treeContainer.style.display = "inline-block";
+      treeContainer.style.verticalAlign = "top";
+      treeContainer.style.border = "1px solid #ddd";
+      treeContainer.style.borderRadius = "10px";
+      treeContainer.style.padding = "10px";
+      treeContainer.style.backgroundColor = "rgba(255,255,255,0.5)";
+      
+      const title = document.createElement("div");
+      title.style.textAlign = "center";
+      title.style.fontWeight = "bold";
+      title.style.marginBottom = "10px";
+      title.style.padding = "5px";
+      title.style.backgroundColor = "#f0f0f0";
+      title.style.borderRadius = "5px";
+      let displayName = root.name;
+      if (displayName && displayName.includes("|")) displayName = displayName.split("|")[0].trim();
+      title.innerText = displayName;
+      treeContainer.appendChild(title);
+      
+      const tempDiv = document.createElement("div");
+      tempDiv.id = `temp-tree-${idx}`;
+      treeContainer.appendChild(tempDiv);
+      
+      forestContainer.appendChild(treeContainer);
+      
+      new Treant({
+        chart: {
+          container: `#temp-tree-${idx}`,
+          rootOrientation: "NORTH",
+          connectors: { type: "step" },
+          animateOnInit: false,
+          levelSeparation: 12,
+          siblingSeparation: 8,
+          subTeeSeparation: 8
+        },
+        nodeStructure: convert(root, [idx], 1)
+      });
     });
+    
+    container.appendChild(forestContainer);
+  } 
+  // Single family
+  else {
+    const singleRoot = Array.isArray(currentTreeData) ? currentTreeData[0] : currentTreeData;
+    if (singleRoot) {
+      new Treant({
+        chart: {
+          container: "#tree",
+          rootOrientation: "NORTH",
+          connectors: { type: "step" },
+          animateOnInit: false,
+          levelSeparation: 12,
+          siblingSeparation: 8,
+          subTeeSeparation: 8
+        },
+        nodeStructure: convert(singleRoot, [], 1)
+      });
+    }
   }
   
   setTimeout(() => {
@@ -311,6 +329,126 @@ async function hapus(path) {
   } catch (err) { alert("Error: " + err.message); }
 }
 
+// ========== UPDATE DROPDOWN ==========
+function updateFamilySelector(data) {
+  const selector = document.getElementById("family-selector");
+  if (!selector) return;
+  
+  // Hapus semua opsi kecuali "all"
+  while (selector.options.length > 1) {
+    selector.remove(1);
+  }
+  
+  if (Array.isArray(data) && data.length > 0) {
+    data.forEach((family, idx) => {
+      const option = document.createElement("option");
+      option.value = (idx + 1).toString();
+      let name = family.name;
+      if (name && name.includes("|")) name = name.split("|")[0].trim();
+      option.text = name || `Keluarga ${idx + 1}`;
+      selector.appendChild(option);
+    });
+  }
+  
+  selector.value = currentFamilyId;
+}
+
+function onFamilyChange() {
+  const selector = document.getElementById("family-selector");
+  currentFamilyId = selector.value;
+  loadTree();
+}
+
+// ========== LOAD TREE ==========
+async function loadTree() {
+  console.log("loadTree mulai, currentFamilyId =", currentFamilyId);
+  
+  try {
+    let data;
+    if (currentFamilyId === "all") {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/get-all-families`);
+      data = await res.json();
+      console.log("Data semua keluarga:", data);
+      if (!data || data.length === 0) data = [];
+    } else {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=${currentFamilyId}`);
+      data = await res.json();
+      console.log("Data satu keluarga:", data);
+    }
+    
+    currentTreeData = data;
+    resetSiblingColors();
+    
+    if (Array.isArray(currentTreeData)) {
+      currentTreeData.forEach(root => assignSiblingGroups(root));
+    } else {
+      assignSiblingGroups(currentTreeData);
+    }
+    
+    renderTree();
+    updateFamilySelector(currentTreeData);
+  } catch (err) {
+    console.error("Gagal load tree:", err);
+    // Fallback ke data test
+    currentTreeData = {
+      name: ">Sekghor |",
+      children: [
+        { name: ">Salama | Tohin", children: [] },
+        { name: ">Ryfan |", children: [] },
+        { name: ">Abd Hary |", children: [] }
+      ]
+    };
+    renderTree();
+  }
+}
+
+// ========== TAMBAH KELUARGA ==========
+async function addNewFamily() {
+  if (!isAdmin) {
+    alert("Hanya admin yang dapat menambah keluarga baru!");
+    return;
+  }
+  
+  const familyName = document.getElementById("new-family-name").value.trim();
+  if (!familyName) {
+    document.getElementById("family-error").innerText = "Nama keluarga tidak boleh kosong!";
+    return;
+  }
+  
+  document.getElementById("family-error").innerText = "";
+  closeAddFamilyModal();
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/add-family`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: familyName })
+    });
+    const result = await res.json();
+    if (result.success) {
+      alert("Keluarga baru berhasil ditambahkan!");
+      currentFamilyId = "all";
+      await loadTree();
+    } else {
+      alert("Gagal: " + (result.error || "Error"));
+    }
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
+
+function showAddFamilyModal() {
+  if (!isAdmin) return;
+  document.getElementById("add-family-modal").style.display = "block";
+  document.getElementById("new-family-name").value = "";
+  document.getElementById("family-error").innerText = "";
+  setTimeout(() => document.getElementById("new-family-name").focus(), 100);
+}
+
+function closeAddFamilyModal() {
+  document.getElementById("add-family-modal").style.display = "none";
+}
+
 // ========== FITUR INFO ==========
 async function showInfo(path) {
   let parsedPath = path;
@@ -318,7 +456,7 @@ async function showInfo(path) {
     try {
       parsedPath = JSON.parse(path);
     } catch(e) {
-      alert("Gagal memuat info");
+      alert("Gagal memuat info. Silakan coba lagi.");
       return;
     }
   }
@@ -331,7 +469,7 @@ async function showInfo(path) {
   }
   
   if (!node) {
-    alert("Node tidak ditemukan");
+    alert("Gagal memuat info. Silakan coba lagi.");
     return;
   }
   
@@ -340,7 +478,7 @@ async function showInfo(path) {
     displayName = displayName.split("|")[0].trim();
   }
   
-  document.getElementById("info-title").innerHTML = `📋 Info: ${escapeHtml(displayName)}`;
+  document.getElementById("info-title").innerHTML = `📋 Info: ${escapeHtml(displayName).replace(/\n/g, '<br>')}`;
   document.getElementById("info-modal").style.display = "block";
 }
 
@@ -357,7 +495,7 @@ function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
-// ========== LOGIN ==========
+// ========== LOGIN MODAL ==========
 function showLoginModal() {
   document.getElementById("login-modal").style.display = "block";
   document.getElementById("pin-input").value = "";
@@ -392,13 +530,15 @@ async function checkPin() {
     if (result.success) {
       isAdmin = true;
       closeLoginModal();
-      alert("Login sebagai Admin berhasil!");
+      alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
+      const addBtn = document.getElementById("add-family-btn");
+      if (addBtn) addBtn.style.display = "inline-block";
       renderTree();
     } else {
       document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
     }
   } catch (err) {
-    document.getElementById("pin-error").innerText = "Gagal verifikasi.";
+    document.getElementById("pin-error").innerText = "Gagal verifikasi. Periksa koneksi.";
   }
 }
 
@@ -414,6 +554,8 @@ document.addEventListener("click", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOMContentLoaded: mulai init");
+  
   document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
   document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
@@ -425,6 +567,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter") checkPin();
   });
   
+  const selector = document.getElementById("family-selector");
+  if (selector) {
+    selector.addEventListener("change", onFamilyChange);
+  }
+  
+  const addBtn = document.getElementById("add-family-btn");
+  if (addBtn) {
+    addBtn.addEventListener("click", showAddFamilyModal);
+  }
+  
+  document.querySelector(".close-family")?.addEventListener("click", closeAddFamilyModal);
+  document.getElementById("submit-family")?.addEventListener("click", addNewFamily);
+  document.getElementById("new-family-name")?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") addNewFamily();
+  });
+  
   loadTree();
 });
 
@@ -434,5 +592,8 @@ window.addEventListener("click", (e) => {
   }
   if (e.target === document.getElementById("info-modal")) {
     closeInfoModal();
+  }
+  if (e.target === document.getElementById("add-family-modal")) {
+    closeAddFamilyModal();
   }
 });
