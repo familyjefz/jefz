@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Tree Silsilah</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1fcff;
+      overflow: auto;
+      min-height: 100vh;
+      padding: 50px;
+    }
+    #tree {
+      position: relative;
+      width: 2000px;
+      height: 1500px;
+    }
+    .node-box {
+      background: #d3d2d29d;
+      border: 1px solid #888888;
+      border-radius: 5px;
+      padding: 4px 6px;
+      min-width: 70px;
+      text-align: center;
+    }
+    .node-name {
+      font-weight: bold;
+      font-size: 9px;
+      margin-bottom: 4px;
+    }
+    .node-buttons {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+      justify-content: center;
+    }
+    .node-buttons button {
+      padding: 2px 4px;
+      font-size: 7px;
+      cursor: pointer;
+      border: none;
+      border-radius: 3px;
+    }
+    .btn-option { background: #717a7c; color: white; }
+    .btn-info { background: #5391c4; color: black; }
+    .node-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 4px;
+    }
+    .node-menu button {
+      font-size: 7px;
+      padding: 2px;
+      border-radius: 3px;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+    .node-menu button:nth-child(1) { background: #4caf50; }
+    .node-menu button:nth-child(2) { background: #2196f3; }
+    .node-menu button:nth-child(3) { background: #f44336; }
+    .node-menu button:nth-child(4) { background: #ff9800; }
+    .node-menu button:nth-child(5) { background: #9c27b0; }
+    .node-input {
+      width: 100%;
+      padding: 4px;
+      margin: 5px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 8px;
+    }
+    .node-actions {
+      display: flex;
+      gap: 3px;
+      margin-top: 3px;
+    }
+    .node-actions button {
+      flex: 1;
+      padding: 2px;
+      border-radius: 3px;
+      font-size: 7px;
+      color: white;
+      cursor: pointer;
+    }
+    .node-actions button:first-child { background: #4caf50; }
+    .node-actions button:last-child { background: #f44336; }
+  </style>
+</head>
+<body>
+<div id="tree"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
+<script>
+// ========== KONFIGURASI ==========
+const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
+let activePath = null;
+let activeMode = null;
+let currentTreeData = null;
+let isAdmin = false;
+let currentZoom = 1;
+
+// ========== WARNA PER SAUDARA ==========
+let siblingColorMap = new Map();
+let nextSiblingGroupId = 1;
+
+function resetSiblingColors() {
+  siblingColorMap.clear();
+  nextSiblingGroupId = 1;
+}
+
+function getOrCreateSiblingColor(siblingGroupId) {
+  if (siblingColorMap.has(siblingGroupId)) {
+    return siblingColorMap.get(siblingGroupId);
+  }
+  const hue = (siblingGroupId * 37) % 360;
+  const color = `hsl(${hue}, 75%, 65%)`;
+  siblingColorMap.set(siblingGroupId, color);
+  return color;
+}
+
+function assignSiblingGroups(node) {
+  if (!node) return;
+  if (node.children && node.children.length > 0) {
+    const childrenGroupId = nextSiblingGroupId++;
+    node.children.forEach(child => {
+      child._siblingGroupId = childrenGroupId;
+      assignSiblingGroups(child);
+    });
+  }
+}
+
+function getNodeColor(node) {
+  if (!node || node._siblingGroupId === undefined) {
+    return `hsl(0, 75%, 65%)`;
+  }
+  return getOrCreateSiblingColor(node._siblingGroupId);
+}
+
+function getNodeByPath(node, path) {
+  if (!path || path.length === 0) return node;
+  let current = node;
+  for (let i = 0; i < path.length; i++) {
+    if (!current.children || !current.children[path[i]]) return null;
+    current = current.children[path[i]];
+  }
+  return current;
+}
+
+function getPathOfNode(root, targetNode) {
+  function search(node, path) {
+    if (node === targetNode) return path;
+    if (node.children) {
+      for (let i = 0; i < node.children.length; i++) {
+        const result = search(node.children[i], [...path, i]);
+        if (result) return result;
+      }
+    }
+    return null;
+  }
+  return search(root, []);
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+}
+
+// ========== LOAD TREE ==========
+async function loadTree() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
+    const data = await res.json();
+    currentTreeData = data;
+    resetSiblingColors();
+    assignSiblingGroups(currentTreeData);
+    renderTree();
+  } catch (err) {
+    console.error("Gagal load tree:", err);
+    alert("Gagal memuat data");
+  }
+}
+
+function renderTree() {
+  const container = document.getElementById("tree");
+  if (!container) return;
+  
+  container.innerHTML = "";
+  
+  new Treant({
+    chart: {
+      container: "#tree",
+      rootOrientation: "NORTH",
+      connectors: { type: "step" },
+      animateOnInit: false,
+      levelSeparation: 12,
+      siblingSeparation: 8,
+      subTeeSeparation: 8
+    },
+    nodeStructure: convert(currentTreeData, [], 1)
+  });
+}
+
+function convert(node, path = [], generation = 1) {
+  const isActiveNode = activePath && JSON.stringify(path) === JSON.stringify(activePath);
+  const borderColor = getNodeColor(node);
+  const inputId = `input-${path.join("-")}`;
+  
+  let innerHTML = "";
+  
+  if (isActiveNode && activeMode && isAdmin) {
+    let inputValue = "";
+    let placeholder = "";
+    if (activeMode === "edit") { inputValue = node.name; placeholder = "Tulis nama (Enter untuk baris baru)"; }
+    else if (activeMode === "add") placeholder = "Tulis nama anak (Enter untuk baris baru)";
+    else if (activeMode === "parent") placeholder = "Tulis nama parent (Enter untuk baris baru)";
+    else if (activeMode === "order") placeholder = "Masukkan nomor urutan (0=pertama)";
+    
+    innerHTML = `
+      <div class="node-box active-node" style="border-left: 4px solid ${borderColor};">
+        <div class="node-name">${escapeHtml(node.name)}</div>
+        <textarea class="node-input" id="${inputId}" 
+          placeholder="${placeholder}" rows="2">${escapeHtml(inputValue)}</textarea>
+        <div class="node-actions">
+          <button onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
+          <button onclick='cancelInline()'>✖ Batal</button>
+        </div>
+      </div>
+    `;
+  }
+  else if (isActiveNode && isAdmin) {
+    innerHTML = `
+      <div class="node-box active-node" style="border-left: 4px solid ${borderColor};">
+        <div class="node-name">${escapeHtml(node.name)}</div>
+        <div class="node-menu">
+          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah Anak</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah Nama</button>
+          <button onclick='hapus(${JSON.stringify(path)})'>❌ Hapus</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Tambah Parent</button>
+          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Ubah Urutan</button>
+        </div>
+      </div>
+    `;
+  }
+  else {
+    const displayName = escapeHtml(node.name).replace(/\n/g, '<br>');
+    let buttons = `<div class="node-buttons"><button class="btn-info" onclick='showInfo(${JSON.stringify(path)})'>📄 Info</button></div>`;
+    if (isAdmin) {
+      buttons = `<div class="node-buttons"><button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>${buttons}</div>`;
+    }
+    
+    innerHTML = `
+      <div class="node-box" style="border-left: 4px solid ${borderColor};">
+        <div class="node-name">${displayName}</div>
+        ${buttons}
+      </div>
+    `;
+  }
+  
+  return {
+    innerHTML: innerHTML,
+    children: node.children?.map((child, i) => convert(child, [...path, i], generation + 1))
+  };
+}
+
+// ========== FUNGSI EDIT ==========
+function openOptions(path) {
+  if (!isAdmin) return;
+  activePath = path;
+  activeMode = null;
+  renderTree();
+}
+
+function setMode(path, mode) {
+  if (!isAdmin) return;
+  activePath = path;
+  activeMode = mode;
+  renderTree();
+}
+
+function cancelInline() {
+  activePath = null;
+  activeMode = null;
+  renderTree();
+}
+
+async function submitInline(path) {
+  if (!isAdmin) return;
+  const input = document.getElementById(`input-${path.join("-")}`);
+  if (!input) return;
+  const val = input.value.trim();
+  if (activeMode !== "order" && !val) { alert("Tidak boleh kosong!"); return; }
+  
+  let action, body = { path };
+  if (activeMode === "add") { action = "add"; body.name = val; }
+  else if (activeMode === "edit") { action = "edit"; body.name = val; }
+  else if (activeMode === "parent") { action = "addParent"; body.name = val; }
+  else if (activeMode === "order") { action = "reorder"; body.position = parseInt(val); if (isNaN(body.position)) { alert("Masukkan angka!"); return; } }
+  else return;
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, ...body })
+    });
+    const result = await res.json();
+    if (result.success) {
+      activePath = null; activeMode = null;
+      await loadTree();
+    } else alert("Gagal: " + (result.error || "Error"));
+  } catch (err) { alert("Error: " + err.message); }
+}
+
+async function hapus(path) {
+  if (!isAdmin) return;
+  if (!confirm("Hapus node ini?")) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", path })
+    });
+    const result = await res.json();
+    if (result.success) {
+      activePath = null; activeMode = null;
+      await loadTree();
+    } else alert("Gagal hapus");
+  } catch (err) { alert("Error: " + err.message); }
+}
+
+// ========== INFO ==========
+function generateInfo(node, familyName) {
+  let spouse = null;
+  if (node.name && node.name.includes("|")) {
+    const parts = node.name.split("|");
+    if (parts.length > 1 && parts[1].trim()) spouse = parts[1].trim();
+  }
+  
+  const children = node.children || [];
+  const childrenList = children.length > 0 ? children.map((c, i) => `${i+1}. ${c.name}`).join('<br>') : null;
+  
+  let grandchildren = [];
+  children.forEach(child => {
+    if (child.children) grandchildren = grandchildren.concat(child.children);
+  });
+  const grandchildrenList = grandchildren.length > 0 ? grandchildren.map((gc, i) => `${i+1}. ${gc.name}`).join('<br>') : null;
+  
+  return `
+    <div class="info-grid">
+      <div><div class="info-label">👤 Nama</div><div class="info-value">${escapeHtml(node.name.split("|")[0].trim())}</div></div>
+      <div><div class="info-label">💑 Pasangan</div><div class="info-value">${spouse || '<span class="empty-info">-</span>'}</div></div>
+      <div><div class="info-label">👶 Anak</div><div class="info-value">${childrenList || '<span class="empty-info">-</span>'}</div></div>
+      <div><div class="info-label">👶 Cucu</div><div class="info-value">${grandchildrenList || '<span class="empty-info">-</span>'}</div></div>
+    </div>
+  `;
+}
+
+function showInfo(path) {
+  let parsedPath = path;
+  if (typeof path === 'string') parsedPath = JSON.parse(path);
+  let node = parsedPath.length === 0 ? currentTreeData : getNodeByPath(currentTreeData, parsedPath);
+  if (!node) return;
+  
+  const displayName = node.name.split("|")[0].trim();
+  const infoHtml = generateInfo(node, "Keluarga");
+  
+  window.parent.postMessage({
+    type: 'showInfo',
+    title: `📋 Info: ${escapeHtml(displayName)}`,
+    body: infoHtml
+  }, '*');
+}
+
+// ========== ZOOM ==========
+function setZoom(zoom) {
+  currentZoom = zoom;
+  document.getElementById("tree").style.transform = `scale(${currentZoom})`;
+  document.getElementById("tree").style.transformOrigin = "top left";
+}
+function zoomIn() { setZoom(currentZoom + 0.1); }
+function zoomOut() { setZoom(currentZoom - 0.1); }
+function zoomReset() { setZoom(1); }
+
+// ========== LISTENER DARI PARENT ==========
+window.addEventListener('message', (e) => {
+  if (e.data.type === 'zoom') {
+    if (e.data.data === 'in') zoomIn();
+    else if (e.data.data === 'out') zoomOut();
+    else if (e.data.data === 'reset') zoomReset();
+  } else if (e.data.type === 'login') {
+    isAdmin = e.data.data;
+    renderTree();
+  }
+});
+
+loadTree();
+</script>
+</body>
+</html>
