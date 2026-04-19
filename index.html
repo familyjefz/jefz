@@ -2,46 +2,61 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Test Silsilah</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silsilah Keluarga</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
   <style>
-    #tree { width: 100%; height: 80vh; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f5f7fb; height: 100vh; overflow: hidden; }
+    .header { background: #fff; padding: 10px; text-align: center; border-bottom: 1px solid #ddd; }
+    .tree-wrapper { height: calc(100vh - 50px); overflow: auto; padding: 20px; }
+    .node-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px; min-width: 100px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .node-name { font-weight: bold; font-size: 12px; }
   </style>
 </head>
 <body>
-<h2>Test Silsilah</h2>
-<div id="tree"></div>
+<div class="header">
+  <h2>Silsilah Keluarga</h2>
+</div>
+<div class="tree-wrapper" id="tree-wrapper">
+  <div id="tree"></div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
 <script>
-// Data statis langsung di sini
-const data = {
-  name: ">Sekghor |",
-  children: [
-    { name: ">Salama | Tohin", children: [] },
-    { name: ">Ryfan |", children: [] },
-    { name: ">Abd Hary |", children: [] }
-  ]
-};
+const SUPABASE_URL = "https://btyrorlzdyisuvnwmrqp.supabase.co";
 
-new Treant({
-  chart: {
-    container: "#tree",
-    rootOrientation: "NORTH",
-    connectors: { type: "step" },
-    animateOnInit: false,
-    levelSeparation: 30,
-    siblingSeparation: 30
-  },
-  nodeStructure: {
-    innerHTML: `<div class="node-box"><div class="node-name">${data.name}</div></div>`,
-    children: data.children.map(child => ({
-      innerHTML: `<div class="node-box"><div class="node-name">${child.name}</div></div>`,
-      children: []
-    }))
+async function loadTree() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
+    const data = await res.json();
+    
+    function convert(node) {
+      return {
+        innerHTML: `<div class="node-box"><div class="node-name">${node.name}</div></div>`,
+        children: node.children?.map(child => convert(child)) || []
+      };
+    }
+    
+    new Treant({
+      chart: {
+        container: "#tree",
+        rootOrientation: "NORTH",
+        connectors: { type: "step" },
+        animateOnInit: false,
+        levelSeparation: 40,
+        siblingSeparation: 40
+      },
+      nodeStructure: convert(data)
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    document.getElementById("tree").innerHTML = `<p style="color:red;padding:20px;">Gagal memuat data: ${err.message}</p>`;
   }
-});
+}
+
+loadTree();
 </script>
 </body>
 </html>
