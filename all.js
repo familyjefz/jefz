@@ -153,30 +153,24 @@ let isAdmin = false;
 
 async function loadTree() {
   try {
-    let data;
-    if (currentFamilyId === "all") {
-      data = await loadAllFamilies();
-      if (!data || data.length === 0) data = [];
-    } else {
-      data = await loadSingleFamily(currentFamilyId);
-    }
-    
-    currentTreeData = data;
+    // DATA STATIS UNTUK TEST
+    currentTreeData = {
+      "name": ">Sekghor |",
+      "children": [
+        { "name": ">Salama | Tohin", "children": [] },
+        { "name": ">Ryfan |", "children": [] },
+        { "name": ">Abd Hary |", "children": [] }
+      ]
+    };
     resetSiblingColors();
-    
-    if (Array.isArray(currentTreeData)) {
-      currentTreeData.forEach(root => assignSiblingGroups(root));
-    } else {
-      assignSiblingGroups(currentTreeData);
-    }
-    
+    assignSiblingGroups(currentTreeData);
     renderTree();
-    updateFamilySelector(currentTreeData);
+    console.log("Load tree dengan data statis berhasil");
   } catch (err) {
     console.error("Gagal load tree:", err);
     alert("Gagal memuat data. Periksa koneksi.");
   }
-}
+        }
 
 function renderTree() {
   const container = document.getElementById("tree");
