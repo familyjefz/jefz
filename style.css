@@ -412,3 +412,12 @@ h2 {
 .custom-popup-buttons button:hover {
   opacity: 0.85;
 }
+/* Tambahkan di akhir file style.css */
+
+.undo-btn, .redo-btn {
+  background: #9c27b0 !important;
+}
+
+.undo-btn:hover, .redo-btn:hover {
+  background: #7b1fa2 !important;
+}
