@@ -4,7 +4,7 @@ let currentFamilyId = "all";
 let currentZoom = 1;
 let isAdmin = false;
 
-// ========== DATA STATIS ==========
+// ========== DATA STATIS SEMENTARA ==========
 const FAMILIES_DATA = [
   {
     name: ">Sekghor |",
@@ -19,6 +19,24 @@ const FAMILIES_DATA = [
     children: []
   }
 ];
+
+// ========== FUNGSI BANTU ==========
+function escapeHtml(str) {
+  if (!str) return "";
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
+function convert(node) {
+  return {
+    innerHTML: `<div class="node-box"><div class="node-name">${escapeHtml(node.name)}</div></div>`,
+    children: node.children?.map(c => convert(c)) || []
+  };
+}
 
 // ========== RENDER TREE ==========
 let currentTreeData = null;
@@ -38,9 +56,10 @@ function renderTree() {
   
   container.innerHTML = "";
   
-  // Jika multi-family (array dengan lebih dari 1 keluarga)
-  if (Array.isArray(currentTreeData) && currentTreeData.length > 1) {
+  // Multi-family (array)
+  if (Array.isArray(currentTreeData) && currentTreeData.length > 0) {
     console.log("Render multi-family, jumlah:", currentTreeData.length);
+    
     const forestContainer = document.createElement("div");
     forestContainer.style.display = "flex";
     forestContainer.style.flexDirection = "row";
@@ -77,14 +96,6 @@ function renderTree() {
       
       forestContainer.appendChild(treeContainer);
       
-      // Konversi sederhana untuk Treant
-      function simpleConvert(node) {
-        return {
-          innerHTML: `<div class="node-box"><div class="node-name">${escapeHtml(node.name)}</div></div>`,
-          children: node.children?.map(child => simpleConvert(child)) || []
-        };
-      }
-      
       new Treant({
         chart: {
           container: `#temp-tree-${idx}`,
@@ -94,7 +105,7 @@ function renderTree() {
           levelSeparation: 30,
           siblingSeparation: 30
         },
-        nodeStructure: simpleConvert(root)
+        nodeStructure: convert(root)
       });
     });
     
@@ -103,13 +114,6 @@ function renderTree() {
   // Single family
   else if (currentTreeData && !Array.isArray(currentTreeData)) {
     console.log("Render single family");
-    function simpleConvert(node) {
-      return {
-        innerHTML: `<div class="node-box"><div class="node-name">${escapeHtml(node.name)}</div></div>`,
-        children: node.children?.map(child => simpleConvert(child)) || []
-      };
-    }
-    
     new Treant({
       chart: {
         container: "#tree",
@@ -119,7 +123,7 @@ function renderTree() {
         levelSeparation: 30,
         siblingSeparation: 30
       },
-      nodeStructure: simpleConvert(currentTreeData)
+      nodeStructure: convert(currentTreeData)
     });
   }
   
@@ -135,16 +139,6 @@ function renderTree() {
       }
     }
   }, 100);
-}
-
-function escapeHtml(str) {
-  if (!str) return "";
-  return str.replace(/[&<>]/g, function(m) {
-    if (m === '&') return '&amp;';
-    if (m === '<') return '&lt;';
-    if (m === '>') return '&gt;';
-    return m;
-  });
 }
 
 // ========== LOAD TREE ==========
@@ -249,16 +243,16 @@ async function checkPin() {
   }
 }
 
-// ========== FUNGSI KOSONG ==========
-function openOptions(path) {}
+// ========== FUNGSI KOSONG UNTUK SEMENTARA ==========
+function openOptions(path) { alert("Fitur edit akan segera hadir"); }
 function setMode(path, mode) {}
 function cancelInline() {}
-async function submitInline(path) {}
-async function hapus(path) {}
+async function submitInline(path) { alert("Fitur edit akan segera hadir"); }
+async function hapus(path) { alert("Fitur hapus akan segera hadir"); }
 async function addNewFamily() { alert("Fitur tambah keluarga akan segera hadir"); }
 function showAddFamilyModal() {}
 function closeAddFamilyModal() {}
-async function showInfo(path) { alert("Info: " + path); }
+async function showInfo(path) { alert("Info: " + JSON.stringify(path)); }
 function getCurrentScroll() { return { left: 800, top: 400 }; }
 function restoreScroll(left, top) {}
 
