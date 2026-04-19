@@ -75,6 +75,74 @@ function escapeHtml(str) {
   });
 }
 
+// ========== FUNGSI CLEAN DATA ==========
+function cleanData(node) {
+  if (!node) return node;
+  const cleanNode = { ...node };
+  delete cleanNode._siblingGroupId;
+  if (cleanNode.children && Array.isArray(cleanNode.children)) {
+    cleanNode.children = cleanNode.children.map(child => cleanData(child));
+  }
+  return cleanNode;
+}
+
+// ========== LOAD DARI SUPABASE ==========
+async function loadAllFamilies() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-all-families`);
+    const data = await res.json();
+    console.log("Raw data dari get-all-families:", data);
+    
+    if (Array.isArray(data)) {
+      return data.map(family => cleanData(family));
+    }
+    return [];
+  } catch (err) {
+    console.error("Gagal load semua keluarga:", err);
+    return [];
+  }
+}
+
+async function loadSingleFamily(id) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=${id}`);
+    const data = await res.json();
+    return cleanData(data);
+  } catch (err) {
+    console.error("Gagal load keluarga:", err);
+    return null;
+  }
+}
+
+// ========== UPDATE DROPDOWN ==========
+function updateFamilySelector(data) {
+  const selector = document.getElementById("family-selector");
+  if (!selector) return;
+  
+  while (selector.options.length > 1) {
+    selector.remove(1);
+  }
+  
+  if (Array.isArray(data) && data.length > 0) {
+    data.forEach((family, idx) => {
+      const option = document.createElement("option");
+      option.value = (idx + 1).toString();
+      let name = family.name;
+      if (name && name.includes("|")) name = name.split("|")[0].trim();
+      option.text = name || `Keluarga ${idx + 1}`;
+      selector.appendChild(option);
+    });
+  }
+  
+  selector.value = currentFamilyId;
+}
+
+function onFamilyChange() {
+  const selector = document.getElementById("family-selector");
+  currentFamilyId = selector.value;
+  loadTree();
+}
+
 // ========== RENDER TREE ==========
 let activePath = null;
 let activeMode = null;
@@ -91,7 +159,6 @@ function renderTree() {
   
   container.innerHTML = "";
   
-  // Multi-family (array dengan lebih dari 1 keluarga)
   if (Array.isArray(currentTreeData) && currentTreeData.length > 1) {
     const forestContainer = document.createElement("div");
     forestContainer.style.display = "flex";
@@ -144,9 +211,7 @@ function renderTree() {
     });
     
     container.appendChild(forestContainer);
-  } 
-  // Single family
-  else {
+  } else {
     const singleRoot = Array.isArray(currentTreeData) ? currentTreeData[0] : currentTreeData;
     if (singleRoot) {
       new Treant({
@@ -329,51 +394,19 @@ async function hapus(path) {
   } catch (err) { alert("Error: " + err.message); }
 }
 
-// ========== UPDATE DROPDOWN ==========
-function updateFamilySelector(data) {
-  const selector = document.getElementById("family-selector");
-  if (!selector) return;
-  
-  // Hapus semua opsi kecuali "all"
-  while (selector.options.length > 1) {
-    selector.remove(1);
-  }
-  
-  if (Array.isArray(data) && data.length > 0) {
-    data.forEach((family, idx) => {
-      const option = document.createElement("option");
-      option.value = (idx + 1).toString();
-      let name = family.name;
-      if (name && name.includes("|")) name = name.split("|")[0].trim();
-      option.text = name || `Keluarga ${idx + 1}`;
-      selector.appendChild(option);
-    });
-  }
-  
-  selector.value = currentFamilyId;
-}
-
-function onFamilyChange() {
-  const selector = document.getElementById("family-selector");
-  currentFamilyId = selector.value;
-  loadTree();
-}
-
-// ========== LOAD TREE ==========
+// ========== LOAD TREE (AMBIL DARI SUPABASE) ==========
 async function loadTree() {
   console.log("loadTree mulai, currentFamilyId =", currentFamilyId);
   
   try {
     let data;
     if (currentFamilyId === "all") {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/get-all-families`);
-      data = await res.json();
-      console.log("Data semua keluarga:", data);
+      data = await loadAllFamilies();
+      console.log("Data semua keluarga setelah clean:", data);
       if (!data || data.length === 0) data = [];
     } else {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=${currentFamilyId}`);
-      data = await res.json();
-      console.log("Data satu keluarga:", data);
+      data = await loadSingleFamily(currentFamilyId);
+      console.log("Data satu keluarga setelah clean:", data);
     }
     
     currentTreeData = data;
@@ -381,7 +414,7 @@ async function loadTree() {
     
     if (Array.isArray(currentTreeData)) {
       currentTreeData.forEach(root => assignSiblingGroups(root));
-    } else {
+    } else if (currentTreeData) {
       assignSiblingGroups(currentTreeData);
     }
     
@@ -389,16 +422,7 @@ async function loadTree() {
     updateFamilySelector(currentTreeData);
   } catch (err) {
     console.error("Gagal load tree:", err);
-    // Fallback ke data test
-    currentTreeData = {
-      name: ">Sekghor |",
-      children: [
-        { name: ">Salama | Tohin", children: [] },
-        { name: ">Ryfan |", children: [] },
-        { name: ">Abd Hary |", children: [] }
-      ]
-    };
-    renderTree();
+    alert("Gagal memuat data. Periksa koneksi.");
   }
 }
 
