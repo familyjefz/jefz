@@ -73,12 +73,29 @@ function escapeHtml(str) {
   });
 }
 
+// ========== CLEAN DATA FUNCTION ==========
+function cleanData(node) {
+  if (!node) return node;
+  const cleanNode = { ...node };
+  delete cleanNode._siblingGroupId;
+  if (cleanNode.children && Array.isArray(cleanNode.children)) {
+    cleanNode.children = cleanNode.children.map(child => cleanData(child));
+  }
+  return cleanNode;
+}
+
 // ========== LOAD SEMUA KELUARGA ==========
 async function loadAllFamilies() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-all-families`);
     const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    
+    if (Array.isArray(data)) {
+      return data.map(family => cleanData(family));
+    } else if (data && typeof data === 'object') {
+      return [cleanData(data)];
+    }
+    return [];
   } catch (err) {
     console.error("Gagal load semua keluarga:", err);
     return [];
@@ -89,7 +106,7 @@ async function loadSingleFamily(id) {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=${id}`);
     const data = await res.json();
-    return data;
+    return cleanData(data);
   } catch (err) {
     console.error("Gagal load keluarga:", err);
     return null;
@@ -761,7 +778,6 @@ async function checkPin() {
       isAdmin = true;
       closeLoginModal();
       alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
-      // Tampilkan tombol tambah keluarga
       const addBtn = document.getElementById("add-family-btn");
       if (addBtn) addBtn.style.display = "inline-block";
       renderTree();
@@ -787,12 +803,9 @@ document.addEventListener("click", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOMContentLoaded: mulai init");
   
-  // Zoom buttons
   document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
   document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
-  
-  // Login
   document.getElementById("login-btn")?.addEventListener("click", showLoginModal);
   document.querySelector(".close")?.addEventListener("click", closeLoginModal);
   document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
@@ -801,19 +814,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter") checkPin();
   });
   
-  // Family selector
   const selector = document.getElementById("family-selector");
   if (selector) {
     selector.addEventListener("change", onFamilyChange);
   }
   
-  // Add family button
   const addBtn = document.getElementById("add-family-btn");
   if (addBtn) {
     addBtn.addEventListener("click", showAddFamilyModal);
   }
   
-  // Modal tambah keluarga
   document.querySelector(".close-family")?.addEventListener("click", closeAddFamilyModal);
   document.getElementById("submit-family")?.addEventListener("click", addNewFamily);
   document.getElementById("new-family-name")?.addEventListener("keypress", (e) => {
