@@ -41,7 +41,7 @@ h2 {
 }
 
 .zoom-controls button {
-  background: #607d8b;
+  background: #000000;
   color: white;
   border: none;
   padding: 4px 10px;
@@ -52,21 +52,21 @@ h2 {
 }
 
 .zoom-controls button:hover {
-  background: #455a64;
+  background: #00a8f7;
 }
 
 .login-btn {
-  background: #4caf50 !important;
+  background: #000000 !important;
 }
 
 .login-btn:hover {
-  background: #45a049 !important;
+  background: #00a8f7 !important;
 }
 
 .tree-wrapper {
   flex: 1;
   overflow: auto;
-  background: #f5f7fb;
+  background: #f1fcff;
   position: relative;
 }
 
@@ -84,8 +84,8 @@ h2 {
 }
 
 .node-box {
-  background: #fff;
-  border: 1px solid #ddd;
+  background: #d3d2d29d;
+  border: 1px solid #888888;
   border-radius: 5px;
   padding: 4px 6px;
   min-width: 70px;
@@ -129,8 +129,8 @@ h2 {
 }
 
 .btn-option {
-  background: #607d8b;
-  color: white;
+  background: #717a7c;
+  color: #f1fcff;
 }
 
 .btn-option:hover {
@@ -138,8 +138,8 @@ h2 {
 }
 
 .btn-info {
-  background: #2196f3;
-  color: white;
+  background: #5391c4;
+  color: #000000fd;
 }
 
 .btn-info:hover {
@@ -213,7 +213,7 @@ h2 {
   top: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.247);
+  background: rgba(0, 0, 0, 0.014);
 }
 
 .modal-content {
@@ -236,8 +236,8 @@ h2 {
 
 .modal-header {
   padding: 15px;
-  background: #4caf50;
-  color: white;
+  background: #76abc4;
+  color: black;
   border-radius: 10px 10px 0 0;
   display: flex;
   justify-content: space-between;
@@ -254,7 +254,7 @@ h2 {
 }
 
 .close, .close-info {
-  color: white;
+  color: rgba(0, 0, 0, 0.979);
   font-size: 28px;
   font-weight: bold;
   cursor: pointer;
@@ -273,14 +273,15 @@ h2 {
   padding: 10px;
   margin: 10px 0;
   border: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0);
   border-radius: 5px;
   font-size: 16px;
   text-align: center;
 }
 
 .pin-submit {
-  background: #4caf50;
-  color: white;
+  background: #52525254;
+  color: rgb(0, 0, 0);
   border: none;
   padding: 10px 20px;
   border-radius: 5px;
@@ -290,7 +291,7 @@ h2 {
 }
 
 .pin-submit:hover {
-  background: #45a049;
+  background: #5f5f5f4b;
 }
 
 .pin-error {
