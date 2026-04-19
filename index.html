@@ -4,89 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Silsilah Keluarga</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: #f1fcff;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    .app-container {
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .header {
-      background: #8cabe5;
-      flex-shrink: 0;
-      border-bottom: 1px solid #ddd;
-      padding: 8px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      position: relative;
-      z-index: 10;
-    }
-
-    h2 {
-      margin: 0;
-      font-size: 16px;
-      color: #fff;
-    }
-
-    .zoom-controls {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .zoom-controls button {
-      background: #000000;
-      color: white;
-      border: none;
-      padding: 4px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    .zoom-controls button:hover {
-      background: #00a8f7;
-    }
-
-    .login-btn {
-      background: #000000 !important;
-    }
-
-    .login-btn:hover {
-      background: #00a8f7 !important;
-    }
-
-    .iframe-container {
-      flex: 1;
-      position: relative;
-      background: #f1fcff;
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-      background: #f1fcff;
-    }
-  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app-container">
@@ -99,8 +18,10 @@
       <button id="login-btn" class="login-btn">👤 Login Admin</button>
     </div>
   </div>
-  <div class="iframe-container">
-    <iframe id="tree-iframe" src="tree.html"></iframe>
+  <div class="tree-wrapper" id="tree-wrapper">
+    <div class="tree-zoom-container" id="tree-zoom-container">
+      <div id="tree"></div>
+    </div>
   </div>
 </div>
 
@@ -131,124 +52,11 @@
   </div>
 </div>
 
-<script>
-// Komunikasi dengan iframe
-const iframe = document.getElementById('tree-iframe');
-
-function sendToIframe(type, data) {
-  iframe.contentWindow.postMessage({ type, data }, '*');
-}
-
-// Zoom
-document.getElementById('zoom-in').onclick = () => sendToIframe('zoom', 'in');
-document.getElementById('zoom-out').onclick = () => sendToIframe('zoom', 'out');
-document.getElementById('zoom-reset').onclick = () => sendToIframe('zoom', 'reset');
-
-// Login
-document.getElementById('login-btn').onclick = () => document.getElementById('login-modal').style.display = 'block';
-document.querySelector('.close').onclick = () => document.getElementById('login-modal').style.display = 'none';
-document.querySelector('.close-info').onclick = () => document.getElementById('info-modal').style.display = 'none';
-document.getElementById('submit-pin').onclick = async () => {
-  const pin = document.getElementById('pin-input').value;
-  const res = await fetch('https://btyrorlzdyisuvnwmrqp.supabase.co/functions/v1/check-pin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pin })
-  });
-  const result = await res.json();
-  if (result.success) {
-    document.getElementById('login-modal').style.display = 'none';
-    sendToIframe('login', true);
-    alert('Login berhasil');
-  } else {
-    document.getElementById('pin-error').innerText = 'PIN salah';
-  }
-};
-
-// Terima pesan dari iframe (info)
-window.addEventListener('message', (e) => {
-  if (e.data.type === 'showInfo') {
-    document.getElementById('info-title').innerHTML = e.data.title;
-    document.getElementById('info-body').innerHTML = e.data.body;
-    document.getElementById('info-modal').style.display = 'block';
-  }
-});
-</script>
-
-<style>
-  /* Modal styles */
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-  }
-  .modal-content {
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    margin: 10% auto;
-    padding: 0;
-    width: 90%;
-    max-width: 400px;
-    border-radius: 10px;
-    box-shadow: 0 4px 20px rgb(158, 232, 255);
-  }
-  .info-modal-content { max-width: 600px; max-height: 80vh; overflow-y: auto; }
-  .modal-header {
-    padding: 15px;
-    background: #76abc4;
-    color: black;
-    border-radius: 10px 10px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .info-header { background: #8cabe5; }
-  .modal-header h3 { margin: 0; font-size: 18px; }
-  .close, .close-info {
-    color: rgba(0,0,0,0.979);
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .close:hover, .close-info:hover { color: #ddd; }
-  .modal-body { padding: 20px; }
-  .pin-input {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    background: rgba(255,255,255,0.9);
-    border-radius: 5px;
-    font-size: 16px;
-    text-align: center;
-  }
-  .pin-submit {
-    background: #52525254;
-    color: rgb(0,0,0);
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    width: 100%;
-  }
-  .pin-submit:hover { background: #5f5f5f4b; }
-  .pin-error { color: red; font-size: 12px; margin: 5px 0; }
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 15px;
-  }
-  .info-label { font-weight: bold; color: #2196f3; font-size: 12px; }
-  .info-value { color: #333; font-size: 11px; line-height: 1.4; margin-top: 3px; }
-  .empty-info { color: #999; font-style: italic; }
-  @media (max-width:600px) { .info-grid { grid-template-columns: 1fr; } }
-</style>
+<script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
+<script src="config.js"></script>
+<script src="family-tree.js"></script>
+<script src="family-info.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
