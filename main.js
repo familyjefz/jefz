@@ -281,11 +281,44 @@ async function hapusNodeOnly(path) {
     
     // Jika path kosong (root node)
     if (!path || path.length === 0) {
-      showCustomPopup("Tidak bisa menghapus root node! Gunakan 'Hapus dengan keturunan' untuk menghapus seluruh keluarga.", "Peringatan");
+      // Root node dihapus, anak pertama (paling kiri) menjadi root baru
+      if (!currentTreeData.children || currentTreeData.children.length === 0) {
+        showCustomPopup("Tidak ada anak yang bisa menjadi root baru!", "Peringatan");
+        return;
+      }
+      
+      const anakPertama = currentTreeData.children[0];
+      const sisaAnak = currentTreeData.children.slice(1);
+      
+      // Root baru adalah anak pertama
+      currentTreeData = anakPertama;
+      
+      // Tambahkan sisa anak ke root baru
+      if (sisaAnak.length > 0) {
+        if (!currentTreeData.children) currentTreeData.children = [];
+        currentTreeData.children.push(...sisaAnak);
+      }
+      
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "replace", data: currentTreeData })
+      });
+      
+      const result = await res.json();
+      
+      if (result.success) {
+        activePath = null;
+        activeMode = null;
+        await loadTree();
+        showCustomPopup("Root berhasil dihapus. '" + anakPertama.name.split("|")[0].trim() + "' menjadi root baru.", "Sukses");
+      } else {
+        showCustomPopup("Gagal menghapus root: " + (result.error || "Error"), "Error");
+      }
       return;
     }
     
-    // Dapatkan parent dan node
+    // Untuk node non-root
     const parentPath = path.slice(0, -1);
     const nodeIndex = path[path.length - 1];
     let parent = null;
@@ -307,20 +340,16 @@ async function hapusNodeOnly(path) {
       return;
     }
     
-    // Ambil anak-anak dari node yang akan dihapus
     const grandchildren = nodeToDelete.children || [];
     
-    // Hapus node
     parent.children.splice(nodeIndex, 1);
     
-    // Masukkan anak-anak ke posisi yang sama
     if (grandchildren.length > 0) {
       for (let i = 0; i < grandchildren.length; i++) {
         parent.children.splice(nodeIndex + i, 0, grandchildren[i]);
       }
     }
     
-    // Simpan ke Supabase
     const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -351,16 +380,11 @@ async function hapusWithChildren(path) {
     
     // Jika path kosong (root node)
     if (!path || path.length === 0) {
-      showCustomPopup("Apakah Anda yakin ingin menghapus seluruh keluarga ini?", "Konfirmasi Hapus", async () => {
+      showCustomPopup("Apakah Anda yakin ingin menghapus seluruh silsilah?", "Konfirmasi Hapus Semua", async () => {
         try {
-          // Buat data kosong
           currentTreeData = {
-            name: ">Sekghor |",
-            children: [
-              { name: ">Salama | Tohin", children: [] },
-              { name: ">Ryfan |", children: [] },
-              { name: ">Abd Hary |", children: [] }
-            ]
+            name: ">Root |",
+            children: []
           };
           
           const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
@@ -374,7 +398,7 @@ async function hapusWithChildren(path) {
             activePath = null;
             activeMode = null;
             await loadTree();
-            showCustomPopup("Seluruh keluarga berhasil direset", "Sukses");
+            showCustomPopup("Seluruh silsilah berhasil dihapus.", "Sukses");
           } else {
             showCustomPopup("Gagal hapus: " + (result.error || "Error"), "Error");
           }
