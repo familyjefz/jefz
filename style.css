@@ -364,3 +364,58 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+/* Tambahan untuk multi-family */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.family-selector {
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background: white;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.add-family-btn {
+  background: #ff9800 !important;
+}
+
+.add-family-btn:hover {
+  background: #e68900 !important;
+}
+
+/* Forest container untuk multi-tree */
+.forest-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 50px;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+.tree-container {
+  display: inline-block;
+  vertical-align: top;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255,255,255,0.5);
+}
+
+.tree-title {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 10px;
+  padding: 5px;
+  background: #f0f0f0;
+  border-radius: 5px;
+}
