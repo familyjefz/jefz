@@ -335,3 +335,31 @@ h2 {
     grid-template-columns: 1fr;
   }
 }
+/* Tambahkan di AKHIR file style.css Anda */
+
+/* Dropdown pilih keluarga */
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.family-selector {
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background: white;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.add-family-btn {
+  background: #ff9800 !important;
+}
+
+.add-family-btn:hover {
+  background: #e68900 !important;
+}
