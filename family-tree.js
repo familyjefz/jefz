@@ -1,92 +1,81 @@
-let siblingColorMap = new Map();
-let nextSiblingGroupId = 1;
-
-function resetSiblingColors() {
-  siblingColorMap.clear();
-  nextSiblingGroupId = 1;
-}
-
-function getOrCreateSiblingColor(siblingGroupId) {
-  if (siblingColorMap.has(siblingGroupId)) {
-    return siblingColorMap.get(siblingGroupId);
-  }
-  const hue = (siblingGroupId * 37) % 360;
-  const color = `hsl(${hue}, 75%, 65%)`;
-  siblingColorMap.set(siblingGroupId, color);
-  return color;
-}
-
-function assignSiblingGroups(node) {
-  if (!node) return;
-  if (node.children && node.children.length > 0) {
-    const childrenGroupId = nextSiblingGroupId++;
-    node.children.forEach(child => {
-      child._siblingGroupId = childrenGroupId;
-      assignSiblingGroups(child);
-    });
+// ========== LOAD ALL FAMILIES ==========
+async function loadAllFamilies() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-all-families`);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("Gagal load semua keluarga:", err);
+    return [];
   }
 }
 
-function getNodeColor(node) {
-  if (!node || node._siblingGroupId === undefined) {
-    return `hsl(0, 75%, 65%)`;
-  }
-  return getOrCreateSiblingColor(node._siblingGroupId);
-}
-
-function getNodeByPath(node, path) {
-  if (!path || path.length === 0) return node;
-  let current = node;
-  for (let i = 0; i < path.length; i++) {
-    if (!current.children || !current.children[path[i]]) return null;
-    current = current.children[path[i]];
-  }
-  return current;
-}
-
-function getPathOfNode(root, targetNode) {
-  function search(node, path) {
-    if (node === targetNode) return path;
-    if (node.children) {
-      for (let i = 0; i < node.children.length; i++) {
-        const result = search(node.children[i], [...path, i]);
-        if (result) return result;
-      }
-    }
+async function loadSingleFamily(id) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=${id}`);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("Gagal load keluarga:", err);
     return null;
   }
-  return search(root, []);
 }
-
-function escapeHtml(str) {
-  if (!str) return "";
-  return str.replace(/[&<>]/g, function(m) {
-    if (m === '&') return '&amp;';
-    if (m === '<') return '&lt;';
-    if (m === '>') return '&gt;';
-    return m;
-  });
-}
-
-let activePath = null;
-let activeMode = null;
-let currentTreeData = null;
-let isFirstLoad = true;
-let currentZoom = 1;
-let isAdmin = false;
 
 async function loadTree() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree`);
-    const data = await res.json();
+    let data;
+    if (CURRENT_FAMILY_ID === "all") {
+      data = await loadAllFamilies();
+      if (!data || data.length === 0) data = [];
+    } else {
+      data = await loadSingleFamily(CURRENT_FAMILY_ID);
+    }
+    
     currentTreeData = data;
     resetSiblingColors();
-    assignSiblingGroups(currentTreeData);
+    
+    if (Array.isArray(currentTreeData)) {
+      currentTreeData.forEach(root => assignSiblingGroups(root));
+    } else {
+      assignSiblingGroups(currentTreeData);
+    }
+    
     renderTree();
+    updateFamilySelector();
   } catch (err) {
     console.error("Gagal load tree:", err);
     alert("Gagal memuat data. Periksa koneksi.");
   }
+}
+
+function updateFamilySelector() {
+  const selector = document.getElementById("family-selector");
+  if (!selector) return;
+  
+  if (Array.isArray(currentTreeData) && currentTreeData.length > 0) {
+    while (selector.options.length > 1) {
+      selector.remove(1);
+    }
+    
+    currentTreeData.forEach((family, idx) => {
+      const option = document.createElement("option");
+      option.value = idx + 1;
+      let displayName = family.name;
+      if (displayName && displayName.includes("|")) {
+        displayName = displayName.split("|")[0].trim();
+      }
+      option.text = displayName || `Keluarga ${idx + 1}`;
+      selector.appendChild(option);
+    });
+  }
+  
+  selector.value = CURRENT_FAMILY_ID;
+}
+
+function onFamilyChange() {
+  const selector = document.getElementById("family-selector");
+  CURRENT_FAMILY_ID = selector.value;
+  loadTree();
 }
 
 function renderTree() {
@@ -99,18 +88,77 @@ function renderTree() {
   
   container.innerHTML = "";
   
-  new Treant({
-    chart: {
-      container: "#tree",
-      rootOrientation: "NORTH",
-      connectors: { type: "step" },
-      animateOnInit: false,
-      levelSeparation: 12,
-      siblingSeparation: 8,
-      subTeeSeparation: 8
-    },
-    nodeStructure: convert(currentTreeData, [], 1)
-  });
+  if (Array.isArray(currentTreeData) && currentTreeData.length > 1) {
+    const forestContainer = document.createElement("div");
+    forestContainer.style.display = "flex";
+    forestContainer.style.flexDirection = "row";
+    forestContainer.style.justifyContent = "center";
+    forestContainer.style.alignItems = "flex-start";
+    forestContainer.style.gap = "50px";
+    forestContainer.style.flexWrap = "wrap";
+    forestContainer.style.padding = "20px";
+    
+    currentTreeData.forEach((root, idx) => {
+      const treeContainer = document.createElement("div");
+      treeContainer.style.display = "inline-block";
+      treeContainer.style.verticalAlign = "top";
+      treeContainer.style.border = "1px solid #ddd";
+      treeContainer.style.borderRadius = "10px";
+      treeContainer.style.padding = "10px";
+      treeContainer.style.backgroundColor = "rgba(255,255,255,0.5)";
+      
+      const title = document.createElement("div");
+      title.style.textAlign = "center";
+      title.style.fontWeight = "bold";
+      title.style.marginBottom = "10px";
+      title.style.padding = "5px";
+      title.style.backgroundColor = "#f0f0f0";
+      title.style.borderRadius = "5px";
+      let displayName = root.name;
+      if (displayName && displayName.includes("|")) {
+        displayName = displayName.split("|")[0].trim();
+      }
+      title.innerText = displayName;
+      treeContainer.appendChild(title);
+      
+      const tempDiv = document.createElement("div");
+      tempDiv.id = `temp-tree-${idx}`;
+      treeContainer.appendChild(tempDiv);
+      
+      forestContainer.appendChild(treeContainer);
+      
+      new Treant({
+        chart: {
+          container: `#temp-tree-${idx}`,
+          rootOrientation: "NORTH",
+          connectors: { type: "step" },
+          animateOnInit: false,
+          levelSeparation: 12,
+          siblingSeparation: 8,
+          subTeeSeparation: 8
+        },
+        nodeStructure: convert(root, [idx], 1)
+      });
+    });
+    
+    container.appendChild(forestContainer);
+  } else {
+    const singleRoot = Array.isArray(currentTreeData) ? currentTreeData[0] : currentTreeData;
+    if (singleRoot) {
+      new Treant({
+        chart: {
+          container: "#tree",
+          rootOrientation: "NORTH",
+          connectors: { type: "step" },
+          animateOnInit: false,
+          levelSeparation: 12,
+          siblingSeparation: 8,
+          subTeeSeparation: 8
+        },
+        nodeStructure: convert(singleRoot, [], 1)
+      });
+    }
+  }
   
   setTimeout(() => {
     if (wrapper) {
@@ -126,153 +174,49 @@ function renderTree() {
   }, 100);
 }
 
-function convert(node, path = [], generation = 1) {
-  const isActiveNode = activePath && JSON.stringify(path) === JSON.stringify(activePath);
-  const borderColor = getNodeColor(node);
-  const inputId = `input-${path.join("-")}`;
-  
-  let innerHTML = "";
-  
-  if (isActiveNode && activeMode && isAdmin) {
-    let inputValue = "";
-    let placeholder = "";
-    if (activeMode === "edit") { inputValue = node.name; placeholder = "Tulis nama (Enter untuk baris baru)"; }
-    else if (activeMode === "add") placeholder = "Tulis nama anak (Enter untuk baris baru)";
-    else if (activeMode === "parent") placeholder = "Tulis nama parent (Enter untuk baris baru)";
-    else if (activeMode === "order") placeholder = "Masukkan nomor urutan (0=pertama)";
-    
-    innerHTML = `
-      <div class="node-box active-node" style="border-left: 4px solid ${borderColor};">
-        <div class="node-name">${escapeHtml(node.name)}</div>
-        <textarea class="node-input" id="${inputId}" 
-          placeholder="${placeholder}" rows="2">${escapeHtml(inputValue)}</textarea>
-        <div class="node-actions">
-          <button onclick='submitInline(${JSON.stringify(path)})'>✔ Simpan</button>
-          <button onclick='cancelInline()'>✖ Batal</button>
-        </div>
-      </div>
-    `;
+// ========== TAMBAH KELUARGA BARU ==========
+async function addNewFamily() {
+  if (!isAdmin) {
+    alert("Hanya admin yang dapat menambah keluarga baru!");
+    return;
   }
-  else if (isActiveNode && isAdmin) {
-    innerHTML = `
-      <div class="node-box active-node" style="border-left: 4px solid ${borderColor};">
-        <div class="node-name">${escapeHtml(node.name)}</div>
-        <div class="node-menu">
-          <button onclick='setMode(${JSON.stringify(path)}, "add")'>➕ Tambah Anak</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "edit")'>✏️ Ubah Nama</button>
-          <button onclick='hapus(${JSON.stringify(path)})'>❌ Hapus</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "parent")'>⬆️ Tambah Parent</button>
-          <button onclick='setMode(${JSON.stringify(path)}, "order")'>🔢 Ubah Urutan</button>
-        </div>
-      </div>
-    `;
+  
+  const familyName = document.getElementById("new-family-name").value.trim();
+  if (!familyName) {
+    document.getElementById("family-error").innerText = "Nama keluarga tidak boleh kosong!";
+    return;
   }
-  else {
-    const displayName = escapeHtml(node.name).replace(/\n/g, '<br>');
-    let buttons = `<button class="btn-info" onclick='showInfo(${JSON.stringify(path)})'>📄 Info</button>`;
-    if (isAdmin) {
-      buttons = `<button class="btn-option" onclick='openOptions(${JSON.stringify(path)})'>⚙️ Option</button>${buttons}`;
+  
+  document.getElementById("family-error").innerText = "";
+  closeAddFamilyModal();
+  
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/add-family`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: familyName })
+    });
+    const result = await res.json();
+    if (result.success) {
+      alert("Keluarga baru berhasil ditambahkan!");
+      CURRENT_FAMILY_ID = "all";
+      await loadTree();
+    } else {
+      alert("Gagal: " + (result.error || "Error"));
     }
-    
-    innerHTML = `
-      <div class="node-box" style="border-left: 4px solid ${borderColor};">
-        <div class="node-name">${displayName}</div>
-        <div class="node-buttons">
-          ${buttons}
-        </div>
-      </div>
-    `;
-  }
-  
-  return {
-    innerHTML: innerHTML,
-    children: node.children?.map((child, i) => convert(child, [...path, i], generation + 1))
-  };
-}
-
-function getCurrentScroll() {
-  const w = document.getElementById("tree-wrapper");
-  return { left: w ? w.scrollLeft : 800, top: w ? w.scrollTop : 400 };
-}
-
-function restoreScroll(left, top) {
-  const w = document.getElementById("tree-wrapper");
-  if (w) {
-    setTimeout(() => {
-      w.scrollLeft = left;
-      w.scrollTop = top;
-    }, 50);
+  } catch (err) {
+    alert("Error: " + err.message);
   }
 }
 
-function openOptions(path) {
+function showAddFamilyModal() {
   if (!isAdmin) return;
-  const scroll = getCurrentScroll();
-  activePath = path;
-  activeMode = null;
-  renderTree();
-  restoreScroll(scroll.left, scroll.top);
+  document.getElementById("add-family-modal").style.display = "block";
+  document.getElementById("new-family-name").value = "";
+  document.getElementById("family-error").innerText = "";
+  setTimeout(() => document.getElementById("new-family-name").focus(), 100);
 }
 
-function setMode(path, mode) {
-  if (!isAdmin) return;
-  const scroll = getCurrentScroll();
-  activePath = path;
-  activeMode = mode;
-  renderTree();
-  restoreScroll(scroll.left, scroll.top);
-}
-
-function cancelInline() {
-  if (!isAdmin) return;
-  const scroll = getCurrentScroll();
-  activePath = null;
-  activeMode = null;
-  renderTree();
-  restoreScroll(scroll.left, scroll.top);
-}
-
-async function submitInline(path) {
-  if (!isAdmin) return;
-  const input = document.getElementById(`input-${path.join("-")}`);
-  if (!input) return;
-  const val = input.value.trim();
-  if (activeMode !== "order" && !val) { alert("Tidak boleh kosong!"); return; }
-  
-  let action, body = { path };
-  if (activeMode === "add") { action = "add"; body.name = val; }
-  else if (activeMode === "edit") { action = "edit"; body.name = val; }
-  else if (activeMode === "parent") { action = "addParent"; body.name = val; }
-  else if (activeMode === "order") { action = "reorder"; body.position = parseInt(val); if (isNaN(body.position)) { alert("Masukkan angka!"); return; } }
-  else return;
-  
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, ...body })
-    });
-    const result = await res.json();
-    if (result.success) {
-      activePath = null; activeMode = null;
-      await loadTree();
-    } else alert("Gagal: " + (result.error || "Error"));
-  } catch (err) { alert("Error: " + err.message); }
-}
-
-async function hapus(path) {
-  if (!isAdmin) return;
-  if (!confirm("Hapus node ini?")) return;
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete", path })
-    });
-    const result = await res.json();
-    if (result.success) {
-      activePath = null; activeMode = null;
-      await loadTree();
-    } else alert("Gagal hapus");
-  } catch (err) { alert("Error: " + err.message); }
+function closeAddFamilyModal() {
+  document.getElementById("add-family-modal").style.display = "none";
 }
