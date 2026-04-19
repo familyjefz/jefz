@@ -6,7 +6,7 @@
   <title>Silsilah Keluarga</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
   <style>
-    /* ========== CSS ANDA YANG SUDAH DIEDIT ========== */
+    /* ========== CSS ANDA ========== */
     * {
       margin: 0;
       padding: 0;
@@ -109,8 +109,13 @@
     .tree-zoom-container {
       transform-origin: center center;
       transition: transform 0.1s ease;
-      width: fit-content;
-      height: fit-content;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-width: max-content;
+      min-height: max-content;
     }
 
     /* Forest container untuk multi-tree */
@@ -121,7 +126,7 @@
       align-items: flex-start;
       gap: 50px;
       flex-wrap: wrap;
-      padding: 20px;
+      padding: 40px;
     }
 
     .tree-container {
@@ -150,7 +155,6 @@
       min-width: 70px;
       text-align: center;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      position: relative;
     }
 
     .active-node {
@@ -184,19 +188,6 @@
       transition: opacity 0.2s;
     }
 
-    .node-buttons button:hover {
-      opacity: 0.85;
-    }
-
-    .btn-option {
-      background: #717a7c;
-      color: #f1fcff;
-    }
-
-    .btn-option:hover {
-      background: #455a64;
-    }
-
     .btn-info {
       background: #5391c4;
       color: #000000fd;
@@ -205,33 +196,6 @@
     .btn-info:hover {
       background: #0b7dda;
     }
-
-    .node-menu {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      margin-top: 4px;
-    }
-
-    .node-menu button {
-      font-size: 7px;
-      padding: 2px;
-      border-radius: 3px;
-      border: none;
-      color: white;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    .node-menu button:hover {
-      opacity: 0.85;
-    }
-
-    .node-menu button:nth-child(1) { background: #4caf50; }
-    .node-menu button:nth-child(2) { background: #2196f3; }
-    .node-menu button:nth-child(3) { background: #f44336; }
-    .node-menu button:nth-child(4) { background: #ff9800; }
-    .node-menu button:nth-child(5) { background: #9c27b0; }
 
     /* Modal */
     .modal {
@@ -288,10 +252,6 @@
       cursor: pointer;
     }
 
-    .close:hover, .close-info:hover, .close-edit:hover, .close-family:hover {
-      color: #ddd;
-    }
-
     .modal-body {
       padding: 20px;
     }
@@ -316,10 +276,6 @@
       cursor: pointer;
       font-size: 14px;
       width: 100%;
-    }
-
-    .pin-submit:hover {
-      background: #5f5f5f4b;
     }
 
     .pin-error {
@@ -352,7 +308,6 @@
       cursor: pointer;
     }
 
-    /* Info grid */
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -438,7 +393,7 @@
 <div id="edit-modal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
-      <h3 id="edit-title">Edit Nama</h3>
+      <h3>Edit Nama</h3>
       <span class="close-edit">&times;</span>
     </div>
     <div class="modal-body">
@@ -476,11 +431,8 @@ let currentZoom = 1;
 let isAdmin = false;
 let currentEditPath = null;
 let currentEditFamilyId = null;
-
-// ========== DATA DARI SUPABASE ==========
 let FAMILIES = [];
 
-// ========== FUNGSI BANTU ==========
 function escapeHtml(str) {
   if (!str) return "";
   return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
@@ -506,10 +458,29 @@ function getNodeByPath(node, path) {
   return current;
 }
 
+// ========== DATA STATIS FALLBACK ==========
+function useStaticData() {
+  FAMILIES = [
+    {
+      id: 1,
+      name: "Sekghor",
+      data: {
+        name: ">Sekghor |",
+        children: [
+          { name: ">Salama | Tohin", children: [] },
+          { name: ">Ryfan |", children: [] },
+          { name: ">Abd Hary |", children: [] }
+        ]
+      }
+    }
+  ];
+}
+
 // ========== LOAD DARI SUPABASE ==========
 async function loadFromSupabase() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-all-families`);
+    if (!res.ok) throw new Error("HTTP error");
     const data = await res.json();
     console.log("Data dari Supabase:", data);
     
@@ -520,49 +491,18 @@ async function loadFromSupabase() {
         data: cleanData(family)
       }));
     } else {
-      // Data default jika kosong
-      FAMILIES = [
-        {
-          id: 1,
-          name: "Sekghor",
-          data: {
-            name: ">Sekghor |",
-            children: [
-              { name: ">Salama | Tohin", children: [] },
-              { name: ">Ryfan |", children: [] },
-              { name: ">Abd Hary |", children: [] }
-            ]
-          }
-        }
-      ];
+      useStaticData();
     }
-    updateFamilySelector();
-    render();
   } catch (err) {
-    console.error("Gagal load dari Supabase:", err);
-    // Fallback data default
-    FAMILIES = [
-      {
-        id: 1,
-        name: "Sekghor",
-        data: {
-          name: ">Sekghor |",
-          children: [
-            { name: ">Salama | Tohin", children: [] },
-            { name: ">Ryfan |", children: [] },
-            { name: ">Abd Hary |", children: [] }
-          ]
-        }
-      }
-    ];
-    updateFamilySelector();
-    render();
+    console.error("Gagal load dari Supabase, pakai data statis:", err);
+    useStaticData();
   }
+  updateFamilySelector();
+  render();
 }
 
 // ========== SAVE KE SUPABASE ==========
 async function saveToSupabase() {
-  // Simpan hanya data (tanpa id dan name display)
   const dataToSave = FAMILIES.map(f => f.data);
   try {
     await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
@@ -662,8 +602,7 @@ function render() {
 }
 
 function convertWithButtons(node, familyId, path) {
-  const nodePath = [...path];
-  const currentPath = nodePath;
+  const currentPath = [...path];
   
   let buttonsHtml = '';
   if (isAdmin) {
@@ -812,9 +751,8 @@ function onFamilyChange() {
 // ========== ZOOM ==========
 function setZoom(z) {
   currentZoom = z;
-  const container = document.getElementById("tree-container");
-  container.style.transform = `scale(${z})`;
-  container.style.transformOrigin = "top left";
+  const zoomContainer = document.getElementById("tree-zoom-container");
+  zoomContainer.style.transform = `scale(${z})`;
 }
 function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
