@@ -279,6 +279,7 @@ async function hapusNodeOnly(path) {
   try {
     saveToUndo(currentTreeData);
     
+    // Dapatkan parent dan node
     const parentPath = path.slice(0, -1);
     const nodeIndex = path[path.length - 1];
     let parent = null;
@@ -289,25 +290,49 @@ async function hapusNodeOnly(path) {
       parent = getNodeByPath(currentTreeData, parentPath);
     }
     
-    if (!parent || !parent.children) return;
-    
-    const nodeToDelete = parent.children[nodeIndex];
-    if (!nodeToDelete) return;
-    
-    const grandchildren = nodeToDelete.children || [];
-    
-    parent.children.splice(nodeIndex, 1);
-    
-    if (grandchildren.length > 0) {
-      parent.children.splice(nodeIndex, 0, ...grandchildren);
+    if (!parent || !parent.children) {
+      showCustomPopup("Gagal menemukan node!", "Error");
+      return;
     }
     
-    await saveToSupabase();
-    activePath = null;
-    activeMode = null;
-    await loadTree();
-    showCustomPopup("Node berhasil dihapus (anak-anak naik ke parent)", "Sukses");
+    const nodeToDelete = parent.children[nodeIndex];
+    if (!nodeToDelete) {
+      showCustomPopup("Node tidak ditemukan!", "Error");
+      return;
+    }
+    
+    // Ambil anak-anak dari node yang akan dihapus
+    const grandchildren = nodeToDelete.children || [];
+    
+    // Hapus node
+    parent.children.splice(nodeIndex, 1);
+    
+    // Masukkan anak-anak ke posisi yang sama
+    if (grandchildren.length > 0) {
+      for (let i = 0; i < grandchildren.length; i++) {
+        parent.children.splice(nodeIndex + i, 0, grandchildren[i]);
+      }
+    }
+    
+    // Simpan ke Supabase
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "replace", data: currentTreeData })
+    });
+    
+    const result = await res.json();
+    
+    if (result.success) {
+      activePath = null;
+      activeMode = null;
+      await loadTree();
+      showCustomPopup("Node berhasil dihapus (anak-anak naik ke parent)", "Sukses");
+    } else {
+      showCustomPopup("Gagal menghapus: " + (result.error || "Error"), "Error");
+    }
   } catch (err) {
+    console.error("Error:", err);
     showCustomPopup("Error: " + err.message, "Error");
   }
 }
@@ -326,7 +351,8 @@ async function hapusWithChildren(path) {
     const result = await res.json();
     
     if (result.success) {
-      activePath = null; activeMode = null;
+      activePath = null;
+      activeMode = null;
       await loadTree();
       showCustomPopup("Node dan semua keturunannya berhasil dihapus", "Sukses");
     } else {
