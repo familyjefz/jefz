@@ -10,6 +10,50 @@ function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
+// ========== CUSTOM POPUP ==========
+function showCustomPopup(message, title = "Informasi", onConfirm = null, showCancel = false) {
+  const popup = document.getElementById("custom-popup");
+  const popupTitle = document.getElementById("popup-title");
+  const popupMessage = document.getElementById("popup-message");
+  const popupButtons = document.getElementById("popup-buttons");
+  
+  popupTitle.textContent = title;
+  popupMessage.innerHTML = message;
+  
+  popupButtons.innerHTML = "";
+  
+  if (showCancel) {
+    const confirmBtn = document.createElement("button");
+    confirmBtn.textContent = "OK";
+    confirmBtn.onclick = () => {
+      popup.style.display = "none";
+      if (onConfirm) onConfirm();
+    };
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Batal";
+    cancelBtn.onclick = () => {
+      popup.style.display = "none";
+    };
+    popupButtons.appendChild(confirmBtn);
+    popupButtons.appendChild(cancelBtn);
+  } else {
+    const confirmBtn = document.createElement("button");
+    confirmBtn.textContent = "OK";
+    confirmBtn.onclick = () => {
+      popup.style.display = "none";
+      if (onConfirm) onConfirm();
+    };
+    popupButtons.appendChild(confirmBtn);
+  }
+  
+  popup.style.display = "block";
+}
+
+function closeCustomPopup() {
+  document.getElementById("custom-popup").style.display = "none";
+}
+
+// ========== LOGIN MODAL ==========
 function showLoginModal() {
   document.getElementById("login-modal").style.display = "block";
   document.getElementById("pin-input").value = "";
@@ -39,7 +83,7 @@ async function checkPin() {
     if (result.success) {
       isAdmin = true;
       closeLoginModal();
-      alert("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.");
+      showCustomPopup("Login sebagai Admin berhasil! Anda sekarang bisa mengedit silsilah.", "Sukses");
       renderTree();
     } else {
       document.getElementById("pin-error").innerText = "PIN salah! Coba lagi.";
@@ -78,6 +122,9 @@ window.addEventListener("click", (e) => {
   }
   if (e.target === document.getElementById("info-modal")) {
     closeInfoModal();
+  }
+  if (e.target === document.getElementById("custom-popup")) {
+    closeCustomPopup();
   }
 });
 
