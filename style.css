@@ -15,11 +15,11 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-top: 60px;
 }
 
 .header {
   background: #8cabe5;
-  flex-shrink: 0;
   border-bottom: 1px solid #ddd;
   padding: 8px 12px;
   display: flex;
@@ -27,6 +27,11 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 h2 {
