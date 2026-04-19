@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test Treant</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
+  <style>
+    #tree { width: 100%; height: 500px; border: 1px solid red; }
+    .node-box { background: white; border: 1px solid #ccc; padding: 10px; }
+  </style>
+</head>
+<body>
+<h1>Test Treant</h1>
+<div id="tree"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
+<script>
+const data = {
+  name: "Root",
+  children: [
+    { name: "Child 1", children: [] },
+    { name: "Child 2", children: [] }
+  ]
+};
+
+function convert(node) {
+  return {
+    innerHTML: `<div class="node-box"><div class="node-name">${node.name}</div></div>`,
+    children: node.children?.map(c => convert(c)) || []
+  };
+}
+
+new Treant({
+  chart: {
+    container: "#tree",
+    rootOrientation: "NORTH",
+    connectors: { type: "step" },
+    animateOnInit: false,
+    levelSeparation: 30,
+    siblingSeparation: 30
+  },
+  nodeStructure: convert(data)
+});
+</script>
+</body>
+</html>
