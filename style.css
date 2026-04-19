@@ -27,6 +27,9 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 h2 {
@@ -219,7 +222,8 @@ h2 {
 
 .modal-content {
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   margin: 10% auto;
   padding: 0;
   width: 90%;
@@ -328,15 +332,4 @@ h2 {
   .info-grid {
     grid-template-columns: 1fr;
   }
-}
-
-/* ========== TAMBAHAN ZOOM - HANYA TREE YANG ZOOM ========== */
-.tree-zoom-container {
-  transform-origin: center center !important;
-  transition: transform 0.1s ease;
-}
-
-/* Pastikan header tidak ikut zoom */
-.header, .zoom-controls, .login-btn, h2 {
-  transform: none !important;
 }
