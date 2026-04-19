@@ -279,6 +279,12 @@ async function hapusNodeOnly(path) {
   try {
     saveToUndo(currentTreeData);
     
+    // Jika path kosong (root node)
+    if (!path || path.length === 0) {
+      showCustomPopup("Tidak bisa menghapus root node! Gunakan 'Hapus dengan keturunan' untuk menghapus seluruh keluarga.", "Peringatan");
+      return;
+    }
+    
     // Dapatkan parent dan node
     const parentPath = path.slice(0, -1);
     const nodeIndex = path[path.length - 1];
@@ -342,6 +348,42 @@ async function hapusWithChildren(path) {
   
   try {
     saveToUndo(currentTreeData);
+    
+    // Jika path kosong (root node)
+    if (!path || path.length === 0) {
+      showCustomPopup("Apakah Anda yakin ingin menghapus seluruh keluarga ini?", "Konfirmasi Hapus", async () => {
+        try {
+          // Buat data kosong
+          currentTreeData = {
+            name: ">Sekghor |",
+            children: [
+              { name: ">Salama | Tohin", children: [] },
+              { name: ">Ryfan |", children: [] },
+              { name: ">Abd Hary |", children: [] }
+            ]
+          };
+          
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "replace", data: currentTreeData })
+          });
+          const result = await res.json();
+          
+          if (result.success) {
+            activePath = null;
+            activeMode = null;
+            await loadTree();
+            showCustomPopup("Seluruh keluarga berhasil direset", "Sukses");
+          } else {
+            showCustomPopup("Gagal hapus: " + (result.error || "Error"), "Error");
+          }
+        } catch (err) {
+          showCustomPopup("Error: " + err.message, "Error");
+        }
+      }, true);
+      return;
+    }
     
     const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
       method: "POST",
