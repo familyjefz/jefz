@@ -17,7 +17,7 @@ function setZoom(zoom) {
     
     // Terapkan zoom
     zoomContainer.style.transform = `scale(${newZoom})`;
-    zoomContainer.style.transformOrigin = "none";
+    zoomContainer.style.transformOrigin = "center center";
     
     // Hitung scroll baru agar posisi center tetap sama
     const newScrollLeft = (oldScrollLeft + centerX) * (newZoom / oldZoom) - centerX;
