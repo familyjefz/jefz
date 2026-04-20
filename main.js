@@ -1,4 +1,6 @@
-// ========== ZOOM FUNCTIONS ==========
+// ========== ZOOM FUNCTIONS (REVISI - ANIMASI MULUS) ==========
+let zoomAnimationFrame = null;
+
 function setZoom(zoom) {
   const oldZoom = currentZoom;
   const newZoom = zoom / 100;
@@ -9,7 +11,11 @@ function setZoom(zoom) {
     return;
   }
   
-  currentZoom = newZoom;
+  // Batalkan animasi yang sedang berjalan
+  if (zoomAnimationFrame) {
+    cancelAnimationFrame(zoomAnimationFrame);
+    zoomAnimationFrame = null;
+  }
   
   const zoomContainer = document.getElementById("tree-zoom-container");
   const wrapper = document.getElementById("tree-wrapper");
@@ -24,27 +30,56 @@ function setZoom(zoom) {
     const contentCenterX = (wrapper.scrollLeft + centerX) / oldZoom;
     const contentCenterY = (wrapper.scrollTop + centerY) / oldZoom;
     
-    // Terapkan zoom dengan will-change untuk performa lebih halus
-    zoomContainer.style.willChange = 'transform';
+    // Hitung target scroll
+    const targetScrollLeft = (contentCenterX * newZoom) - centerX;
+    const targetScrollTop = (contentCenterY * newZoom) - centerY;
+    
+    // Simpan posisi scroll awal
+    const startScrollLeft = wrapper.scrollLeft;
+    const startScrollTop = wrapper.scrollTop;
+    const startZoom = oldZoom;
+    const endZoom = newZoom;
+    
+    // Waktu animasi (ms)
+    const duration = 150;
+    const startTime = performance.now();
+    
+    // Terapkan zoom langsung tanpa transisi CSS
     zoomContainer.style.transform = `scale(${newZoom})`;
     zoomContainer.style.transformOrigin = "0 0";
     
-    // Hitung posisi scroll baru agar titik konten yang sama tetap di tengah
-    const newScrollLeft = (contentCenterX * newZoom) - centerX;
-    const newScrollTop = (contentCenterY * newZoom) - centerY;
-    
-    // Gunakan requestAnimationFrame untuk sinkronisasi dengan render browser
-    requestAnimationFrame(() => {
-      wrapper.scrollLeft = newScrollLeft;
-      wrapper.scrollTop = newScrollTop;
+    // Fungsi animasi scroll
+    const animateScroll = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      let progress = Math.min(elapsed / duration, 1);
       
-      // Reset will-change setelah transform selesai
-      setTimeout(() => {
-        zoomContainer.style.willChange = 'auto';
-      }, 100);
-    });
+      // Easing function: ease-out (cubic)
+      progress = 1 - Math.pow(1 - progress, 3);
+      
+      // Interpolasi zoom untuk perhitungan scroll
+      const currentZoomValue = startZoom + (endZoom - startZoom) * progress;
+      
+      // Hitung scroll berdasarkan zoom yang sedang berlangsung
+      const currentScrollLeft = (contentCenterX * currentZoomValue) - centerX;
+      const currentScrollTop = (contentCenterY * currentZoomValue) - centerY;
+      
+      wrapper.scrollLeft = currentScrollLeft;
+      wrapper.scrollTop = currentScrollTop;
+      
+      if (progress < 1) {
+        zoomAnimationFrame = requestAnimationFrame(animateScroll);
+      } else {
+        // Final position - pastikan tepat
+        wrapper.scrollLeft = targetScrollLeft;
+        wrapper.scrollTop = targetScrollTop;
+        zoomAnimationFrame = null;
+      }
+    };
+    
+    zoomAnimationFrame = requestAnimationFrame(animateScroll);
   }
   
+  currentZoom = newZoom;
   updateZoomUI(zoom);
 }
 
@@ -146,7 +181,6 @@ function showCustomPopup(message, title = "Informasi", onConfirm = null, showCan
   
   popup.style.display = "block";
   
-  // Posisikan popup di tengah layar
   setTimeout(() => {
     const popupContent = document.querySelector(".custom-popup-content");
     if (popupContent) {
@@ -169,7 +203,6 @@ function showLoginModal() {
   document.getElementById("pin-input").value = "";
   document.getElementById("pin-error").innerText = "";
   
-  // Posisikan modal di tengah layar
   setTimeout(() => {
     const modalContent = document.querySelector("#login-modal .modal-content");
     if (modalContent) {
@@ -194,7 +227,6 @@ function showInfoModal() {
   const modal = document.getElementById("info-modal");
   modal.style.display = "block";
   
-  // Posisikan modal info di tengah layar
   setTimeout(() => {
     const modalContent = document.querySelector("#info-modal .modal-content");
     if (modalContent) {
@@ -386,7 +418,6 @@ function showHapusPopup(path) {
   
   popup.style.display = "block";
   
-  // Posisikan di tengah
   setTimeout(() => {
     const popupContent = document.querySelector(".custom-popup-content");
     if (popupContent) {
@@ -572,7 +603,6 @@ document.addEventListener("click", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Load invert setting
   loadInvertSetting();
   
   if (isLoggedIn()) {
