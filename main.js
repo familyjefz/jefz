@@ -90,10 +90,12 @@ function zoomReset() {
 
 // ========== DRAG PAN (SMOOTH) ==========
 function startDrag(e) {
-  // Jangan drag jika klik pada button, textarea, atau node-box
+  // Jangan drag jika klik pada elemen interaktif
   if (e.target.closest("button") || 
       e.target.closest("textarea") || 
-      e.target.closest(".node-box")) {
+      e.target.closest(".node-box") ||
+      e.target.closest("input") ||
+      e.target.closest(".zoom-slider")) {
     return;
   }
   
@@ -135,10 +137,17 @@ function touchStart(e) {
     startScale = scale;
     e.preventDefault();
   } else if (e.touches.length === 1) {
-    // Jangan drag jika menyentuh button atau textarea
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (target && (target.closest("button") || target.closest("textarea") || target.closest(".node-box"))) {
+    
+    // Jangan drag jika menyentuh elemen interaktif
+    if (target && (
+      target.closest("button") || 
+      target.closest("textarea") || 
+      target.closest(".node-box") ||
+      target.closest("input") ||
+      target.closest(".zoom-slider")
+    )) {
       return;
     }
     
@@ -512,7 +521,6 @@ async function hapusNodeOnly(path) {
       return;
     }
     
-    // ... kode hapus node only (sama seperti sebelumnya) ...
     const parentPath = path.slice(0, -1);
     const nodeIndex = path[path.length - 1];
     let parent = parentPath.length === 0 ? currentTreeData : getNodeByPath(currentTreeData, parentPath);
