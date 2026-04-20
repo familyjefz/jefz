@@ -1,15 +1,22 @@
-// ========== ZOOM FUNCTIONS ==========
-function setZoom(zoom) {
-  currentZoom = zoom;
+// ========== ZOOM FUNCTIONS dengan Slider ==========
+function setZoom(zoomPercent) {
+  currentZoom = zoomPercent / 100;
   const zoomContainer = document.getElementById("tree-zoom-container");
   if (zoomContainer) {
     zoomContainer.style.transform = `scale(${currentZoom})`;
   }
+  const zoomValue = document.getElementById("zoom-value");
+  if (zoomValue) {
+    zoomValue.textContent = Math.round(zoomPercent) + "%";
+  }
 }
 
-function zoomIn() { setZoom(currentZoom + 0.1); }
-function zoomOut() { setZoom(currentZoom - 0.1); }
-function zoomReset() { setZoom(1); }
+function updateZoomFromSlider() {
+  const slider = document.getElementById("zoom-slider");
+  if (slider) {
+    setZoom(parseInt(slider.value));
+  }
+}
 
 // ========== INVERT COLOR dengan localStorage ==========
 const INVERT_KEY = "silsilah_invert_mode";
@@ -534,37 +541,9 @@ document.addEventListener("click", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   loadInvertSetting();
   
-  if (isLoggedIn()) {
-    isAdmin = true;
-    updateLoginButton();
-    updateUndoRedoButtons();
-  }
-  
-  document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
-  document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
-  document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
-  document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
-  document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
-  document.getElementById("undo-btn")?.addEventListener("click", undoAction);
-  document.getElementById("redo-btn")?.addEventListener("click", redoAction);
-  document.querySelector(".close")?.addEventListener("click", closeLoginModal);
-  document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
-  document.getElementById("submit-pin")?.addEventListener("click", checkPin);
-  document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") checkPin();
-  });
-});
-
-window.addEventListener("click", (e) => {
-  if (e.target === document.getElementById("login-modal")) {
-    closeLoginModal();
-  }
-  if (e.target === document.getElementById("info-modal")) {
-    closeInfoModal();
-  }
-  if (e.target === document.getElementById("custom-popup")) {
-    closeCustomPopup();
-  }
-});
-
-loadTree();
+  // Set slider default value
+  const slider = document.getElementById("zoom-slider");
+  if (slider) {
+    slider.value = "100";
+    setZoom(100);
+    slider.addEventListener("input", updateZoomFromSlider);
