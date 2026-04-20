@@ -58,7 +58,7 @@
   cursor: grabbing;
 }
 
-/* ========== ZOOM CONTAINER (Anti-Blur) ========== */
+/* ========== ZOOM CONTAINER ========== */
 .tree-zoom-container {
   transform-origin: 0 0;
   transition: none !important;
@@ -67,19 +67,6 @@
   min-width: max-content;
   min-height: max-content;
   will-change: transform;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-}
-
-.tree-zoom-container * {
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
 }
 
 #tree {
@@ -88,7 +75,7 @@
   height: 1500px;
 }
 
-/* ========== BOTTOM ZOOM BAR ========== */
+/* ========== BOTTOM ZOOM BAR - HAPUS BACKDROP-FILTER ========== */
 .bottom-zoom-bar {
   position: fixed;
   bottom: 16px;
@@ -97,12 +84,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.85);
   padding: 10px 20px;
   border-radius: 40px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   z-index: 500;
 }
 
