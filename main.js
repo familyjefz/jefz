@@ -1,46 +1,63 @@
-// ========== ZOOM FUNCTIONS ==========
-function setZoom(zoom, cx = null, cy = null) {
-  // Batasi zoom antara 30% - 200%
+// ========== STATE ZOOM & PAN ==========
+let scale = 1;          // zoom (1 = 100%)
+let offsetX = 0;
+let offsetY = 0;
+
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let startOffsetX = 0;
+let startOffsetY = 0;
+
+let isPinching = false;
+let startDist = 0;
+let startScale = 1;
+
+// ========== ELEMENT REFERENCES ==========
+const getContainer = () => document.getElementById("tree-zoom-container");
+
+// ========== APPLY TRANSFORM (SMOOTH) ==========
+function applyTransform() {
+  const el = getContainer();
+  if (!el) return;
+  el.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+  el.style.transformOrigin = "0 0";
+}
+
+// ========== ZOOM FUNCTION (SMOOTH) ==========
+function setZoom(zoom, centerX = null, centerY = null) {
+  // Batasi zoom 30% - 200%
   zoom = Math.max(30, Math.min(200, zoom));
   
-  const wrapper = document.getElementById("tree-wrapper");
-  const container = document.getElementById("tree-zoom-container");
+  const newScale = zoom / 100;
+  const el = getContainer();
+  if (!el) return;
   
-  if (!wrapper || !container) return;
-  
-  const oldZoom = currentZoom;
-  const newZoom = zoom / 100;
-  
-  // Jika zoom tidak berubah, skip
-  if (oldZoom === newZoom) {
-    updateZoomUI(zoom);
-    return;
+  // Jika tidak ada titik fokus, gunakan center window
+  if (centerX === null || centerY === null) {
+    centerX = window.innerWidth / 2;
+    centerY = window.innerHeight / 2;
   }
   
-  const rect = wrapper.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
   
-  // Jika tidak ada titik fokus, gunakan center viewport
-  if (cx === null || cy === null) {
-    cx = rect.width / 2;
-    cy = rect.height / 2;
-  }
+  // Hitung posisi relatif titik fokus terhadap container
+  const dx = centerX - rect.left;
+  const dy = centerY - rect.top;
   
-  // Hitung titik fokus dalam koordinat konten
-  const offsetX = (wrapper.scrollLeft + cx) / oldZoom;
-  const offsetY = (wrapper.scrollTop + cy) / oldZoom;
+  // Sesuaikan offset agar titik fokus tetap di posisi yang sama
+  offsetX -= dx * (newScale / scale - 1);
+  offsetY -= dy * (newScale / scale - 1);
   
-  // Terapkan zoom
-  container.style.transform = `scale(${newZoom})`;
-  container.style.transformOrigin = "0 0";
+  scale = newScale;
   
-  currentZoom = newZoom;
-  
-  // Sesuaikan scroll agar titik fokus tetap di posisi yang sama
-  wrapper.scrollLeft = offsetX * newZoom - cx;
-  wrapper.scrollTop = offsetY * newZoom - cy;
+  applyTransform();
   
   // Update UI
   updateZoomUI(zoom);
+  
+  // Update currentZoom untuk kompatibilitas
+  currentZoom = newScale;
 }
 
 function updateZoomUI(zoom) {
@@ -60,12 +77,51 @@ function updateZoomFromSlider(e) {
 }
 
 function zoomReset() {
-  setZoom(100);
+  scale = 1;
+  offsetX = 0;
+  offsetY = 0;
+  currentZoom = 1;
+  
+  applyTransform();
+  
+  updateZoomUI(100);
+  document.getElementById("zoom-slider").value = 100;
 }
 
-// ========== PINCH ZOOM ==========
-let lastDist = 0;
+// ========== DRAG PAN (SMOOTH) ==========
+function startDrag(e) {
+  // Jangan drag jika klik pada button, textarea, atau node-box
+  if (e.target.closest("button") || 
+      e.target.closest("textarea") || 
+      e.target.closest(".node-box")) {
+    return;
+  }
+  
+  isDragging = true;
+  
+  startX = e.clientX;
+  startY = e.clientY;
+  
+  startOffsetX = offsetX;
+  startOffsetY = offsetY;
+  
+  e.preventDefault();
+}
 
+function moveDrag(e) {
+  if (!isDragging) return;
+  
+  offsetX = startOffsetX + (e.clientX - startX);
+  offsetY = startOffsetY + (e.clientY - startY);
+  
+  applyTransform();
+}
+
+function endDrag() {
+  isDragging = false;
+}
+
+// ========== PINCH ZOOM (SMOOTH) ==========
 function getDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
@@ -74,35 +130,57 @@ function getDist(touches) {
 
 function touchStart(e) {
   if (e.touches.length === 2) {
-    lastDist = getDist(e.touches);
+    isPinching = true;
+    startDist = getDist(e.touches);
+    startScale = scale;
     e.preventDefault();
+  } else if (e.touches.length === 1) {
+    // Jangan drag jika menyentuh button atau textarea
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target && (target.closest("button") || target.closest("textarea") || target.closest(".node-box"))) {
+      return;
+    }
+    
+    isDragging = true;
+    startX = touch.clientX;
+    startY = touch.clientY;
+    startOffsetX = offsetX;
+    startOffsetY = offsetY;
   }
 }
 
 function touchMove(e) {
-  if (e.touches.length === 2) {
+  if (isPinching && e.touches.length === 2) {
     e.preventDefault();
     
-    const newDist = getDist(e.touches);
-    const delta = newDist - lastDist;
+    const dist = getDist(e.touches);
+    const factor = dist / startDist;
     
-    // Zoom saat ini dalam persen
-    let zoom = currentZoom * 100;
+    // Hitung zoom dalam persen
+    const zoom = (startScale * factor) * 100;
     
-    // Tambahkan delta dengan sensitivitas
-    zoom += delta * 0.5;
+    // Titik tengah dua jari
+    const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     
-    // Batasi zoom
-    zoom = Math.max(30, Math.min(200, zoom));
+    setZoom(zoom, centerX, centerY);
+  } else if (isDragging && e.touches.length === 1) {
+    e.preventDefault();
     
-    // Titik tengah antara dua jari
-    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    offsetX = startOffsetX + (e.touches[0].clientX - startX);
+    offsetY = startOffsetY + (e.touches[0].clientY - startY);
     
-    // Terapkan zoom dengan titik fokus
-    setZoom(zoom, cx, cy);
-    
-    lastDist = newDist;
+    applyTransform();
+  }
+}
+
+function touchEnd(e) {
+  if (e.touches.length < 2) {
+    isPinching = false;
+  }
+  if (e.touches.length === 0) {
+    isDragging = false;
   }
 }
 
@@ -427,34 +505,21 @@ async function hapusNodeOnly(path) {
         activePath = null;
         activeMode = null;
         await loadTree();
-        showCustomPopup("Root berhasil dihapus. '" + anakPertama.name.split("|")[0].trim() + "' menjadi root baru.", "Sukses");
+        showCustomPopup("Root berhasil dihapus.", "Sukses");
       } else {
-        showCustomPopup("Gagal menghapus root: " + (result.error || "Error"), "Error");
+        showCustomPopup("Gagal menghapus root.", "Error");
       }
       return;
     }
     
+    // ... kode hapus node only (sama seperti sebelumnya) ...
     const parentPath = path.slice(0, -1);
     const nodeIndex = path[path.length - 1];
-    let parent = null;
+    let parent = parentPath.length === 0 ? currentTreeData : getNodeByPath(currentTreeData, parentPath);
     
-    if (parentPath.length === 0) {
-      parent = currentTreeData;
-    } else {
-      parent = getNodeByPath(currentTreeData, parentPath);
-    }
-    
-    if (!parent || !parent.children) {
-      showCustomPopup("Gagal menemukan node!", "Error");
-      return;
-    }
+    if (!parent || !parent.children) return;
     
     const nodeToDelete = parent.children[nodeIndex];
-    if (!nodeToDelete) {
-      showCustomPopup("Node tidak ditemukan!", "Error");
-      return;
-    }
-    
     const grandchildren = nodeToDelete.children || [];
     
     parent.children.splice(nodeIndex, 1);
@@ -477,12 +542,9 @@ async function hapusNodeOnly(path) {
       activePath = null;
       activeMode = null;
       await loadTree();
-      showCustomPopup("Node berhasil dihapus (anak-anak naik ke parent)", "Sukses");
-    } else {
-      showCustomPopup("Gagal menghapus: " + (result.error || "Error"), "Error");
+      showCustomPopup("Node berhasil dihapus.", "Sukses");
     }
   } catch (err) {
-    console.error("Error:", err);
     showCustomPopup("Error: " + err.message, "Error");
   }
 }
@@ -494,31 +556,19 @@ async function hapusWithChildren(path) {
     saveToUndo(currentTreeData);
     
     if (!path || path.length === 0) {
-      showCustomPopup("Apakah Anda yakin ingin menghapus seluruh silsilah?", "Konfirmasi Hapus Semua", async () => {
-        try {
-          currentTreeData = {
-            name: ">Root |",
-            children: []
-          };
-          
-          const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "replace", data: currentTreeData })
-          });
-          const result = await res.json();
-          
-          if (result.success) {
-            activePath = null;
-            activeMode = null;
-            await loadTree();
-            showCustomPopup("Seluruh silsilah berhasil dihapus.", "Sukses");
-          } else {
-            showCustomPopup("Gagal hapus: " + (result.error || "Error"), "Error");
-          }
-        } catch (err) {
-          showCustomPopup("Error: " + err.message, "Error");
-        }
+      showCustomPopup("Apakah Anda yakin ingin menghapus seluruh silsilah?", "Konfirmasi", async () => {
+        currentTreeData = { name: ">Root |", children: [] };
+        
+        await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "replace", data: currentTreeData })
+        });
+        
+        activePath = null;
+        activeMode = null;
+        await loadTree();
+        showCustomPopup("Seluruh silsilah berhasil dihapus.", "Sukses");
       }, true);
       return;
     }
@@ -528,15 +578,14 @@ async function hapusWithChildren(path) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", path })
     });
+    
     const result = await res.json();
     
     if (result.success) {
       activePath = null;
       activeMode = null;
       await loadTree();
-      showCustomPopup("Node dan semua keturunannya berhasil dihapus", "Sukses");
-    } else {
-      showCustomPopup("Gagal hapus: " + (result.error || "Error"), "Error");
+      showCustomPopup("Node dan keturunannya berhasil dihapus.", "Sukses");
     }
   } catch (err) {
     showCustomPopup("Error: " + err.message, "Error");
@@ -546,58 +595,59 @@ async function hapusWithChildren(path) {
 // ========== SAVE TO SUPABASE ==========
 async function saveToSupabase() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+    await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "replace", data: currentTreeData })
     });
-    await res.json();
   } catch (err) {
-    console.error("Gagal save ke Supabase:", err);
+    console.error("Gagal save:", err);
   }
 }
 
 // ========== EVENT LISTENERS ==========
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
-    const scroll = getCurrentScroll();
     activePath = null;
     activeMode = null;
     renderTree();
-    restoreScroll(scroll.left, scroll.top);
   }
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Load invert setting
   loadInvertSetting();
   
-  // Cek session login
   if (isLoggedIn()) {
     isAdmin = true;
     updateLoginButton();
     updateUndoRedoButtons();
   }
   
-  // Zoom init
+  // Zoom slider
   const slider = document.getElementById("zoom-slider");
   if (slider) {
     slider.min = "30";
     slider.max = "200";
     slider.step = "1";
     slider.value = "100";
-    setZoom(100);
     slider.addEventListener("input", updateZoomFromSlider);
   }
   
-  // Pinch zoom - hanya pada tree wrapper
-  const wrapper = document.getElementById("tree-wrapper");
-  if (wrapper) {
-    wrapper.addEventListener("touchstart", touchStart, { passive: false });
-    wrapper.addEventListener("touchmove", touchMove, { passive: false });
-  }
+  // Init zoom
+  zoomReset();
   
-  // Tombol-tombol
+  // Mouse drag pan
+  document.addEventListener("mousedown", startDrag);
+  document.addEventListener("mousemove", moveDrag);
+  document.addEventListener("mouseup", endDrag);
+  
+  // Touch events (pinch + pan)
+  document.addEventListener("touchstart", touchStart, { passive: false });
+  document.addEventListener("touchmove", touchMove, { passive: false });
+  document.addEventListener("touchend", touchEnd);
+  document.addEventListener("touchcancel", touchEnd);
+  
+  // Buttons
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
   document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
@@ -612,17 +662,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 window.addEventListener("click", (e) => {
-  if (e.target === document.getElementById("login-modal")) {
-    closeLoginModal();
-  }
-  if (e.target === document.getElementById("info-modal")) {
-    closeInfoModal();
-  }
-  if (e.target === document.getElementById("custom-popup")) {
-    closeCustomPopup();
-  }
+  if (e.target.id === "login-modal") closeLoginModal();
+  if (e.target.id === "info-modal") closeInfoModal();
+  if (e.target.id === "custom-popup") closeCustomPopup();
 });
 
-// Load tree
 loadTree();
 /*Stable*/
