@@ -4,7 +4,6 @@ function setZoom(zoomPercent) {
   const zoomContainer = document.getElementById("tree-zoom-container");
   if (zoomContainer) {
     zoomContainer.style.transform = `scale(${currentZoom})`;
-    zoomContainer.style.willChange = "transform";
   }
   const zoomValue = document.getElementById("zoom-value");
   if (zoomValue) {
@@ -19,7 +18,7 @@ function updateZoomFromSlider() {
   }
 }
 
-// ========== INVERT COLOR dengan localStorage ==========
+// ========== INVERT COLOR dengan localStorage (kembalikan seperti semula) ==========
 const INVERT_KEY = "silsilah_invert_mode";
 
 function toggleInvert() {
