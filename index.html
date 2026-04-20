@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Silsilah Keluarga</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.css">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/themes.css">
 </head>
 <body>
 <div class="app-container">
@@ -25,7 +28,6 @@
     </div>
   </div>
   
-  <!-- Zoom Controls di Bawah Tengah -->
   <div class="bottom-zoom-bar">
     <button id="zoom-reset" class="zoom-reset-btn">⟳</button>
     <input type="range" id="zoom-slider" class="zoom-slider" min="30" max="200" value="100" step="1">
@@ -73,10 +75,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/raphael@2.3.0/raphael.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/treant-js@1.0/Treant.min.js"></script>
-<script src="config.js"></script>
-<script src="family-tree.js"></script>
-<script src="family-info.js"></script>
-<script src="main.js"></script>
+<script src="js/config.js"></script>
+<script src="js/zoom-pan.js"></script>
+<script src="js/ui-modal.js"></script>
+<script src="js/admin-undo.js"></script>
+<script src="js/family-tree.js"></script>
+<script src="js/family-info.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
 <!--Stable-->
