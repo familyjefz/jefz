@@ -18,12 +18,6 @@
   gap: 8px;
 }
 
-h2 {
-  margin: 0;
-  font-size: 16px;
-}
-
-/* ========== HEADER CONTROLS ========== */
 .header-controls {
   display: flex;
   gap: 6px;
@@ -45,12 +39,50 @@ h2 {
   background: #00a8f7;
 }
 
-/* Sembunyikan zoom-controls lama */
 .zoom-controls {
   display: none;
 }
 
-/* ========== BOTTOM ZOOM BAR - LOGIC ASLI ========== */
+/* ========== TREE WRAPPER ========== */
+.tree-wrapper {
+  flex: 1;
+  overflow: hidden;
+  background: #f1fcff;
+  position: relative;
+  touch-action: none;
+  cursor: grab;
+  height: 100%;
+}
+
+.tree-wrapper:active {
+  cursor: grabbing;
+}
+
+/* ========== ZOOM CONTAINER (Anti-Blur) ========== */
+.tree-zoom-container {
+  transform-origin: 0 0;
+  transition: none !important;
+  width: fit-content;
+  height: fit-content;
+  min-width: max-content;
+  min-height: max-content;
+  will-change: transform;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
+#tree {
+  position: relative;
+  width: 2000px;
+  height: 1500px;
+}
+
+/* ========== BOTTOM ZOOM BAR ========== */
 .bottom-zoom-bar {
   position: fixed;
   bottom: 16px;
@@ -69,7 +101,7 @@ h2 {
 }
 
 .bottom-zoom-bar .zoom-slider {
-  width: 180px;
+  width: 200px;
   height: 5px;
   -webkit-appearance: none;
   background: rgba(255, 255, 255, 0.3);
@@ -116,38 +148,6 @@ h2 {
 .bottom-zoom-bar .zoom-reset-btn:hover {
   background: #0088cc;
   transform: scale(1.05);
-}
-
-/* ========== TREE WRAPPER ========== */
-.tree-wrapper {
-  flex: 1;
-  overflow: hidden;
-  background: #f1fcff;
-  position: relative;
-  touch-action: none;
-  cursor: grab;
-  height: 100%;
-}
-
-.tree-wrapper:active {
-  cursor: grabbing;
-}
-
-/* ========== ZOOM CONTAINER ========== */
-.tree-zoom-container {
-  transform-origin: 0 0;
-  transition: none !important;
-  width: fit-content;
-  height: fit-content;
-  min-width: max-content;
-  min-height: max-content;
-  will-change: transform;
-}
-
-#tree {
-  position: relative;
-  width: 2000px;
-  height: 1500px;
 }
 
 /* ========== SLIDER CUSTOM ========== */
