@@ -1,9 +1,10 @@
-// ========== ZOOM FUNCTIONS dengan Slider ==========
+// ========== ZOOM FUNCTIONS dengan Slider Vertikal ==========
 function setZoom(zoomPercent) {
   currentZoom = zoomPercent / 100;
   const zoomContainer = document.getElementById("tree-zoom-container");
   if (zoomContainer) {
     zoomContainer.style.transform = `scale(${currentZoom})`;
+    zoomContainer.style.willChange = "transform";
   }
   const zoomValue = document.getElementById("zoom-value");
   if (zoomValue) {
@@ -541,9 +542,11 @@ document.addEventListener("click", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   loadInvertSetting();
   
-  // Set slider default value
+  // Set slider vertikal
   const slider = document.getElementById("zoom-slider");
   if (slider) {
+    slider.min = "30";
+    slider.max = "500";
     slider.value = "100";
     setZoom(100);
     slider.addEventListener("input", updateZoomFromSlider);
