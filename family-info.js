@@ -48,7 +48,7 @@ async function showInfo(path) {
   `;
   
   document.getElementById("info-body").innerHTML = bodyHtml;
-  document.getElementById("info-modal").style.display = "block";
+  document.getElementById("info-modal").style.display = "flex";
 }
 
 function generateFamilyInfo(treeData, path, node) {
