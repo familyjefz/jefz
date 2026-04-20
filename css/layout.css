@@ -75,7 +75,7 @@
   height: 1500px;
 }
 
-/* ========== BOTTOM ZOOM BAR - HAPUS BACKDROP-FILTER ========== */
+/* ========== BOTTOM ZOOM BAR - AWAL YANG AMAN ========== */
 .bottom-zoom-bar {
   position: fixed;
   bottom: 16px;
@@ -84,31 +84,31 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.85);
-  padding: 10px 20px;
-  border-radius: 40px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  background: #333;
+  padding: 8px 16px;
+  border-radius: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   z-index: 500;
+  border: 1px solid #555;
 }
 
 .bottom-zoom-bar .zoom-slider {
-  width: 200px;
+  width: 180px;
   height: 5px;
   -webkit-appearance: none;
-  background: rgba(255, 255, 255, 0.3);
+  background: #666;
   border-radius: 5px;
   outline: none;
 }
 
 .bottom-zoom-bar .zoom-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #00a8f7;
   cursor: pointer;
   border: 2px solid white;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .bottom-zoom-bar .zoom-value {
@@ -123,22 +123,19 @@
   background: #00a8f7;
   color: white;
   border: none;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s;
 }
 
 .bottom-zoom-bar .zoom-reset-btn:hover {
   background: #0088cc;
-  transform: scale(1.05);
 }
 
 /* ========== SLIDER CUSTOM ========== */
