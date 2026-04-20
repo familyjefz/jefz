@@ -16,11 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
     updateUndoRedoButtons();
   }
   
-  // Zoom slider
+  // Zoom slider - max diubah ke 300
   const slider = document.getElementById("zoom-slider");
   if (slider) {
     slider.min = "30";
-    slider.max = "300";
+    slider.max = "300";  // Diubah dari 200 ke 300
     slider.step = "1";
     slider.value = "100";
     slider.addEventListener("input", updateZoomFromSlider);
@@ -28,18 +28,16 @@ document.addEventListener("DOMContentLoaded", () => {
   
   zoomReset();
   
-  // Mouse drag pan - pasang di wrapper dan document untuk memastikan
-  const wrapper = document.getElementById("tree-wrapper");
-  
-  wrapper.addEventListener("mousedown", startDrag);
-  window.addEventListener("mousemove", moveDrag);
-  window.addEventListener("mouseup", endDrag);
+  // Mouse drag pan
+  document.addEventListener("mousedown", startDrag);
+  document.addEventListener("mousemove", moveDrag);
+  document.addEventListener("mouseup", endDrag);
   
   // Touch events
-  wrapper.addEventListener("touchstart", touchStart, { passive: false });
-  wrapper.addEventListener("touchmove", touchMove, { passive: false });
-  wrapper.addEventListener("touchend", touchEnd);
-  wrapper.addEventListener("touchcancel", touchEnd);
+  document.addEventListener("touchstart", touchStart, { passive: false });
+  document.addEventListener("touchmove", touchMove, { passive: false });
+  document.addEventListener("touchend", touchEnd);
+  document.addEventListener("touchcancel", touchEnd);
   
   // Buttons
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
