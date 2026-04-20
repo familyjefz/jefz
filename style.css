@@ -117,18 +117,49 @@ h2 {
   background: #00a8f7 !important;
 }
 
+/* ========== TREE WRAPPER - DIUBAH UNTUK SMOOTH ZOOM & DRAG PAN ========== */
 .tree-wrapper {
   flex: 1;
-  overflow: auto;
+  overflow: hidden; /* Penting: hidden karena pakai drag pan JavaScript */
   background: #f1fcff;
   position: relative;
+  touch-action: none; /* Serahkan semua touch event ke JavaScript */
+  cursor: grab;
 }
 
+.tree-wrapper:active {
+  cursor: grabbing;
+}
+
+/* ========== ZOOM CONTAINER - DIUBAH ========== */
 .tree-zoom-container {
-  transform-origin: center center;
-  transition: transform 0.1s ease;
+  transform-origin: 0 0; /* Penting: 0 0 untuk perhitungan yang tepat */
+  transition: none !important; /* Animasi di-handle JavaScript */
   width: fit-content;
   height: fit-content;
+  min-width: max-content;
+  min-height: max-content;
+  will-change: transform; /* Optimasi performa */
+}
+
+/* Cegah drag cursor pada elemen interaktif */
+.node-box,
+.node-box *,
+button,
+textarea,
+input,
+.modal,
+.modal *,
+.custom-popup,
+.custom-popup * {
+  cursor: default;
+}
+
+.node-box button,
+.node-box .btn-option,
+.node-box .btn-info,
+button:not(.tree-wrapper button) {
+  cursor: pointer;
 }
 
 #tree {
@@ -238,6 +269,7 @@ h2 {
   font-family: Arial, sans-serif;
   resize: vertical;
   box-sizing: border-box;
+  cursor: text; /* Kursor text untuk input */
 }
 
 .node-actions {
@@ -271,6 +303,11 @@ h2 {
   background: rgba(0, 0, 0, 0.014);
   align-items: center;
   justify-content: center;
+}
+
+.modal[style*="display: block"],
+.modal[style*="display: flex"] {
+  display: flex !important;
 }
 
 .modal-content {
@@ -347,6 +384,7 @@ h2 {
   border-radius: 5px;
   font-size: 16px;
   text-align: center;
+  cursor: text;
 }
 
 .pin-submit {
@@ -418,6 +456,11 @@ h2 {
   background: rgba(0, 0, 0, 0.014);
   align-items: center;
   justify-content: center;
+}
+
+.custom-popup[style*="display: block"],
+.custom-popup[style*="display: flex"] {
+  display: flex !important;
 }
 
 .custom-popup-content {
