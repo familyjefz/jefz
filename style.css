@@ -122,13 +122,17 @@ h2 {
   overflow: auto;
   background: #f1fcff;
   position: relative;
+  scroll-behavior: auto !important;
 }
 
 .tree-zoom-container {
-  transform-origin: center center;
-  transition: transform 0.1s ease;
+  transform-origin: 0 0;
+  will-change: transform;
+  transition: transform 0.05s linear;
   width: fit-content;
   height: fit-content;
+  min-width: max-content;
+  min-height: max-content;
 }
 
 #tree {
@@ -486,4 +490,3 @@ h2 {
 body.invert-mode {
   filter: invert(1);
 }
-/*Stable*/
