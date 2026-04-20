@@ -16,11 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
     updateUndoRedoButtons();
   }
   
-  // Zoom slider
+  // Zoom slider - max diubah ke 300
   const slider = document.getElementById("zoom-slider");
   if (slider) {
     slider.min = "30";
-    slider.max = "200";
+    slider.max = "300";  // Diubah dari 200 ke 300
     slider.step = "1";
     slider.value = "100";
     slider.addEventListener("input", updateZoomFromSlider);
