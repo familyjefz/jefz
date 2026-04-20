@@ -63,6 +63,15 @@ h2 {
   background: #00a8f7 !important;
 }
 
+.invert-btn {
+  background: #000000 !important;
+  color: white !important;
+}
+
+.invert-btn:hover {
+  background: #00a8f7 !important;
+}
+
 .tree-wrapper {
   flex: 1;
   overflow: auto;
@@ -334,4 +343,9 @@ h2 {
   .info-grid-2col {
     grid-template-columns: 1fr;
   }
+}
+
+/* Invert mode */
+body.invert-mode {
+  filter: invert(1);
 }
