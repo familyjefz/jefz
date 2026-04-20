@@ -18,12 +18,6 @@
   gap: 8px;
 }
 
-h2 {
-  margin: 0;
-  font-size: 16px;
-}
-
-/* ========== HEADER CONTROLS ========== */
 .header-controls {
   display: flex;
   gap: 6px;
@@ -45,15 +39,46 @@ h2 {
   background: #00a8f7;
 }
 
-/* Sembunyikan zoom-controls lama */
 .zoom-controls {
   display: none;
 }
 
-/* ========== BOTTOM ZOOM BAR - PERBAIKI MOBILE ========== */
+/* ========== TREE WRAPPER ========== */
+.tree-wrapper {
+  flex: 1;
+  overflow: hidden;
+  background: #f1fcff;
+  position: relative;
+  touch-action: none;
+  cursor: grab;
+  height: 100%;
+}
+
+.tree-wrapper:active {
+  cursor: grabbing;
+}
+
+/* ========== ZOOM CONTAINER ========== */
+.tree-zoom-container {
+  transform-origin: 0 0;
+  transition: none !important;
+  width: fit-content;
+  height: fit-content;
+  min-width: max-content;
+  min-height: max-content;
+  will-change: transform;
+}
+
+#tree {
+  position: relative;
+  width: 2000px;
+  height: 1500px;
+}
+
+/* ========== BOTTOM ZOOM BAR ========== */
 .bottom-zoom-bar {
   position: fixed;
-  bottom: 20px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -66,18 +91,6 @@ h2 {
   border-radius: 40px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   z-index: 500;
-}
-
-/* Tambahan untuk mobile */
-@media (max-width: 768px) {
-  .bottom-zoom-bar {
-    bottom: 180px; /* Naikkan agar tidak ketutupan browser UI */
-    padding: 8px 16px;
-  }
-  
-  .bottom-zoom-bar .zoom-slider {
-    width: 150px;
-  }
 }
 
 .bottom-zoom-bar .zoom-slider {
@@ -130,39 +143,6 @@ h2 {
   transform: scale(1.05);
 }
 
-/* ========== TREE WRAPPER ========== */
-.tree-wrapper {
-  flex: 1;
-  overflow: hidden;
-  background: #f1fcff;
-  position: relative;
-  touch-action: none;
-  cursor: grab;
-  height: 100%;
-}
-
-.tree-wrapper:active {
-  cursor: grabbing;
-}
-
-/* ========== ZOOM CONTAINER ========== */
-.tree-zoom-container {
-  transform-origin: 0 0;
-  transition: none !important;
-  width: fit-content;
-  height: fit-content;
-  min-width: max-content;
-  min-height: max-content;
-  will-change: transform;
-}
-
-#tree {
-  position: relative;
-  width: 2000px;
-  height: 1500px;
-}
-
-/* ========== SLIDER CUSTOM ========== */
 .zoom-slider {
   width: 100px;
   height: 4px;
