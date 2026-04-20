@@ -5,11 +5,24 @@ function setZoom(zoom) {
   if (zoomContainer) {
     zoomContainer.style.transform = `scale(${currentZoom})`;
   }
+  const zoomValue = document.getElementById("zoom-value");
+  if (zoomValue) {
+    zoomValue.textContent = Math.round(zoom) + "%";
+  }
+  const slider = document.getElementById("zoom-slider");
+  if (slider && slider.value != zoom) {
+    slider.value = zoom;
+  }
 }
 
-function zoomIn() { setZoom(currentZoom + 0.1); }
-function zoomOut() { setZoom(currentZoom - 0.1); }
-function zoomReset() { setZoom(1); }
+function updateZoomFromSlider() {
+  const slider = document.getElementById("zoom-slider");
+  if (slider) {
+    setZoom(parseInt(slider.value));
+  }
+}
+
+function zoomReset() { setZoom(100); }
 
 // ========== INVERT COLOR dengan localStorage ==========
 const INVERT_KEY = "silsilah_invert_mode";
@@ -521,8 +534,10 @@ document.addEventListener("DOMContentLoaded", () => {
     updateUndoRedoButtons();
   }
   
-  document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
-  document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
+  const slider = document.getElementById("zoom-slider");
+  if (slider) {
+    slider.addEventListener("input", updateZoomFromSlider);
+  }
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
   document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
