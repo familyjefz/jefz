@@ -1,34 +1,28 @@
-// ========== ZOOM ==========
-function setZoom(zoom, cx = null, cy = null) {
-  zoom = Math.max(15, Math.min(300, zoom));
-
-  const wrapper = document.getElementById("tree-wrapper");
-  const container = document.getElementById("tree-zoom-container");
-
-  if (!wrapper || !container) return;
-
+// ========== ZOOM FUNCTIONS ==========
+function setZoom(zoom) {
   const oldZoom = currentZoom;
   const newZoom = zoom / 50;
-
-  const rect = wrapper.getBoundingClientRect();
-
-  if (cx === null || cy === null) {
-    cx = rect.width / 2;
-    cy = rect.height / 2;
-  }
-
-  const worldX = (wrapper.scrollLeft + cx) / oldZoom;
-  const worldY = (wrapper.scrollTop + cy) / oldZoom;
-
-  container.style.transform = `scale(${newZoom})`;
-  container.style.transformOrigin = "0 0";
-
   currentZoom = newZoom;
+  
+  const zoomContainer = document.getElementById("tree-zoom-container");
+  const wrapper = document.getElementById("tree-wrapper");
+  
+  if (zoomContainer && wrapper && oldZoom !== newZoom) {
 
-  wrapper.scrollLeft = worldX * newZoom - cx;
-  wrapper.scrollTop = worldY * newZoom - cy;
+    const rect = wrapper.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
 
-  // sync UI
+    const worldX = (wrapper.scrollLeft + centerX) / oldZoom;
+    const worldY = (wrapper.scrollTop + centerY) / oldZoom;
+
+    zoomContainer.style.transform = `scale(${newZoom})`;
+    zoomContainer.style.transformOrigin = "0 0";
+
+    wrapper.scrollLeft = worldX * newZoom - centerX;
+    wrapper.scrollTop = worldY * newZoom - centerY;
+  }
+  
   const zoomValue = document.getElementById("zoom-value");
   if (zoomValue) zoomValue.textContent = Math.round(zoom) + "%";
 
@@ -36,69 +30,109 @@ function setZoom(zoom, cx = null, cy = null) {
   if (slider && slider.value != zoom) slider.value = zoom;
 }
 
-function updateZoomFromSlider(e) {
-  setZoom(parseInt(e.target.value));
+function updateZoomFromSlider() {
+  const slider = document.getElementById("zoom-slider");
+  if (slider) setZoom(parseInt(slider.value));
 }
 
-function zoomReset() {
-  setZoom(50);
+function zoomReset() { setZoom(50); }
+
+// ========== INVERT ==========
+const INVERT_KEY = "silsilah_invert_mode";
+
+function toggleInvert() {
+  document.body.classList.toggle("invert-mode");
+  const isInvert = document.body.classList.contains("invert-mode");
+  localStorage.setItem(INVERT_KEY, isInvert ? "true" : "false");
 }
 
-// ========== PINCH SMOOTH ==========
-let pinchStartDist = 0;
-let pinchStartZoom = 50;
-
-function getDistance(touches) {
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-function touchStart(e) {
-  if (e.touches.length === 2) {
-    pinchStartDist = getDistance(e.touches);
-    pinchStartZoom = currentZoom * 50;
+function loadInvertSetting() {
+  const savedInvert = localStorage.getItem(INVERT_KEY);
+  if (savedInvert === "true") {
+    document.body.classList.add("invert-mode");
   }
 }
 
-function touchMove(e) {
-  if (e.touches.length === 2) {
-    e.preventDefault();
+// ========== SESSION LOGIN ==========
+const SESSION_KEY = "silsilah_admin_logged_in";
 
-    const newDist = getDistance(e.touches);
-    const ratio = newDist / pinchStartDist;
-
-    const zoom = pinchStartZoom * ratio;
-
-    const wrapper = document.getElementById("tree-wrapper");
-    const rect = wrapper.getBoundingClientRect();
-
-    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
-    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
-
-    setZoom(zoom, cx, cy);
-  }
+function saveLoginSession() {
+  localStorage.setItem(SESSION_KEY, "true");
 }
 
-// ========== MODAL ==========
+function clearLoginSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function isLoggedIn() {
+  return localStorage.getItem(SESSION_KEY) === "true";
+}
+
+// ========== CUSTOM POPUP ==========
+function showCustomPopup(message, title = "Informasi", onConfirm = null, showCancel = false) {
+  const popup = document.getElementById("custom-popup");
+  if (!popup) {
+    alert(message);
+    if (onConfirm) onConfirm();
+    return;
+  }
+  
+  const popupTitle = document.getElementById("popup-title");
+  const popupMessage = document.getElementById("popup-message");
+  const popupButtons = document.getElementById("popup-buttons");
+  
+  popupTitle.textContent = title;
+  popupMessage.innerHTML = message;
+  
+  popupButtons.innerHTML = "";
+  
+  const confirmBtn = document.createElement("button");
+  confirmBtn.textContent = "OK";
+  confirmBtn.onclick = () => {
+    popup.style.display = "none";
+    if (onConfirm) onConfirm();
+  };
+
+  popupButtons.appendChild(confirmBtn);
+
+  if (showCancel) {
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Batal";
+    cancelBtn.onclick = () => popup.style.display = "none";
+    popupButtons.appendChild(cancelBtn);
+  }
+  
+  popup.style.display = "flex";
+}
+
+function closeCustomPopup() {
+  const popup = document.getElementById("custom-popup");
+  if (popup) popup.style.display = "none";
+}
+
+// ========== MODAL (FIX CENTER) ==========
 function showLoginModal() {
-  document.getElementById("login-modal").style.display = "flex";
+  const modal = document.getElementById("login-modal");
+  modal.style.display = "flex";
+  document.getElementById("pin-input").value = "";
+  document.getElementById("pin-error").innerText = "";
 }
 
 function closeLoginModal() {
   document.getElementById("login-modal").style.display = "none";
 }
 
-function showInfoModal() {
-  document.getElementById("info-modal").style.display = "flex";
-}
-
 function closeInfoModal() {
   document.getElementById("info-modal").style.display = "none";
 }
 
+function showInfoModal() {
+  document.getElementById("info-modal").style.display = "flex";
+}
+
 // ========== INIT ==========
 document.addEventListener("DOMContentLoaded", () => {
+
   loadInvertSetting();
 
   if (isLoggedIn()) {
@@ -111,17 +145,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (slider) {
     slider.min = "15";
     slider.max = "300";
+    slider.step = "1";
     slider.value = "50";
     setZoom(50);
     slider.addEventListener("input", updateZoomFromSlider);
   }
 
-  // pinch hanya di tree (AMAN)
-  const wrapper = document.getElementById("tree-wrapper");
-  wrapper.addEventListener("touchstart", touchStart, { passive: false });
-  wrapper.addEventListener("touchmove", touchMove, { passive: false });
-
-  // tombol
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
   document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
@@ -132,10 +161,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
 
   document.getElementById("submit-pin")?.addEventListener("click", checkPin);
+  document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") checkPin();
+  });
 
   window.addEventListener("click", (e) => {
     if (e.target.id === "login-modal") closeLoginModal();
     if (e.target.id === "info-modal") closeInfoModal();
+    if (e.target.id === "custom-popup") closeCustomPopup();
   });
 });
 
