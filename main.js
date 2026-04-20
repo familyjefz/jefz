@@ -4,10 +4,15 @@ function setZoom(zoomPercent) {
   const zoomContainer = document.getElementById("tree-zoom-container");
   if (zoomContainer) {
     zoomContainer.style.transform = `scale(${currentZoom})`;
+    zoomContainer.style.transformOrigin = "center center";
   }
   const zoomValue = document.getElementById("zoom-value");
   if (zoomValue) {
     zoomValue.textContent = Math.round(zoomPercent) + "%";
+  }
+  const slider = document.getElementById("zoom-slider");
+  if (slider && slider.value != zoomPercent) {
+    slider.value = zoomPercent;
   }
 }
 
@@ -16,6 +21,10 @@ function updateZoomFromSlider() {
   if (slider) {
     setZoom(parseInt(slider.value));
   }
+}
+
+function resetZoom() {
+  setZoom(100);
 }
 
 // ========== INVERT COLOR dengan localStorage ==========
@@ -524,61 +533,4 @@ async function showInfo(path) {
     </div>
   `;
   
-  document.getElementById("info-body").innerHTML = bodyHtml;
-  showInfoModal();
-}
-
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
-    const scroll = getCurrentScroll();
-    activePath = null;
-    activeMode = null;
-    renderTree();
-    restoreScroll(scroll.left, scroll.top);
-  }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  loadInvertSetting();
-  
-  // Set slider horizontal
-  const slider = document.getElementById("zoom-slider");
-  if (slider) {
-    slider.min = "30";
-    slider.max = "500";
-    slider.value = "100";
-    setZoom(100);
-    slider.addEventListener("input", updateZoomFromSlider);
-  }
-  
-  if (isLoggedIn()) {
-    isAdmin = true;
-    updateLoginButton();
-    updateUndoRedoButtons();
-  }
-  
-  document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
-  document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
-  document.getElementById("undo-btn")?.addEventListener("click", undoAction);
-  document.getElementById("redo-btn")?.addEventListener("click", redoAction);
-  document.querySelector(".close")?.addEventListener("click", closeLoginModal);
-  document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
-  document.getElementById("submit-pin")?.addEventListener("click", checkPin);
-  document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") checkPin();
-  });
-});
-
-window.addEventListener("click", (e) => {
-  if (e.target === document.getElementById("login-modal")) {
-    closeLoginModal();
-  }
-  if (e.target === document.getElementById("info-modal")) {
-    closeInfoModal();
-  }
-  if (e.target === document.getElementById("custom-popup")) {
-    closeCustomPopup();
-  }
-});
-
-loadTree();
+  document.getElementById("info-body").innerHTML
