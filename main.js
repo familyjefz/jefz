@@ -1,11 +1,29 @@
-// ========== ZOOM FUNCTIONS dengan Slider Horizontal ==========
+// ========== ZOOM FUNCTIONS dengan Slider (center ke layar) ==========
 function setZoom(zoomPercent) {
   currentZoom = zoomPercent / 100;
   const zoomContainer = document.getElementById("tree-zoom-container");
-  if (zoomContainer) {
+  const wrapper = document.getElementById("tree-wrapper");
+  
+  if (zoomContainer && wrapper) {
+    // Simpan posisi scroll relatif terhadap center layar
+    const centerX = wrapper.clientWidth / 2;
+    const centerY = wrapper.clientHeight / 2;
+    const oldScrollLeft = wrapper.scrollLeft;
+    const oldScrollTop = wrapper.scrollTop;
+    
+    // Terapkan zoom
     zoomContainer.style.transform = `scale(${currentZoom})`;
-    zoomContainer.style.transformOrigin = "center center";
+    zoomContainer.style.transformOrigin = "0 0";
+    
+    // Hitung ulang scroll agar zoom terasa dari center layar
+    setTimeout(() => {
+      const newScrollLeft = (oldScrollLeft + centerX) * (currentZoom / (currentZoom / 1)) - centerX;
+      const newScrollTop = (oldScrollTop + centerY) * (currentZoom / (currentZoom / 1)) - centerY;
+      wrapper.scrollLeft = newScrollLeft;
+      wrapper.scrollTop = newScrollTop;
+    }, 10);
   }
+  
   const zoomValue = document.getElementById("zoom-value");
   if (zoomValue) {
     zoomValue.textContent = Math.round(zoomPercent) + "%";
