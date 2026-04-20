@@ -15,9 +15,8 @@ let startScale = 1;
 
 // ========== ELEMENT REFERENCES ==========
 const getContainer = () => document.getElementById("tree-zoom-container");
-const getWrapper = () => document.getElementById("tree-wrapper");
 
-// ========== APPLY TRANSFORM (SMOOTH) ==========
+// ========== APPLY TRANSFORM ==========
 function applyTransform() {
   const el = getContainer();
   if (!el) return;
@@ -25,7 +24,7 @@ function applyTransform() {
   el.style.transformOrigin = "0 0";
 }
 
-// ========== ZOOM FUNCTION (SMOOTH) ==========
+// ========== ZOOM FUNCTION ==========
 function setZoom(zoom, centerX = null, centerY = null) {
   zoom = Math.max(30, Math.min(300, zoom));
   
@@ -75,56 +74,36 @@ function zoomReset() {
   document.getElementById("zoom-slider").value = 100;
 }
 
-// ========== DRAG PAN (PERBAIKI TIDAK RESPON) ==========
+// ========== DRAG PAN ==========
 function startDrag(e) {
-  // Cek target dengan lebih longgar
-  const target = e.target;
-  
-  // Jangan drag jika klik pada elemen interaktif
-  if (target.closest("button") || 
-      target.closest("textarea") || 
-      target.closest("input") ||
-      target.closest("select") ||
-      target.closest(".node-box") ||
-      target.closest(".modal") ||
-      target.closest(".custom-popup") ||
-      target.closest(".zoom-slider")) {
+  if (e.target.closest("button") || 
+      e.target.closest("textarea") || 
+      e.target.closest(".node-box") ||
+      e.target.closest("input") ||
+      e.target.closest(".zoom-slider")) {
     return;
   }
-  
-  // Cek apakah klik di dalam tree-wrapper
-  const wrapper = getWrapper();
-  if (!wrapper || !wrapper.contains(target)) return;
   
   isDragging = true;
   startX = e.clientX;
   startY = e.clientY;
   startOffsetX = offsetX;
   startOffsetY = offsetY;
-  
   e.preventDefault();
-  e.stopPropagation();
 }
 
 function moveDrag(e) {
   if (!isDragging) return;
-  
   offsetX = startOffsetX + (e.clientX - startX);
   offsetY = startOffsetY + (e.clientY - startY);
-  
   applyTransform();
-  
-  e.preventDefault();
 }
 
-function endDrag(e) {
-  if (isDragging) {
-    isDragging = false;
-    e.preventDefault();
-  }
+function endDrag() {
+  isDragging = false;
 }
 
-// ========== PINCH ZOOM (SMOOTH) ==========
+// ========== PINCH ZOOM ==========
 function getDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
@@ -144,15 +123,12 @@ function touchStart(e) {
     if (target && (
       target.closest("button") || 
       target.closest("textarea") || 
-      target.closest("input") ||
       target.closest(".node-box") ||
+      target.closest("input") ||
       target.closest(".zoom-slider")
     )) {
       return;
     }
-    
-    const wrapper = getWrapper();
-    if (!wrapper || !wrapper.contains(target)) return;
     
     isDragging = true;
     startX = touch.clientX;
@@ -183,9 +159,4 @@ function touchEnd(e) {
   if (e.touches.length < 2) isPinching = false;
   if (e.touches.length === 0) isDragging = false;
 }
-
-// ========== PASTIKAN DRAG BERHENTI SAAT MOUSE KELUAR ==========
-document.addEventListener("mouseleave", () => {
-  if (isDragging) isDragging = false;
-});
 /*Stable*/
