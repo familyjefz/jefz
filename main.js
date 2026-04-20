@@ -10,6 +10,11 @@ function zoomIn() { setZoom(currentZoom + 0.1); }
 function zoomOut() { setZoom(currentZoom - 0.1); }
 function zoomReset() { setZoom(1); }
 
+// ========== INVERT COLOR ==========
+function toggleInvert() {
+  document.body.classList.toggle("invert-mode");
+}
+
 function showLoginModal() {
   document.getElementById("login-modal").style.display = "block";
   document.getElementById("pin-input").value = "";
@@ -63,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
   document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
+  document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", showLoginModal);
   document.querySelector(".close")?.addEventListener("click", closeLoginModal);
   document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
