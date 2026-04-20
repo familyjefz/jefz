@@ -67,6 +67,7 @@
   min-width: max-content;
   min-height: max-content;
   will-change: transform;
+  image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -74,6 +75,11 @@
   -webkit-backface-visibility: hidden;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
+}
+
+.tree-zoom-container * {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 #tree {
