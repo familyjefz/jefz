@@ -15,6 +15,7 @@ let startScale = 1;
 
 // ========== ELEMENT REFERENCES ==========
 const getContainer = () => document.getElementById("tree-zoom-container");
+const getWrapper = () => document.getElementById("tree-wrapper");
 
 // ========== APPLY TRANSFORM ==========
 function applyTransform() {
@@ -26,7 +27,8 @@ function applyTransform() {
 
 // ========== ZOOM FUNCTION ==========
 function setZoom(zoom, centerX = null, centerY = null) {
-  zoom = Math.max(30, Math.min(200, zoom));
+  // Batasi zoom 30% - 300% (diperbesar)
+  zoom = Math.max(30, Math.min(300, zoom));
   
   const newScale = zoom / 100;
   const el = getContainer();
@@ -69,14 +71,52 @@ function updateZoomFromSlider(e) {
   setZoom(parseInt(e.target.value));
 }
 
+// ========== ZOOM RESET - CENTER TREE ==========
 function zoomReset() {
   scale = 1;
-  offsetX = 0;
-  offsetY = 0;
   currentZoom = 1;
+  
+  const wrapper = getWrapper();
+  const container = getContainer();
+  
+  if (wrapper && container) {
+    // Dapatkan ukuran viewport
+    const wrapperRect = wrapper.getBoundingClientRect();
+    
+    // Dapatkan ukuran konten tree
+    const treeElement = document.getElementById("tree");
+    const treeWidth = treeElement ? treeElement.offsetWidth : 2000;
+    const treeHeight = treeElement ? treeElement.offsetHeight : 1500;
+    
+    // Hitung offset agar tree berada di tengah viewport
+    // Posisi center tree = treeWidth/2, treeHeight/2
+    // Posisi center viewport = wrapperRect.width/2, wrapperRect.height/2
+    offsetX = (wrapperRect.width / 2) - (treeWidth / 2);
+    offsetY = (wrapperRect.height / 2) - (treeHeight / 2);
+    
+    // Jika tree lebih kecil dari viewport, posisikan di tengah
+    // Jika lebih besar, posisikan agar kiri-atas terlihat
+    if (treeWidth < wrapperRect.width) {
+      offsetX = (wrapperRect.width - treeWidth) / 2;
+    } else {
+      offsetX = 0;
+    }
+    
+    if (treeHeight < wrapperRect.height) {
+      offsetY = (wrapperRect.height - treeHeight) / 2;
+    } else {
+      offsetY = 0;
+    }
+  } else {
+    offsetX = 0;
+    offsetY = 0;
+  }
+  
   applyTransform();
   updateZoomUI(100);
-  document.getElementById("zoom-slider").value = 100;
+  
+  const slider = document.getElementById("zoom-slider");
+  if (slider) slider.value = 100;
 }
 
 // ========== DRAG PAN ==========
