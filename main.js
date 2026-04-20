@@ -46,7 +46,7 @@ function updateZoomFromSlider() {
   }
 }
 
-function zoomReset() { setZoom(30); }
+function zoomReset() { setZoom(50); }
 
 // ========== INVERT COLOR dengan localStorage ==========
 const INVERT_KEY = "silsilah_invert_mode";
@@ -151,8 +151,7 @@ function showLoginModal() {
     const modalContent = document.querySelector("#login-modal .modal-content");
     if (modalContent) {
       modalContent.style.top = "50%";
-      modalContent.style.left = "50%";
-      modalContent.style.transform = "translate(-50%, -50%)";
+      modalContent.style.left = "0%";
     }
     document.getElementById("pin-input").focus();
   }, 10);
@@ -169,7 +168,7 @@ function closeInfoModal() {
 
 function showInfoModal() {
   const modal = document.getElementById("info-modal");
-  modal.style.display = "block";
+  modal.style.display = "flex";
   
   // Posisikan modal info di tengah layar
   setTimeout(() => {
@@ -560,10 +559,10 @@ document.addEventListener("DOMContentLoaded", () => {
   
   const slider = document.getElementById("zoom-slider");
   if (slider) {
-    slider.min = "0";
+    slider.min = "15";
     slider.max = "300";
     slider.step = "1";
-    slider.value = "30";
+    slider.value = "10";
     setZoom(50);
     slider.addEventListener("input", updateZoomFromSlider);
   }
