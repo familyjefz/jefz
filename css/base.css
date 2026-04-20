@@ -12,7 +12,6 @@ body {
   overflow: hidden;
 }
 
-/* ========== FONT & TYPOGRAPHY ========== */
 h2 {
   margin: 0;
   font-size: 16px;
@@ -28,7 +27,6 @@ h4 {
   font-size: 18px;
 }
 
-/* ========== UTILITY ========== */
 .empty-info {
   color: #999;
   font-style: italic;
