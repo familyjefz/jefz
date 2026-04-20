@@ -81,6 +81,42 @@ h2 {
   background: #00a8f7 !important;
 }
 
+.zoom-slider {
+  width: 100px;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #ddd;
+  border-radius: 5px;
+  outline: none;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #00a8f7;
+  cursor: pointer;
+  border: none;
+}
+
+.zoom-value {
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 45px;
+  text-align: center;
+}
+
+.zoom-reset-btn {
+  background: #000000 !important;
+  color: white !important;
+}
+
+.zoom-reset-btn:hover {
+  background: #00a8f7 !important;
+}
+
 .tree-wrapper {
   flex: 1;
   overflow: auto;
