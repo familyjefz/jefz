@@ -93,6 +93,7 @@ h2 {
   transition: transform 0.1s ease;
   width: fit-content;
   height: fit-content;
+  will-change: transform;
 }
 
 #tree {
@@ -489,7 +490,13 @@ h2 {
   text-align: center;
   writing-mode: horizontal-tb;
 }
+
 /* Invert mode - murni tanpa pengecualian */
 body.invert-mode {
+  filter: invert(1);
+}
+
+/* Pastikan zoom container tidak terpengaruh invert */
+body.invert-mode .tree-zoom-container {
   filter: invert(1);
 }
