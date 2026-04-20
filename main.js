@@ -1,7 +1,7 @@
 // ========== ZOOM FUNCTIONS ==========
 function setZoom(zoom) {
   const oldZoom = currentZoom;
-  const newZoom = zoom / 100;
+  const newZoom = zoom/ 50;
   currentZoom = newZoom;
   
   const zoomContainer = document.getElementById("tree-zoom-container");
@@ -46,7 +46,7 @@ function updateZoomFromSlider() {
   }
 }
 
-function zoomReset() { setZoom(100); }
+function zoomReset() { setZoom(30); }
 
 // ========== INVERT COLOR dengan localStorage ==========
 const INVERT_KEY = "silsilah_invert_mode";
@@ -560,11 +560,11 @@ document.addEventListener("DOMContentLoaded", () => {
   
   const slider = document.getElementById("zoom-slider");
   if (slider) {
-    slider.min = "30";
-    slider.max = "200";
+    slider.min = "0";
+    slider.max = "300";
     slider.step = "1";
-    slider.value = "100";
-    setZoom(100);
+    slider.value = "30";
+    setZoom(50);
     slider.addEventListener("input", updateZoomFromSlider);
   }
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
