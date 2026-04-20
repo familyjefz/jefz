@@ -1,6 +1,4 @@
-// ========== ZOOM FUNCTIONS (REVISI - ANIMASI MULUS) ==========
-let zoomAnimationFrame = null;
-
+// ========== ZOOM FUNCTIONS (TANPA ANIMASI - MULUS & FOKUS TEPAT) ==========
 function setZoom(zoom) {
   const oldZoom = currentZoom;
   const newZoom = zoom / 100;
@@ -11,75 +9,53 @@ function setZoom(zoom) {
     return;
   }
   
-  // Batalkan animasi yang sedang berjalan
-  if (zoomAnimationFrame) {
-    cancelAnimationFrame(zoomAnimationFrame);
-    zoomAnimationFrame = null;
-  }
+  currentZoom = newZoom;
   
   const zoomContainer = document.getElementById("tree-zoom-container");
   const wrapper = document.getElementById("tree-wrapper");
   
   if (zoomContainer && wrapper) {
-    // Dapatkan posisi center viewport saat ini
-    const rect = wrapper.getBoundingClientRect();
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
+    // SIMPAN POSISI ELEMEN YANG SEDANG DIFOKUSKAN (jika ada)
+    let targetElement = null;
+    let targetRect = null;
     
-    // Titik tengah dalam koordinat konten sebelum zoom
-    const contentCenterX = (wrapper.scrollLeft + centerX) / oldZoom;
-    const contentCenterY = (wrapper.scrollTop + centerY) / oldZoom;
+    // Cek apakah ada node yang sedang aktif/dibuka
+    const activeNode = document.querySelector(".active-node");
+    if (activeNode) {
+      targetElement = activeNode;
+      targetRect = targetElement.getBoundingClientRect();
+    }
     
-    // Hitung target scroll
-    const targetScrollLeft = (contentCenterX * newZoom) - centerX;
-    const targetScrollTop = (contentCenterY * newZoom) - centerY;
+    // Dapatkan posisi center viewport
+    const viewportRect = wrapper.getBoundingClientRect();
+    const viewportCenterX = viewportRect.width / 2;
+    const viewportCenterY = viewportRect.height / 2;
     
-    // Simpan posisi scroll awal
-    const startScrollLeft = wrapper.scrollLeft;
-    const startScrollTop = wrapper.scrollTop;
-    const startZoom = oldZoom;
-    const endZoom = newZoom;
-    
-    // Waktu animasi (ms)
-    const duration = 150;
-    const startTime = performance.now();
-    
-    // Terapkan zoom langsung tanpa transisi CSS
+    // Terapkan zoom
     zoomContainer.style.transform = `scale(${newZoom})`;
     zoomContainer.style.transformOrigin = "0 0";
     
-    // Fungsi animasi scroll
-    const animateScroll = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      let progress = Math.min(elapsed / duration, 1);
-      
-      // Easing function: ease-out (cubic)
-      progress = 1 - Math.pow(1 - progress, 3);
-      
-      // Interpolasi zoom untuk perhitungan scroll
-      const currentZoomValue = startZoom + (endZoom - startZoom) * progress;
-      
-      // Hitung scroll berdasarkan zoom yang sedang berlangsung
-      const currentScrollLeft = (contentCenterX * currentZoomValue) - centerX;
-      const currentScrollTop = (contentCenterY * currentZoomValue) - centerY;
-      
-      wrapper.scrollLeft = currentScrollLeft;
-      wrapper.scrollTop = currentScrollTop;
-      
-      if (progress < 1) {
-        zoomAnimationFrame = requestAnimationFrame(animateScroll);
+    // Gunakan requestAnimationFrame untuk memastikan render selesai
+    requestAnimationFrame(() => {
+      if (targetElement && targetRect) {
+        // Jika ada node yang difokuskan, pertahankan posisi node tersebut
+        const newTargetRect = targetElement.getBoundingClientRect();
+        const deltaX = newTargetRect.left - targetRect.left;
+        const deltaY = newTargetRect.top - targetRect.top;
+        
+        wrapper.scrollLeft = wrapper.scrollLeft + deltaX;
+        wrapper.scrollTop = wrapper.scrollTop + deltaY;
       } else {
-        // Final position - pastikan tepat
-        wrapper.scrollLeft = targetScrollLeft;
-        wrapper.scrollTop = targetScrollTop;
-        zoomAnimationFrame = null;
+        // Jika tidak ada fokus khusus, pertahankan center viewport
+        const contentCenterX = (wrapper.scrollLeft + viewportCenterX) / oldZoom;
+        const contentCenterY = (wrapper.scrollTop + viewportCenterY) / oldZoom;
+        
+        wrapper.scrollLeft = (contentCenterX * newZoom) - viewportCenterX;
+        wrapper.scrollTop = (contentCenterY * newZoom) - viewportCenterY;
       }
-    };
-    
-    zoomAnimationFrame = requestAnimationFrame(animateScroll);
+    });
   }
   
-  currentZoom = newZoom;
   updateZoomUI(zoom);
 }
 
