@@ -1,6 +1,6 @@
 // ========== ZOOM FUNCTIONS ==========
 function setZoom(zoom) {
-  currentZoom = zoom;
+  currentZoom = zoom / 100;
   const zoomContainer = document.getElementById("tree-zoom-container");
   const wrapper = document.getElementById("tree-wrapper");
   
@@ -556,6 +556,9 @@ document.addEventListener("DOMContentLoaded", () => {
   
   const slider = document.getElementById("zoom-slider");
   if (slider) {
+    slider.min = "30";
+    slider.max = "200";
+    slider.step = "1";
     slider.value = "100";
     setZoom(100);
     slider.addEventListener("input", updateZoomFromSlider);
