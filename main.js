@@ -1,4 +1,4 @@
-// ========== ZOOM FUNCTIONS dengan Slider Vertikal ==========
+// ========== ZOOM FUNCTIONS dengan Slider Horizontal ==========
 function setZoom(zoomPercent) {
   currentZoom = zoomPercent / 100;
   const zoomContainer = document.getElementById("tree-zoom-container");
@@ -18,7 +18,7 @@ function updateZoomFromSlider() {
   }
 }
 
-// ========== INVERT COLOR dengan localStorage (kembalikan seperti semula) ==========
+// ========== INVERT COLOR dengan localStorage ==========
 const INVERT_KEY = "silsilah_invert_mode";
 
 function toggleInvert() {
@@ -541,7 +541,7 @@ document.addEventListener("click", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   loadInvertSetting();
   
-  // Set slider vertikal
+  // Set slider horizontal
   const slider = document.getElementById("zoom-slider");
   if (slider) {
     slider.min = "30";
