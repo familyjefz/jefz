@@ -4,7 +4,6 @@ function setZoom(zoom) {
   const zoomContainer = document.getElementById("tree-zoom-container");
   if (zoomContainer) {
     zoomContainer.style.transform = `scale(${currentZoom})`;
-    zoomContainer.style.transformOrigin = "center center";
   }
   
   const zoomValue = document.getElementById("zoom-value");
