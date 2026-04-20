@@ -1,7 +1,7 @@
 // ========== ZOOM FUNCTIONS ==========
 function setZoom(zoom) {
   currentZoom = zoom / 100;
-  const zoomContainer = document.getElementById("tree-zoom-container");
+  const zoomContainer = document.getElementById("tree-wrapper");
   if (zoomContainer) {
     zoomContainer.style.transform = `scale(${currentZoom})`;
   }
