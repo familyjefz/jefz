@@ -446,6 +446,48 @@ h2 {
   opacity: 0.85;
 }
 
+/* Floating Zoom Slider - pojok kanan bawah */
+.zoom-slider-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  padding: 8px 12px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 999;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.zoom-slider {
+  width: 120px;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #ddd;
+  border-radius: 5px;
+  outline: none;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #00a8f7;
+  cursor: pointer;
+}
+
+.zoom-value {
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 45px;
+  text-align: center;
+}
+
 /* Invert mode - murni tanpa pengecualian */
 body.invert-mode {
   filter: invert(1);
