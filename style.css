@@ -446,7 +446,7 @@ h2 {
   opacity: 0.85;
 }
 
-/* Floating Zoom Slider Horizontal - pojok kanan bawah */
+/* Floating Zoom Slider - pojok kanan bawah */
 .zoom-slider-container {
   position: fixed;
   bottom: 20px;
