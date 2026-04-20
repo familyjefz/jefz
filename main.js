@@ -1,13 +1,15 @@
 // ========== ZOOM FUNCTIONS dengan Slider (center ke layar) ==========
+// Menggunakan logika zoom dari sistem klik yang sudah stabil
 function setZoom(zoomPercent) {
   currentZoom = zoomPercent / 100;
   const zoomContainer = document.getElementById("tree-zoom-container");
   const wrapper = document.getElementById("tree-wrapper");
   
   if (zoomContainer && wrapper) {
-    // Simpan posisi scroll relatif terhadap center layar
-    const centerX = wrapper.clientWidth / 2;
-    const centerY = wrapper.clientHeight / 2;
+    // Simpan posisi scroll sebelum zoom (untuk center ke layar)
+    const rect = wrapper.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
     const oldScrollLeft = wrapper.scrollLeft;
     const oldScrollTop = wrapper.scrollTop;
     
@@ -17,8 +19,8 @@ function setZoom(zoomPercent) {
     
     // Hitung ulang scroll agar zoom terasa dari center layar
     setTimeout(() => {
-      const newScrollLeft = (oldScrollLeft + centerX) * (currentZoom / (currentZoom / 1)) - centerX;
-      const newScrollTop = (oldScrollTop + centerY) * (currentZoom / (currentZoom / 1)) - centerY;
+      const newScrollLeft = (oldScrollLeft + centerX) * currentZoom - centerX;
+      const newScrollTop = (oldScrollTop + centerY) * currentZoom - centerY;
       wrapper.scrollLeft = newScrollLeft;
       wrapper.scrollTop = newScrollTop;
     }, 10);
