@@ -493,8 +493,3 @@ h2 {
 body.invert-mode {
   filter: invert(1);
 }
-
-/* Pastikan slider tidak terpengaruh invert */
-body.invert-mode .zoom-slider-container {
-  filter: invert(1);
-}
