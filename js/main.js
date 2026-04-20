@@ -16,11 +16,10 @@ document.addEventListener("DOMContentLoaded", () => {
     updateUndoRedoButtons();
   }
   
-  // Zoom slider - max diubah ke 300
   const slider = document.getElementById("zoom-slider");
   if (slider) {
     slider.min = "30";
-    slider.max = "300";  // Diubah dari 200 ke 300
+    slider.max = "300";
     slider.step = "1";
     slider.value = "100";
     slider.addEventListener("input", updateZoomFromSlider);
@@ -28,18 +27,15 @@ document.addEventListener("DOMContentLoaded", () => {
   
   zoomReset();
   
-  // Mouse drag pan
   document.addEventListener("mousedown", startDrag);
   document.addEventListener("mousemove", moveDrag);
   document.addEventListener("mouseup", endDrag);
   
-  // Touch events
   document.addEventListener("touchstart", touchStart, { passive: false });
   document.addEventListener("touchmove", touchMove, { passive: false });
   document.addEventListener("touchend", touchEnd);
   document.addEventListener("touchcancel", touchEnd);
   
-  // Buttons
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
   document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
