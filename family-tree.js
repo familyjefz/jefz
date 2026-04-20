@@ -198,10 +198,10 @@ function getCurrentScroll() {
 function restoreScroll(left, top) {
   const w = document.getElementById("tree-wrapper");
   if (w) {
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       w.scrollLeft = left;
       w.scrollTop = top;
-    });
+    }, 50);
   }
 }
 
