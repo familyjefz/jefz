@@ -1,10 +1,32 @@
 // ========== ZOOM FUNCTIONS ==========
 function setZoom(zoom) {
-  currentZoom = zoom / 100;
+  const oldZoom = currentZoom;
+  const newZoom = zoom / 100;
+  currentZoom = newZoom;
+  
   const zoomContainer = document.getElementById("tree-zoom-container");
-  if (zoomContainer) {
-    zoomContainer.style.transform = `scale(${currentZoom})`;
-    zoomContainer.style.transformOrigin = "0";
+  const wrapper = document.getElementById("tree-wrapper");
+  
+  if (zoomContainer && wrapper && oldZoom !== newZoom) {
+    // Simpan posisi scroll relatif terhadap center
+    const rect = wrapper.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const oldScrollLeft = wrapper.scrollLeft;
+    const oldScrollTop = wrapper.scrollTop;
+    
+    // Terapkan zoom
+    zoomContainer.style.transform = `scale(${newZoom})`;
+    zoomContainer.style.transformOrigin = "0 0";
+    
+    // Hitung scroll baru agar posisi center tetap sama
+    const newScrollLeft = (oldScrollLeft + centerX) * (newZoom / oldZoom) - centerX;
+    const newScrollTop = (oldScrollTop + centerY) * (newZoom / oldZoom) - centerY;
+    
+    setTimeout(() => {
+      wrapper.scrollLeft = newScrollLeft;
+      wrapper.scrollTop = newScrollTop;
+    }, 10);
   }
   
   const zoomValue = document.getElementById("zoom-value");
