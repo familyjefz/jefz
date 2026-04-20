@@ -2,27 +2,9 @@
 function setZoom(zoom) {
   currentZoom = zoom / 100;
   const zoomContainer = document.getElementById("tree-zoom-container");
-  const wrapper = document.getElementById("tree-wrapper");
-  
-  if (zoomContainer && wrapper) {
-    // Simpan posisi scroll sebelum zoom (untuk center ke layar)
-    const rect = wrapper.getBoundingClientRect();
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const oldScrollLeft = wrapper.scrollLeft;
-    const oldScrollTop = wrapper.scrollTop;
-    
-    // Terapkan zoom
+  if (zoomContainer) {
     zoomContainer.style.transform = `scale(${currentZoom})`;
-    zoomContainer.style.transformOrigin = "0 0";
-    
-    // Hitung ulang scroll agar zoom terasa dari center layar
-    setTimeout(() => {
-      const newScrollLeft = (oldScrollLeft + centerX) * currentZoom - centerX;
-      const newScrollTop = (oldScrollTop + centerY) * currentZoom - centerY;
-      wrapper.scrollLeft = newScrollLeft;
-      wrapper.scrollTop = newScrollTop;
-    }, 10);
+    zoomContainer.style.transformOrigin = "center center";
   }
   
   const zoomValue = document.getElementById("zoom-value");
