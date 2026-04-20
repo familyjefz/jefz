@@ -1,5 +1,5 @@
 // ========== STATE ZOOM & PAN ==========
-let scale = 1;          // zoom (1 = 100%)
+let scale = 1;
 let offsetX = 0;
 let offsetY = 0;
 
@@ -15,6 +15,7 @@ let startScale = 1;
 
 // ========== ELEMENT REFERENCES ==========
 const getContainer = () => document.getElementById("tree-zoom-container");
+const getWrapper = () => document.getElementById("tree-wrapper");
 
 // ========== APPLY TRANSFORM (SMOOTH) ==========
 function applyTransform() {
@@ -26,50 +27,37 @@ function applyTransform() {
 
 // ========== ZOOM FUNCTION (SMOOTH) ==========
 function setZoom(zoom, centerX = null, centerY = null) {
-  // Batasi zoom 30% - 300%
   zoom = Math.max(30, Math.min(300, zoom));
   
   const newScale = zoom / 100;
   const el = getContainer();
   if (!el) return;
   
-  // Jika tidak ada titik fokus, gunakan center window
   if (centerX === null || centerY === null) {
     centerX = window.innerWidth / 2;
     centerY = window.innerHeight / 2;
   }
   
   const rect = el.getBoundingClientRect();
-  
-  // Hitung posisi relatif titik fokus terhadap container
   const dx = centerX - rect.left;
   const dy = centerY - rect.top;
   
-  // Sesuaikan offset agar titik fokus tetap di posisi yang sama
   offsetX -= dx * (newScale / scale - 1);
   offsetY -= dy * (newScale / scale - 1);
   
   scale = newScale;
-  
   applyTransform();
   
-  // Update UI
   updateZoomUI(zoom);
-  
-  // Update currentZoom untuk kompatibilitas
   currentZoom = newScale;
 }
 
 function updateZoomUI(zoom) {
   const zoomValue = document.getElementById("zoom-value");
-  if (zoomValue) {
-    zoomValue.textContent = Math.round(zoom) + "%";
-  }
+  if (zoomValue) zoomValue.textContent = Math.round(zoom) + "%";
   
   const slider = document.getElementById("zoom-slider");
-  if (slider && slider.value != zoom) {
-    slider.value = zoom;
-  }
+  if (slider && slider.value != zoom) slider.value = zoom;
 }
 
 function updateZoomFromSlider(e) {
@@ -83,31 +71,39 @@ function zoomReset() {
   currentZoom = 1;
   
   applyTransform();
-  
   updateZoomUI(100);
   document.getElementById("zoom-slider").value = 100;
 }
 
-// ========== DRAG PAN (SMOOTH) ==========
+// ========== DRAG PAN (PERBAIKI TIDAK RESPON) ==========
 function startDrag(e) {
+  // Cek target dengan lebih longgar
+  const target = e.target;
+  
   // Jangan drag jika klik pada elemen interaktif
-  if (e.target.closest("button") || 
-      e.target.closest("textarea") || 
-      e.target.closest(".node-box") ||
-      e.target.closest("input") ||
-      e.target.closest(".zoom-slider")) {
+  if (target.closest("button") || 
+      target.closest("textarea") || 
+      target.closest("input") ||
+      target.closest("select") ||
+      target.closest(".node-box") ||
+      target.closest(".modal") ||
+      target.closest(".custom-popup") ||
+      target.closest(".zoom-slider")) {
     return;
   }
   
-  isDragging = true;
+  // Cek apakah klik di dalam tree-wrapper
+  const wrapper = getWrapper();
+  if (!wrapper || !wrapper.contains(target)) return;
   
+  isDragging = true;
   startX = e.clientX;
   startY = e.clientY;
-  
   startOffsetX = offsetX;
   startOffsetY = offsetY;
   
   e.preventDefault();
+  e.stopPropagation();
 }
 
 function moveDrag(e) {
@@ -117,10 +113,15 @@ function moveDrag(e) {
   offsetY = startOffsetY + (e.clientY - startY);
   
   applyTransform();
+  
+  e.preventDefault();
 }
 
-function endDrag() {
-  isDragging = false;
+function endDrag(e) {
+  if (isDragging) {
+    isDragging = false;
+    e.preventDefault();
+  }
 }
 
 // ========== PINCH ZOOM (SMOOTH) ==========
@@ -143,12 +144,15 @@ function touchStart(e) {
     if (target && (
       target.closest("button") || 
       target.closest("textarea") || 
-      target.closest(".node-box") ||
       target.closest("input") ||
+      target.closest(".node-box") ||
       target.closest(".zoom-slider")
     )) {
       return;
     }
+    
+    const wrapper = getWrapper();
+    if (!wrapper || !wrapper.contains(target)) return;
     
     isDragging = true;
     startX = touch.clientX;
@@ -161,32 +165,27 @@ function touchStart(e) {
 function touchMove(e) {
   if (isPinching && e.touches.length === 2) {
     e.preventDefault();
-    
     const dist = getDist(e.touches);
     const factor = dist / startDist;
-    
     const zoom = (startScale * factor) * 100;
-    
     const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
     const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-    
     setZoom(zoom, centerX, centerY);
   } else if (isDragging && e.touches.length === 1) {
     e.preventDefault();
-    
     offsetX = startOffsetX + (e.touches[0].clientX - startX);
     offsetY = startOffsetY + (e.touches[0].clientY - startY);
-    
     applyTransform();
   }
 }
 
 function touchEnd(e) {
-  if (e.touches.length < 2) {
-    isPinching = false;
-  }
-  if (e.touches.length === 0) {
-    isDragging = false;
-  }
+  if (e.touches.length < 2) isPinching = false;
+  if (e.touches.length === 0) isDragging = false;
 }
+
+// ========== PASTIKAN DRAG BERHENTI SAAT MOUSE KELUAR ==========
+document.addEventListener("mouseleave", () => {
+  if (isDragging) isDragging = false;
+});
 /*Stable*/
