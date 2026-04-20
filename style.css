@@ -34,13 +34,14 @@ h2 {
   font-size: 16px;
 }
 
-.zoom-controls {
+/* ========== HEADER CONTROLS ========== */
+.header-controls {
   display: flex;
   gap: 6px;
   align-items: center;
 }
 
-.zoom-controls button {
+.header-controls button {
   background: #000000;
   color: white;
   border: none;
@@ -51,8 +52,13 @@ h2 {
   font-weight: bold;
 }
 
-.zoom-controls button:hover {
+.header-controls button:hover {
   background: #00a8f7;
+}
+
+/* Sembunyikan zoom-controls lama */
+.zoom-controls {
+  display: none;
 }
 
 .login-btn {
@@ -81,65 +87,98 @@ h2 {
   background: #00a8f7 !important;
 }
 
-.zoom-slider {
-  width: 100px;
-  height: 4px;
+/* ========== BOTTOM ZOOM BAR ========== */
+.bottom-zoom-bar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 10px 20px;
+  border-radius: 40px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  z-index: 500;
+}
+
+.bottom-zoom-bar .zoom-slider {
+  width: 180px;
+  height: 5px;
   -webkit-appearance: none;
-  background: #ddd;
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 5px;
   outline: none;
 }
 
-.zoom-slider::-webkit-slider-thumb {
+.bottom-zoom-bar .zoom-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #00a8f7;
   cursor: pointer;
-  border: none;
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.zoom-value {
+.bottom-zoom-bar .zoom-value {
   color: white;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: bold;
-  min-width: 45px;
+  min-width: 55px;
   text-align: center;
 }
 
-.zoom-reset-btn {
-  background: #000000 !important;
-  color: white !important;
+.bottom-zoom-bar .zoom-reset-btn {
+  background: #00a8f7;
+  color: white;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
 }
 
-.zoom-reset-btn:hover {
-  background: #00a8f7 !important;
+.bottom-zoom-bar .zoom-reset-btn:hover {
+  background: #0088cc;
+  transform: scale(1.05);
 }
 
-/* ========== TREE WRAPPER - DIUBAH UNTUK SMOOTH ZOOM & DRAG PAN ========== */
+/* ========== TREE WRAPPER ========== */
 .tree-wrapper {
   flex: 1;
-  overflow: hidden; /* Penting: hidden karena pakai drag pan JavaScript */
+  overflow: hidden;
   background: #f1fcff;
   position: relative;
-  touch-action: none; /* Serahkan semua touch event ke JavaScript */
+  touch-action: none;
   cursor: grab;
+  height: 100%;
 }
 
 .tree-wrapper:active {
   cursor: grabbing;
 }
 
-/* ========== ZOOM CONTAINER - DIUBAH ========== */
+/* ========== ZOOM CONTAINER ========== */
 .tree-zoom-container {
-  transform-origin: 0 0; /* Penting: 0 0 untuk perhitungan yang tepat */
-  transition: none !important; /* Animasi di-handle JavaScript */
+  transform-origin: 0 0;
+  transition: none !important;
   width: fit-content;
   height: fit-content;
   min-width: max-content;
   min-height: max-content;
-  will-change: transform; /* Optimasi performa */
+  will-change: transform;
 }
 
 /* Cegah drag cursor pada elemen interaktif */
@@ -269,7 +308,7 @@ button:not(.tree-wrapper button) {
   font-family: Arial, sans-serif;
   resize: vertical;
   box-sizing: border-box;
-  cursor: text; /* Kursor text untuk input */
+  cursor: text;
 }
 
 .node-actions {
@@ -525,7 +564,7 @@ button:not(.tree-wrapper button) {
   opacity: 0.85;
 }
 
-/* Invert mode - murni tanpa pengecualian */
+/* Invert mode */
 body.invert-mode {
   filter: invert(1);
 }
