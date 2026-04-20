@@ -1,5 +1,3 @@
-Perbaiki sistem zoom nya biar ga patah", tapi harus tetep bisa fokus kaya begitu.
-
 // ========== ZOOM FUNCTIONS ==========
 function setZoom(zoom) {
   const oldZoom = currentZoom;
