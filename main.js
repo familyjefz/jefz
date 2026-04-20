@@ -2,37 +2,58 @@
 function setZoom(zoom) {
   const oldZoom = currentZoom;
   const newZoom = zoom / 100;
+  
+  // Skip jika zoom tidak berubah
+  if (oldZoom === newZoom) {
+    updateZoomUI(zoom);
+    return;
+  }
+  
   currentZoom = newZoom;
   
   const zoomContainer = document.getElementById("tree-zoom-container");
   const wrapper = document.getElementById("tree-wrapper");
   
-  if (zoomContainer && wrapper && oldZoom !== newZoom) {
-    // Simpan posisi scroll relatif terhadap center
+  if (zoomContainer && wrapper) {
+    // Dapatkan posisi center viewport saat ini
     const rect = wrapper.getBoundingClientRect();
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    const oldScrollLeft = wrapper.scrollLeft;
-    const oldScrollTop = wrapper.scrollTop;
     
-    // Terapkan zoom
+    // Titik tengah dalam koordinat konten sebelum zoom
+    const contentCenterX = (wrapper.scrollLeft + centerX) / oldZoom;
+    const contentCenterY = (wrapper.scrollTop + centerY) / oldZoom;
+    
+    // Terapkan zoom dengan will-change untuk performa lebih halus
+    zoomContainer.style.willChange = 'transform';
     zoomContainer.style.transform = `scale(${newZoom})`;
     zoomContainer.style.transformOrigin = "0 0";
     
-    // Hitung scroll baru agar posisi center tetap sama
-    const newScrollLeft = (oldScrollLeft + centerX) * (newZoom / oldZoom) - centerX;
-    const newScrollTop = (oldScrollTop + centerY) * (newZoom / oldZoom) - centerY;
+    // Hitung posisi scroll baru agar titik konten yang sama tetap di tengah
+    const newScrollLeft = (contentCenterX * newZoom) - centerX;
+    const newScrollTop = (contentCenterY * newZoom) - centerY;
     
-    setTimeout(() => {
+    // Gunakan requestAnimationFrame untuk sinkronisasi dengan render browser
+    requestAnimationFrame(() => {
       wrapper.scrollLeft = newScrollLeft;
       wrapper.scrollTop = newScrollTop;
-    }, 10);
+      
+      // Reset will-change setelah transform selesai
+      setTimeout(() => {
+        zoomContainer.style.willChange = 'auto';
+      }, 100);
+    });
   }
   
+  updateZoomUI(zoom);
+}
+
+function updateZoomUI(zoom) {
   const zoomValue = document.getElementById("zoom-value");
   if (zoomValue) {
     zoomValue.textContent = Math.round(zoom) + "%";
   }
+  
   const slider = document.getElementById("zoom-slider");
   if (slider && slider.value != zoom) {
     slider.value = zoom;
@@ -46,7 +67,9 @@ function updateZoomFromSlider() {
   }
 }
 
-function zoomReset() { setZoom(100); }
+function zoomReset() { 
+  setZoom(100); 
+}
 
 // ========== INVERT COLOR dengan localStorage ==========
 const INVERT_KEY = "silsilah_invert_mode";
