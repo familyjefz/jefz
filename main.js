@@ -1,99 +1,139 @@
-// ========== ZOOM FUNCTIONS ==========
-function setZoom(zoom) {
-  zoom = Math.max(15, Math.min(300, zoom)); // clamp
+// ================= STATE =================
+let scale = 1;          // zoom (1 = 50%)
+let offsetX = 0;
+let offsetY = 0;
 
-  const oldZoom = currentZoom;
-  const newZoom = zoom / 50;
-  currentZoom = newZoom;
+let isDragging = false;
+let startX = 0;
+let startY = 0;
 
-  const zoomContainer = document.getElementById("tree-zoom-container");
-  const wrapper = document.getElementById("tree-wrapper");
+let startOffsetX = 0;
+let startOffsetY = 0;
 
-  if (zoomContainer && wrapper) {
-    const rect = wrapper.getBoundingClientRect();
+let isPinching = false;
+let startDist = 0;
+let startScale = 1;
 
-    const centerX = wrapper.scrollLeft + rect.width / 2;
-    const centerY = wrapper.scrollTop + rect.height / 2;
+// ================= ELEMENT =================
+const container = () => document.getElementById("tree-zoom-container");
 
-    const relX = centerX / oldZoom;
-    const relY = centerY / oldZoom;
+// ================= APPLY TRANSFORM =================
+function applyTransform() {
+  const el = container();
+  if (!el) return;
 
-    zoomContainer.style.transform = `scale(${newZoom})`;
-    zoomContainer.style.transformOrigin = "0 0";
-
-    wrapper.scrollLeft = relX * newZoom - rect.width / 2;
-    wrapper.scrollTop = relY * newZoom - rect.height / 2;
-  }
-
-  // sync UI
-  const zoomValue = document.getElementById("zoom-value");
-  if (zoomValue) zoomValue.textContent = Math.round(zoom) + "%";
-
-  const slider = document.getElementById("zoom-slider");
-  if (slider && slider.value != zoom) slider.value = zoom;
+  el.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
 }
 
-function updateZoomFromSlider() {
-  const slider = document.getElementById("zoom-slider");
-  if (slider) setZoom(parseInt(slider.value));
+// ================= ZOOM =================
+function setZoom(zoom, centerX = window.innerWidth / 2, centerY = window.innerHeight / 2) {
+  zoom = Math.max(15, Math.min(300, zoom));
+
+  const newScale = zoom / 50;
+
+  const el = container();
+  if (!el) return;
+
+  const rect = el.getBoundingClientRect();
+
+  const dx = centerX - rect.left;
+  const dy = centerY - rect.top;
+
+  offsetX -= dx * (newScale / scale - 1);
+  offsetY -= dy * (newScale / scale - 1);
+
+  scale = newScale;
+
+  applyTransform();
+
+  // UI sync
+  document.getElementById("zoom-value").textContent = Math.round(zoom) + "%";
+  document.getElementById("zoom-slider").value = zoom;
 }
 
 function zoomReset() {
-  setZoom(50);
+  scale = 1;
+  offsetX = 0;
+  offsetY = 0;
+
+  applyTransform();
+
+  document.getElementById("zoom-value").textContent = "50%";
+  document.getElementById("zoom-slider").value = 50;
 }
 
-// ========== INVERT ==========
-const INVERT_KEY = "silsilah_invert_mode";
-
-function toggleInvert() {
-  document.body.classList.toggle("invert-mode");
-  localStorage.setItem(INVERT_KEY, document.body.classList.contains("invert-mode"));
+// ================= SLIDER =================
+function updateZoomFromSlider(e) {
+  setZoom(parseInt(e.target.value));
 }
 
-function loadInvertSetting() {
-  if (localStorage.getItem(INVERT_KEY) === "true") {
-    document.body.classList.add("invert-mode");
+// ================= DRAG =================
+function startDrag(e) {
+  if (e.target.closest("button") || e.target.closest("textarea")) return;
+
+  isDragging = true;
+
+  startX = e.clientX;
+  startY = e.clientY;
+
+  startOffsetX = offsetX;
+  startOffsetY = offsetY;
+}
+
+function moveDrag(e) {
+  if (!isDragging) return;
+
+  offsetX = startOffsetX + (e.clientX - startX);
+  offsetY = startOffsetY + (e.clientY - startY);
+
+  applyTransform();
+}
+
+function endDrag() {
+  isDragging = false;
+}
+
+// ================= PINCH =================
+function getDist(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function touchStart(e) {
+  if (e.touches.length === 2) {
+    isPinching = true;
+    startDist = getDist(e.touches);
+    startScale = scale;
+  } else if (e.touches.length === 1) {
+    startDrag(e.touches[0]);
   }
 }
 
-// ========== LOGIN SESSION ==========
-const SESSION_KEY = "silsilah_admin_logged_in";
+function touchMove(e) {
+  if (isPinching && e.touches.length === 2) {
+    const dist = getDist(e.touches);
+    const factor = dist / startDist;
 
-function saveLoginSession() {
-  localStorage.setItem(SESSION_KEY, "true");
+    const zoom = (startScale * factor) * 50;
+
+    const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+    setZoom(zoom, centerX, centerY);
+  } else if (e.touches.length === 1) {
+    moveDrag(e.touches[0]);
+  }
 }
 
-function clearLoginSession() {
-  localStorage.removeItem(SESSION_KEY);
+function touchEnd() {
+  isPinching = false;
+  endDrag();
 }
 
-function isLoggedIn() {
-  return localStorage.getItem(SESSION_KEY) === "true";
-}
-
-// ========== MODAL CENTER FIX ==========
-function centerModal(selector) {
-  const modal = document.querySelector(selector);
-  if (!modal) return;
-
-  const content = modal.querySelector(".modal-content");
-  if (!content) return;
-
-  content.style.position = "fixed";
-  content.style.top = "50%";
-  content.style.left = "50%";
-  content.style.transform = "translate(-50%, -50%)";
-}
-
-// ========== LOGIN ==========
+// ================= MODAL FIX =================
 function showLoginModal() {
-  const modal = document.getElementById("login-modal");
-  modal.style.display = "flex";
-
-  document.getElementById("pin-input").value = "";
-  document.getElementById("pin-error").innerText = "";
-
-  setTimeout(() => centerModal("#login-modal"), 10);
+  document.getElementById("login-modal").style.display = "flex";
 }
 
 function closeLoginModal() {
@@ -101,54 +141,46 @@ function closeLoginModal() {
 }
 
 function showInfoModal() {
-  const modal = document.getElementById("info-modal");
-  modal.style.display = "flex";
-  setTimeout(() => centerModal("#info-modal"), 10);
+  document.getElementById("info-modal").style.display = "flex";
 }
 
 function closeInfoModal() {
   document.getElementById("info-modal").style.display = "none";
 }
 
-// ========== INIT ==========
+// ================= INIT =================
 document.addEventListener("DOMContentLoaded", () => {
-  loadInvertSetting();
+  // init zoom
+  zoomReset();
 
-  if (isLoggedIn()) {
-    isAdmin = true;
-    updateLoginButton();
-    updateUndoRedoButtons();
-  }
+  // slider
+  document.getElementById("zoom-slider")
+    ?.addEventListener("input", updateZoomFromSlider);
 
-  const slider = document.getElementById("zoom-slider");
-  if (slider) {
-    slider.min = "15";
-    slider.max = "300";
-    slider.value = "50";
-    setZoom(50);
+  // mouse
+  document.addEventListener("mousedown", startDrag);
+  document.addEventListener("mousemove", moveDrag);
+  document.addEventListener("mouseup", endDrag);
 
-    slider.addEventListener("input", updateZoomFromSlider);
-  }
+  // touch
+  document.addEventListener("touchstart", touchStart);
+  document.addEventListener("touchmove", touchMove);
+  document.addEventListener("touchend", touchEnd);
 
+  // buttons
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
-  document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
-  document.getElementById("undo-btn")?.addEventListener("click", undoAction);
-  document.getElementById("redo-btn")?.addEventListener("click", redoAction);
 
   document.querySelector(".close")?.addEventListener("click", closeLoginModal);
   document.querySelector(".close-info")?.addEventListener("click", closeInfoModal);
 
   document.getElementById("submit-pin")?.addEventListener("click", checkPin);
-  document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") checkPin();
-  });
-});
 
-// klik luar modal
-window.addEventListener("click", (e) => {
-  if (e.target.id === "login-modal") closeLoginModal();
-  if (e.target.id === "info-modal") closeInfoModal();
+  // klik luar modal
+  window.addEventListener("click", (e) => {
+    if (e.target.id === "login-modal") closeLoginModal();
+    if (e.target.id === "info-modal") closeInfoModal();
+  });
 });
 
 loadTree();
