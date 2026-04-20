@@ -14,9 +14,6 @@
     <div class="zoom-controls">
       <button id="undo-btn" class="undo-btn" style="display:none;">↩️ Undo</button>
       <button id="redo-btn" class="redo-btn" style="display:none;">↪️ Redo</button>
-      <button id="zoom-in">🔍+</button>
-      <button id="zoom-out">🔍-</button>
-      <button id="zoom-reset">⟳</button>
       <button id="invert-btn" class="invert-btn">🎨 Invert</button>
       <button id="login-btn" class="login-btn">👤 Login Admin</button>
     </div>
@@ -26,6 +23,12 @@
       <div id="tree"></div>
     </div>
   </div>
+</div>
+
+<!-- Floating Zoom Slider -->
+<div class="zoom-slider-container">
+  <input type="range" id="zoom-slider" class="zoom-slider" min="30" max="200" value="100" step="5">
+  <span id="zoom-value" class="zoom-value">100%</span>
 </div>
 
 <!-- Modal Login -->
