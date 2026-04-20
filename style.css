@@ -127,18 +127,19 @@ h2 {
 
 .tree-zoom-container {
   transform-origin: 0 0;
-  /* HAPUS TRANSITION - animasi di-handle JavaScript */
-  transition: none !important;
+  transition: none !important; /* PENTING: Tidak ada transisi */
   width: fit-content;
   height: fit-content;
   min-width: max-content;
   min-height: max-content;
 }
 
-#tree {
+.tree-wrapper {
+  flex: 1;
+  overflow: auto;
+  background: #f1fcff;
   position: relative;
-  width: 2000px;
-  height: 1500px;
+  scroll-behavior: auto !important; /* Hindari smooth scroll */
 }
 
 .node-box {
