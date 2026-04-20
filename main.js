@@ -1,9 +1,10 @@
 // ========== ZOOM FUNCTIONS ==========
 function setZoom(zoom) {
   currentZoom = zoom / 100;
-  const zoomContainer = document.getElementById("tree-wrapper");
+  const zoomContainer = document.getElementById("tree-zoom-container");
   if (zoomContainer) {
     zoomContainer.style.transform = `scale(${currentZoom})`;
+    zoomContainer.style.transformOrigin = "0 0";
   }
   
   const zoomValue = document.getElementById("zoom-value");
