@@ -1,12 +1,11 @@
 // ================= STATE =================
-let scale = 1;          // zoom (1 = 50%)
+let scale = 1;
 let offsetX = 0;
 let offsetY = 0;
 
 let isDragging = false;
 let startX = 0;
 let startY = 0;
-
 let startOffsetX = 0;
 let startOffsetY = 0;
 
@@ -16,28 +15,33 @@ let startScale = 1;
 
 // ================= ELEMENT =================
 const container = () => document.getElementById("tree-zoom-container");
+const wrapper = () => document.getElementById("tree-wrapper");
 
-// ================= APPLY TRANSFORM =================
+// ================= APPLY =================
 function applyTransform() {
   const el = container();
   if (!el) return;
-
   el.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
 }
 
 // ================= ZOOM =================
-function setZoom(zoom, centerX = window.innerWidth / 2, centerY = window.innerHeight / 2) {
+function setZoom(zoom, cx = null, cy = null) {
   zoom = Math.max(15, Math.min(300, zoom));
-
   const newScale = zoom / 50;
 
+  const wrap = wrapper();
   const el = container();
-  if (!el) return;
+  if (!wrap || !el) return;
 
-  const rect = el.getBoundingClientRect();
+  const rect = wrap.getBoundingClientRect();
 
-  const dx = centerX - rect.left;
-  const dy = centerY - rect.top;
+  if (cx === null || cy === null) {
+    cx = rect.width / 2;
+    cy = rect.height / 2;
+  }
+
+  const dx = cx - rect.left;
+  const dy = cy - rect.top;
 
   offsetX -= dx * (newScale / scale - 1);
   offsetY -= dy * (newScale / scale - 1);
@@ -46,7 +50,6 @@ function setZoom(zoom, centerX = window.innerWidth / 2, centerY = window.innerHe
 
   applyTransform();
 
-  // UI sync
   document.getElementById("zoom-value").textContent = Math.round(zoom) + "%";
   document.getElementById("zoom-slider").value = zoom;
 }
@@ -55,7 +58,6 @@ function zoomReset() {
   scale = 1;
   offsetX = 0;
   offsetY = 0;
-
   applyTransform();
 
   document.getElementById("zoom-value").textContent = "50%";
@@ -67,15 +69,23 @@ function updateZoomFromSlider(e) {
   setZoom(parseInt(e.target.value));
 }
 
+// ================= FILTER AREA =================
+function isUIElement(target) {
+  return (
+    target.closest(".modal") ||
+    target.closest("button") ||
+    target.closest("textarea") ||
+    target.closest("input")
+  );
+}
+
 // ================= DRAG =================
 function startDrag(e) {
-  if (e.target.closest("button") || e.target.closest("textarea")) return;
+  if (isUIElement(e.target)) return;
 
   isDragging = true;
-
   startX = e.clientX;
   startY = e.clientY;
-
   startOffsetX = offsetX;
   startOffsetY = offsetY;
 }
@@ -94,13 +104,15 @@ function endDrag() {
 }
 
 // ================= PINCH =================
-function getDist(touches) {
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
+function getDist(t) {
+  const dx = t[0].clientX - t[1].clientX;
+  const dy = t[0].clientY - t[1].clientY;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
 function touchStart(e) {
+  if (isUIElement(e.target)) return;
+
   if (e.touches.length === 2) {
     isPinching = true;
     startDist = getDist(e.touches);
@@ -111,16 +123,18 @@ function touchStart(e) {
 }
 
 function touchMove(e) {
+  if (isUIElement(e.target)) return;
+
   if (isPinching && e.touches.length === 2) {
     const dist = getDist(e.touches);
     const factor = dist / startDist;
 
     const zoom = (startScale * factor) * 50;
 
-    const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
 
-    setZoom(zoom, centerX, centerY);
+    setZoom(zoom, cx, cy);
   } else if (e.touches.length === 1) {
     moveDrag(e.touches[0]);
   }
@@ -150,25 +164,23 @@ function closeInfoModal() {
 
 // ================= INIT =================
 document.addEventListener("DOMContentLoaded", () => {
-  // init zoom
   zoomReset();
 
-  // slider
-  document.getElementById("zoom-slider")
-    ?.addEventListener("input", updateZoomFromSlider);
+  const wrap = wrapper();
 
-  // mouse
-  document.addEventListener("mousedown", startDrag);
-  document.addEventListener("mousemove", moveDrag);
-  document.addEventListener("mouseup", endDrag);
+  // EVENT HANYA DI AREA TREE
+  wrap.addEventListener("mousedown", startDrag);
+  wrap.addEventListener("mousemove", moveDrag);
+  wrap.addEventListener("mouseup", endDrag);
+  wrap.addEventListener("mouseleave", endDrag);
 
-  // touch
-  document.addEventListener("touchstart", touchStart);
-  document.addEventListener("touchmove", touchMove);
-  document.addEventListener("touchend", touchEnd);
+  wrap.addEventListener("touchstart", touchStart, { passive: false });
+  wrap.addEventListener("touchmove", touchMove, { passive: false });
+  wrap.addEventListener("touchend", touchEnd);
 
-  // buttons
+  document.getElementById("zoom-slider")?.addEventListener("input", updateZoomFromSlider);
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
+
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
 
   document.querySelector(".close")?.addEventListener("click", closeLoginModal);
@@ -176,7 +188,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("submit-pin")?.addEventListener("click", checkPin);
 
-  // klik luar modal
   window.addEventListener("click", (e) => {
     if (e.target.id === "login-modal") closeLoginModal();
     if (e.target.id === "info-modal") closeInfoModal();
