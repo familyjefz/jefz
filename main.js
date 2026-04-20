@@ -2,14 +2,47 @@
 function setZoom(zoom) {
   currentZoom = zoom;
   const zoomContainer = document.getElementById("tree-zoom-container");
-  if (zoomContainer) {
+  const wrapper = document.getElementById("tree-wrapper");
+  
+  if (zoomContainer && wrapper) {
+    // Simpan posisi scroll sebelum zoom (untuk center ke layar)
+    const rect = wrapper.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const oldScrollLeft = wrapper.scrollLeft;
+    const oldScrollTop = wrapper.scrollTop;
+    
+    // Terapkan zoom
     zoomContainer.style.transform = `scale(${currentZoom})`;
+    zoomContainer.style.transformOrigin = "0 0";
+    
+    // Hitung ulang scroll agar zoom terasa dari center layar
+    setTimeout(() => {
+      const newScrollLeft = (oldScrollLeft + centerX) * currentZoom - centerX;
+      const newScrollTop = (oldScrollTop + centerY) * currentZoom - centerY;
+      wrapper.scrollLeft = newScrollLeft;
+      wrapper.scrollTop = newScrollTop;
+    }, 10);
+  }
+  
+  const zoomValue = document.getElementById("zoom-value");
+  if (zoomValue) {
+    zoomValue.textContent = Math.round(zoom) + "%";
+  }
+  const slider = document.getElementById("zoom-slider");
+  if (slider && slider.value != zoom) {
+    slider.value = zoom;
   }
 }
 
-function zoomIn() { setZoom(currentZoom + 0.1); }
-function zoomOut() { setZoom(currentZoom - 0.1); }
-function zoomReset() { setZoom(1); }
+function updateZoomFromSlider() {
+  const slider = document.getElementById("zoom-slider");
+  if (slider) {
+    setZoom(parseInt(slider.value));
+  }
+}
+
+function zoomReset() { setZoom(100); }
 
 // ========== INVERT COLOR dengan localStorage ==========
 const INVERT_KEY = "silsilah_invert_mode";
@@ -521,8 +554,12 @@ document.addEventListener("DOMContentLoaded", () => {
     updateUndoRedoButtons();
   }
   
-  document.getElementById("zoom-in")?.addEventListener("click", zoomIn);
-  document.getElementById("zoom-out")?.addEventListener("click", zoomOut);
+  const slider = document.getElementById("zoom-slider");
+  if (slider) {
+    slider.value = "100";
+    setZoom(100);
+    slider.addEventListener("input", updateZoomFromSlider);
+  }
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
   document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
