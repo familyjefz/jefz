@@ -504,7 +504,12 @@ h2 {
   background: #0088cc;
 }
 
-/* Invert mode - semua ikut invert */
+/* Invert mode - hanya konten yang diinvert, slider container tidak */
 body.invert-mode {
+  filter: invert(1);
+}
+
+/* Slider container ikut invert */
+body.invert-mode .zoom-slider-container {
   filter: invert(1);
 }
