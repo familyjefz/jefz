@@ -71,7 +71,7 @@ h2 {
 /* Tambahan untuk mobile */
 @media (max-width: 768px) {
   .bottom-zoom-bar {
-    bottom: 80px; /* Naikkan agar tidak ketutupan browser UI */
+    bottom: 180px; /* Naikkan agar tidak ketutupan browser UI */
     padding: 8px 16px;
   }
   
