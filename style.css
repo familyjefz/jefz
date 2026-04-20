@@ -127,8 +127,8 @@ h2 {
 
 .tree-zoom-container {
   transform-origin: 0 0;
-  will-change: transform;
-  transition: transform 0.05s linear;
+  /* HAPUS TRANSITION - animasi di-handle JavaScript */
+  transition: none !important;
   width: fit-content;
   height: fit-content;
   min-width: max-content;
