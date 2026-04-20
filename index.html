@@ -12,9 +12,9 @@
   <div class="header">
     <h2>Silsilah Keluarga</h2>
     <div class="zoom-controls">
-      <button id="undo-btn" class="undo-btn" style="display:none;">↩️ Undo</button>
-      <button id="redo-btn" class="redo-btn" style="display:none;">↪️ Redo</button>
-      <button id="invert-btn" class="invert-btn">🎨 Invert</button>
+      <button id="zoom-in">🔍+</button>
+      <button id="zoom-out">🔍-</button>
+      <button id="zoom-reset">⟳</button>
       <button id="login-btn" class="login-btn">👤 Login Admin</button>
     </div>
   </div>
@@ -23,13 +23,6 @@
       <div id="tree"></div>
     </div>
   </div>
-</div>
-
-<!-- Floating Zoom Slider -->
-<div class="zoom-slider-container">
-  <input type="range" id="zoom-slider" class="zoom-slider" min="30" max="500" value="100" step="5">
-  <span id="zoom-value" class="zoom-value">100%</span>
-  <button id="zoom-reset-btn" class="zoom-reset-btn">⟳</button>
 </div>
 
 <!-- Modal Login -->
@@ -56,17 +49,6 @@
       <span class="close-info">&times;</span>
     </div>
     <div class="modal-body" id="info-body"></div>
-  </div>
-</div>
-
-<!-- Custom Popup -->
-<div id="custom-popup" class="custom-popup">
-  <div class="custom-popup-content">
-    <div class="custom-popup-header">
-      <h4 id="popup-title">Peringatan</h4>
-    </div>
-    <div class="custom-popup-body" id="popup-message"></div>
-    <div class="custom-popup-buttons" id="popup-buttons"></div>
   </div>
 </div>
 
