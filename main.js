@@ -1,4 +1,4 @@
-// ================= ZOOM =================
+// ========== ZOOM ==========
 function setZoom(zoom, cx = null, cy = null) {
   zoom = Math.max(15, Math.min(300, zoom));
 
@@ -17,42 +17,47 @@ function setZoom(zoom, cx = null, cy = null) {
     cy = rect.height / 2;
   }
 
-  const offsetX = (wrapper.scrollLeft + cx) / oldZoom;
-  const offsetY = (wrapper.scrollTop + cy) / oldZoom;
+  const worldX = (wrapper.scrollLeft + cx) / oldZoom;
+  const worldY = (wrapper.scrollTop + cy) / oldZoom;
 
   container.style.transform = `scale(${newZoom})`;
   container.style.transformOrigin = "0 0";
 
   currentZoom = newZoom;
 
-  wrapper.scrollLeft = offsetX * newZoom - cx;
-  wrapper.scrollTop = offsetY * newZoom - cy;
+  wrapper.scrollLeft = worldX * newZoom - cx;
+  wrapper.scrollTop = worldY * newZoom - cy;
 
   // sync UI
-  document.getElementById("zoom-value").textContent = Math.round(zoom) + "%";
-  document.getElementById("zoom-slider").value = zoom;
-}
+  const zoomValue = document.getElementById("zoom-value");
+  if (zoomValue) zoomValue.textContent = Math.round(zoom) + "%";
 
-function zoomReset() {
-  setZoom(50);
+  const slider = document.getElementById("zoom-slider");
+  if (slider && slider.value != zoom) slider.value = zoom;
 }
 
 function updateZoomFromSlider(e) {
   setZoom(parseInt(e.target.value));
 }
 
-// ================= PINCH (FIXED) =================
-let lastDist = 0;
+function zoomReset() {
+  setZoom(50);
+}
 
-function getDist(t) {
-  const dx = t[0].clientX - t[1].clientX;
-  const dy = t[0].clientY - t[1].clientY;
+// ========== PINCH SMOOTH ==========
+let pinchStartDist = 0;
+let pinchStartZoom = 50;
+
+function getDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
 function touchStart(e) {
   if (e.touches.length === 2) {
-    lastDist = getDist(e.touches);
+    pinchStartDist = getDistance(e.touches);
+    pinchStartZoom = currentZoom * 50;
   }
 }
 
@@ -60,47 +65,58 @@ function touchMove(e) {
   if (e.touches.length === 2) {
     e.preventDefault();
 
-    const newDist = getDist(e.touches);
-    const delta = newDist - lastDist;
+    const newDist = getDistance(e.touches);
+    const ratio = newDist / pinchStartDist;
 
-    let zoom = currentZoom * 50;
+    const zoom = pinchStartZoom * ratio;
 
-    zoom += delta * 0.5; // sensitif
+    const wrapper = document.getElementById("tree-wrapper");
+    const rect = wrapper.getBoundingClientRect();
 
-    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
 
     setZoom(zoom, cx, cy);
-
-    lastDist = newDist;
   }
 }
 
-// ================= MODAL =================
+// ========== MODAL ==========
 function showLoginModal() {
   document.getElementById("login-modal").style.display = "flex";
 }
+
 function closeLoginModal() {
   document.getElementById("login-modal").style.display = "none";
 }
+
 function showInfoModal() {
   document.getElementById("info-modal").style.display = "flex";
 }
+
 function closeInfoModal() {
   document.getElementById("info-modal").style.display = "none";
 }
 
-// ================= INIT =================
+// ========== INIT ==========
 document.addEventListener("DOMContentLoaded", () => {
-  // zoom init
-  document.getElementById("zoom-slider").value = 50;
-  setZoom(50);
+  loadInvertSetting();
 
-  // slider
-  document.getElementById("zoom-slider")
-    ?.addEventListener("input", updateZoomFromSlider);
+  if (isLoggedIn()) {
+    isAdmin = true;
+    updateLoginButton();
+    updateUndoRedoButtons();
+  }
 
-  // pinch ONLY on tree
+  const slider = document.getElementById("zoom-slider");
+  if (slider) {
+    slider.min = "15";
+    slider.max = "300";
+    slider.value = "50";
+    setZoom(50);
+    slider.addEventListener("input", updateZoomFromSlider);
+  }
+
+  // pinch hanya di tree (AMAN)
   const wrapper = document.getElementById("tree-wrapper");
   wrapper.addEventListener("touchstart", touchStart, { passive: false });
   wrapper.addEventListener("touchmove", touchMove, { passive: false });
@@ -109,7 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
   document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
-
   document.getElementById("undo-btn")?.addEventListener("click", undoAction);
   document.getElementById("redo-btn")?.addEventListener("click", redoAction);
 
@@ -122,8 +137,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.id === "login-modal") closeLoginModal();
     if (e.target.id === "info-modal") closeInfoModal();
   });
-
-  loadInvertSetting();
 });
 
 loadTree();
