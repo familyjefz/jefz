@@ -1,118 +1,213 @@
-// ========== INVERT MODE ==========
-const INVERT_KEY = "invertMode";
+// ========== INVERT COLOR ==========
+const INVERT_KEY = "silsilah_invert_mode";
 
 function toggleInvert() {
   document.body.classList.toggle("invert-mode");
   const isInvert = document.body.classList.contains("invert-mode");
-  localStorage.setItem(INVERT_KEY, isInvert ? "1" : "0");
+  localStorage.setItem(INVERT_KEY, isInvert ? "true" : "false");
 }
 
 function loadInvertSetting() {
-  const saved = localStorage.getItem(INVERT_KEY);
-  if (saved === "1") {
+  const savedInvert = localStorage.getItem(INVERT_KEY);
+  if (savedInvert === "true") {
     document.body.classList.add("invert-mode");
   }
 }
 
-// ========== LOGIN / ADMIN ==========
+// ========== SESSION LOGIN ==========
+const SESSION_KEY = "silsilah_admin_logged_in";
+
+function saveLoginSession() {
+  localStorage.setItem(SESSION_KEY, "true");
+}
+
+function clearLoginSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
 function isLoggedIn() {
-  return localStorage.getItem("isAdmin") === "1";
+  return localStorage.getItem(SESSION_KEY) === "true";
 }
 
-function setLoggedIn(v) {
-  if (v) localStorage.setItem("isAdmin", "1");
-  else localStorage.removeItem("isAdmin");
-}
-
-function updateLoginButton() {
-  const btn = document.getElementById("login-btn");
-  if (!btn) return;
-  if (isAdmin) {
-    btn.textContent = "🚪 Logout";
-  } else {
-    btn.textContent = "👤 Login Admin";
+// ========== CUSTOM POPUP ==========
+function showCustomPopup(message, title = "Informasi", onConfirm = null, showCancel = false) {
+  const popup = document.getElementById("custom-popup");
+  if (!popup) {
+    alert(message);
+    if (onConfirm) onConfirm();
+    return;
   }
-}
 
-function updateUndoRedoButtons() {
-  const undoBtn = document.getElementById("undo-btn");
-  const redoBtn = document.getElementById("redo-btn");
-  if (undoBtn) undoBtn.style.display = isAdmin ? "inline-block" : "none";
-  if (redoBtn) redoBtn.style.display = isAdmin ? "inline-block" : "none";
-}
+  const popupTitle = document.getElementById("popup-title");
+  const popupMessage = document.getElementById("popup-message");
+  const popupButtons = document.getElementById("popup-buttons");
 
-function onLoginLogoutClick() {
-  if (isAdmin) {
-    isAdmin = false;
-    setLoggedIn(false);
-    updateLoginButton();
-    updateUndoRedoButtons();
-    renderTree();
+  popupTitle.textContent = title;
+  popupMessage.innerHTML = message;
+  popupButtons.innerHTML = "";
+
+  if (showCancel) {
+    const confirmBtn = document.createElement("button");
+    confirmBtn.textContent = "OK";
+    confirmBtn.onclick = () => {
+      popup.style.display = "none";
+      if (onConfirm) onConfirm();
+    };
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Batal";
+    cancelBtn.onclick = () => {
+      popup.style.display = "none";
+    };
+    popupButtons.appendChild(confirmBtn);
+    popupButtons.appendChild(cancelBtn);
   } else {
-    openLoginModal();
+    const confirmBtn = document.createElement("button");
+    confirmBtn.textContent = "OK";
+    confirmBtn.onclick = () => {
+      popup.style.display = "none";
+      if (onConfirm) onConfirm();
+    };
+    popupButtons.appendChild(confirmBtn);
   }
+
+  popup.style.display = "flex";
+  popup.style.alignItems = "center";
+  popup.style.justifyContent = "center";
 }
 
-function openLoginModal() {
-  document.getElementById("login-modal").style.display = "flex";
+function closeCustomPopup() {
+  const popup = document.getElementById("custom-popup");
+  if (popup) popup.style.display = "none";
+}
+
+// ========== MODALS ==========
+function showLoginModal() {
+  const modal = document.getElementById("login-modal");
+  modal.style.display = "flex";
   document.getElementById("pin-input").value = "";
-  document.getElementById("pin-error").textContent = "";
-  setTimeout(() => document.getElementById("pin-input").focus(), 100);
+  document.getElementById("pin-error").innerText = "";
+  setTimeout(() => document.getElementById("pin-input").focus(), 10);
 }
 
 function closeLoginModal() {
   document.getElementById("login-modal").style.display = "none";
 }
 
-function checkPin() {
-  const pin = document.getElementById("pin-input").value;
-  if (pin === ADMIN_PIN) {
-    isAdmin = true;
-    setLoggedIn(true);
-    updateLoginButton();
-    updateUndoRedoButtons();
-    closeLoginModal();
-    renderTree();
-  } else {
-    document.getElementById("pin-error").textContent = "PIN salah!";
-  }
-}
-
-// ========== INFO MODAL ==========
 function closeInfoModal() {
   document.getElementById("info-modal").style.display = "none";
-  // Reset pinch-zoom state so the next opened info popup starts at 1x
   if (typeof resetInfoZoom === "function") resetInfoZoom();
 }
 
 function showInfoModal() {
-  // Reset pinch-zoom whenever a fresh info popup is shown
   if (typeof resetInfoZoom === "function") resetInfoZoom();
   document.getElementById("info-modal").style.display = "flex";
 }
 
-// ========== CUSTOM POPUP ==========
-function showCustomPopup(title, message, buttons) {
-  document.getElementById("popup-title").textContent = title;
-  document.getElementById("popup-message").textContent = message;
+// ========== LOGIN/LOGOUT ==========
+async function checkPin() {
+  const submitBtn = document.getElementById("submit-pin");
+  const pinErrEl = document.getElementById("pin-error");
+  const pin = document.getElementById("pin-input").value;
 
-  const btnContainer = document.getElementById("popup-buttons");
-  btnContainer.innerHTML = "";
+  console.log("[login] checkPin called, pin length:", pin.length);
 
-  buttons.forEach((b) => {
-    const btn = document.createElement("button");
-    btn.textContent = b.text;
-    btn.onclick = () => {
-      closeCustomPopup();
-      if (b.onClick) b.onClick();
-    };
-    btnContainer.appendChild(btn);
-  });
+  if (!pin) {
+    if (pinErrEl) pinErrEl.innerText = "PIN belum diisi.";
+    return;
+  }
 
-  document.getElementById("custom-popup").style.display = "flex";
+  // Visual feedback so user always knows the click was registered
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.dataset.originalText = submitBtn.textContent;
+    submitBtn.textContent = "Memeriksa...";
+  }
+  if (pinErrEl) pinErrEl.innerText = "";
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/check-pin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pin: pin })
+    });
+    console.log("[login] response status:", res.status);
+    const result = await res.json();
+    console.log("[login] response body:", result);
+
+    if (result && result.success) {
+      isAdmin = true;
+      saveLoginSession();
+      closeLoginModal();
+      updateLoginButton();
+      updateUndoRedoButtons();
+      showCustomPopup("Login sebagai Admin berhasil!", "Sukses");
+      renderTree();
+    } else {
+      if (pinErrEl) pinErrEl.innerText = "PIN salah!";
+      showCustomPopup("PIN yang Anda masukkan salah.", "Login Gagal");
+    }
+  } catch (err) {
+    console.error("[login] fetch error:", err);
+    if (pinErrEl) pinErrEl.innerText = "Gagal verifikasi.";
+    showCustomPopup(
+      "Tidak bisa menghubungi server verifikasi.<br>Cek koneksi internet lalu coba lagi.",
+      "Login Gagal"
+    );
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      if (submitBtn.dataset.originalText) {
+        submitBtn.textContent = submitBtn.dataset.originalText;
+        delete submitBtn.dataset.originalText;
+      }
+    }
+  }
 }
 
-function closeCustomPopup() {
-  document.getElementById("custom-popup").style.display = "none";
+function logout() {
+  isAdmin = false;
+  clearLoginSession();
+  activePath = null;
+  activeMode = null;
+  updateLoginButton();
+  updateUndoRedoButtons();
+  showCustomPopup("Anda telah logout.", "Info");
+  renderTree();
+}
+
+function updateLoginButton() {
+  const loginBtn = document.getElementById("login-btn");
+  if (loginBtn) {
+    if (isAdmin) {
+      loginBtn.innerHTML = "🚪 Logout";
+      loginBtn.classList.add("logout-btn");
+      loginBtn.classList.remove("login-btn");
+    } else {
+      loginBtn.innerHTML = "👤 Login Admin";
+      loginBtn.classList.add("login-btn");
+      loginBtn.classList.remove("logout-btn");
+    }
+  }
+}
+
+function updateUndoRedoButtons() {
+  const undoBtn = document.getElementById("undo-btn");
+  const redoBtn = document.getElementById("redo-btn");
+
+  if (isAdmin) {
+    if (undoBtn) undoBtn.style.display = "inline-block";
+    if (redoBtn) redoBtn.style.display = "inline-block";
+  } else {
+    if (undoBtn) undoBtn.style.display = "none";
+    if (redoBtn) redoBtn.style.display = "none";
+  }
+}
+
+function onLoginLogoutClick() {
+  if (isAdmin) {
+    logout();
+  } else {
+    showLoginModal();
+  }
 }
 /*Stable*/
