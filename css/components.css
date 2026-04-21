@@ -321,6 +321,13 @@ button:not(.tree-wrapper button) {
   line-height: 1.4;
 }
 
+/* ========== INFO BODY ZOOM (pinch-to-zoom inside info popup) ========== */
+/* Uses CSS `zoom` so the text grows in place — no translation/shifting,
+   only the font/element sizes change. Updated by zoom-pan.js. */
+#info-body {
+  zoom: var(--info-zoom, 1);
+}
+
 /* ========== CUSTOM POPUP ========== */
 .custom-popup {
   display: none;
