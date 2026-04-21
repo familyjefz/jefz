@@ -15,16 +15,19 @@ let startDist = 0;
 let startScale = 1;
 let pinchCooldown = 0;
 
-// Pinch zoom state for the Info popup text (independent from tree zoom)
 let isInfoPinching = false;
 let infoZoom = 1;
 let startInfoZoom = 1;
+
+// Reposition mode (di-set oleh multi-tree.js)
+let repositionMode = false;
 
 const DRAG_THRESHOLD = 8;
 const INFO_ZOOM_MIN = 0.6;
 const INFO_ZOOM_MAX = 4;
 
-// ========== ELEMENT REFERENCES ==========
+const VIEW_KEY = "silsilah_view_state";
+
 const getContainer = () => document.getElementById("tree-zoom-container");
 const getInfoModal = () => document.getElementById("info-modal");
 
@@ -45,7 +48,6 @@ function resetInfoZoom() {
   applyInfoZoom();
 }
 
-// ========== APPLY TRANSFORM ==========
 function applyTransform() {
   const el = getContainer();
   if (!el) return;
@@ -53,10 +55,8 @@ function applyTransform() {
   el.style.transformOrigin = "0 0";
 }
 
-// ========== ZOOM FUNCTION ==========
 function setZoom(zoom, centerX = null, centerY = null) {
   zoom = Math.max(30, Math.min(300, zoom));
-
   const newScale = zoom / 100;
   const el = getContainer();
   if (!el) return;
@@ -78,12 +78,12 @@ function setZoom(zoom, centerX = null, centerY = null) {
 
   updateZoomUI(zoom);
   currentZoom = newScale;
+  saveViewState();
 }
 
 function updateZoomUI(zoom) {
   const zoomValue = document.getElementById("zoom-value");
   if (zoomValue) zoomValue.textContent = Math.round(zoom) + "%";
-
   const slider = document.getElementById("zoom-slider");
   if (slider && slider.value != zoom) slider.value = zoom;
 }
@@ -97,13 +97,50 @@ function zoomReset() {
   offsetX = 0;
   offsetY = 0;
   currentZoom = 1;
-
   applyTransform();
   updateZoomUI(100);
-  document.getElementById("zoom-slider").value = 100;
+  const slider = document.getElementById("zoom-slider");
+  if (slider) slider.value = 100;
+  saveViewState();
 }
 
-// ========== HELPERS ==========
+function saveViewState() {
+  try {
+    const w = document.getElementById("tree-wrapper");
+    const data = {
+      scale, offsetX, offsetY,
+      scrollLeft: w ? w.scrollLeft : 0,
+      scrollTop: w ? w.scrollTop : 0
+    };
+    localStorage.setItem(VIEW_KEY, JSON.stringify(data));
+  } catch (e) {}
+}
+
+function loadViewState() {
+  try {
+    const raw = localStorage.getItem(VIEW_KEY);
+    const w = document.getElementById("tree-wrapper");
+    if (!raw) {
+      if (w) { w.scrollLeft = 800; w.scrollTop = 400; }
+      return;
+    }
+    const data = JSON.parse(raw);
+    scale = data.scale || 1;
+    offsetX = data.offsetX || 0;
+    offsetY = data.offsetY || 0;
+    currentZoom = scale;
+    applyTransform();
+    updateZoomUI(Math.round(scale * 100));
+    if (w) {
+      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 800;
+      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 400;
+    }
+  } catch (e) {
+    const w = document.getElementById("tree-wrapper");
+    if (w) { w.scrollLeft = 800; w.scrollTop = 400; }
+  }
+}
+
 function isAlwaysInteractive(target) {
   if (!target) return false;
   return !!(target.closest("textarea") ||
@@ -119,27 +156,22 @@ function isClickable(target) {
 }
 
 function suppressNextClick() {
-  const handler = (ev) => {
-    ev.stopPropagation();
-    ev.preventDefault();
-  };
+  const handler = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
   document.addEventListener("click", handler, { capture: true, once: true });
   setTimeout(() => {
     document.removeEventListener("click", handler, { capture: true });
   }, 400);
 }
 
-// ========== MOUSE / PEN DRAG PAN ==========
 function startDrag(e) {
+  if (repositionMode) return;
   const t = e.target;
   if (isAlwaysInteractive(t)) return;
 
   pendingDrag = true;
   isDragging = false;
-  startX = e.clientX;
-  startY = e.clientY;
-  startOffsetX = offsetX;
-  startOffsetY = offsetY;
+  startX = e.clientX; startY = e.clientY;
+  startOffsetX = offsetX; startOffsetY = offsetY;
 
   if (!isClickable(t)) {
     isDragging = true;
@@ -148,6 +180,7 @@ function startDrag(e) {
 }
 
 function moveDrag(e) {
+  if (repositionMode) return;
   if (!pendingDrag && !isDragging) return;
 
   const dx = e.clientX - startX;
@@ -164,18 +197,19 @@ function moveDrag(e) {
 }
 
 function endDrag(e) {
+  if (repositionMode) return;
   if (isDragging && e) {
     const dx = (e.clientX ?? startX) - startX;
     const dy = (e.clientY ?? startY) - startY;
     if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
       suppressNextClick();
     }
+    saveViewState();
   }
   isDragging = false;
   pendingDrag = false;
 }
 
-// ========== PINCH ZOOM ==========
 function getDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
@@ -184,8 +218,6 @@ function getDist(touches) {
 
 function touchStart(e) {
   if (e.touches.length >= 2) {
-    // If the Info popup is open, route pinch to the info-text zoom
-    // (position stays fixed, only text size changes).
     if (isInfoModalOpen()) {
       isInfoPinching = true;
       isPinching = false;
@@ -196,7 +228,7 @@ function touchStart(e) {
       e.preventDefault();
       return;
     }
-
+    if (repositionMode) return;
     isPinching = true;
     isDragging = false;
     pendingDrag = false;
@@ -208,6 +240,7 @@ function touchStart(e) {
 
   if (e.touches.length === 1) {
     if (isPinching || isInfoPinching || Date.now() < pinchCooldown) return;
+    if (repositionMode) return;
 
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -253,6 +286,7 @@ function touchMove(e) {
   }
 
   if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching && !isInfoPinching) {
+    if (repositionMode) return;
     const t = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
@@ -270,14 +304,13 @@ function touchMove(e) {
 }
 
 function touchEnd(e) {
-  // Coming out of any pinch (tree or info): when fewer than 2 touches
-  // remain, stop pinch and DO NOT promote the leftover finger into a drag.
   if ((isPinching || isInfoPinching) && e.touches.length < 2) {
     isPinching = false;
     isInfoPinching = false;
     isDragging = false;
     pendingDrag = false;
     pinchCooldown = Date.now() + 250;
+    saveViewState();
   }
 
   if (e.touches.length === 0) {
@@ -288,9 +321,21 @@ function touchEnd(e) {
       if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
         suppressNextClick();
       }
+      saveViewState();
     }
     isDragging = false;
     pendingDrag = false;
   }
 }
-/*Stable*/
+
+document.addEventListener("DOMContentLoaded", () => {
+  const w = document.getElementById("tree-wrapper");
+  if (w) {
+    let t = null;
+    w.addEventListener("scroll", () => {
+      clearTimeout(t);
+      t = setTimeout(saveViewState, 200);
+    });
+  }
+});
+/*Stable + view persist*/
