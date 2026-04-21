@@ -1,5 +1,10 @@
 /* ========== INVERT MODE ========== */
-body.invert-mode {
+/* Apply filter to specific sections (NOT body) so position:fixed elements
+   like .bottom-zoom-bar are not affected. A `filter` on <body> creates a
+   containing block for fixed descendants, which on mobile makes the
+   zoom slider get clipped or disappear. */
+body.invert-mode .header,
+body.invert-mode .tree-wrapper {
   filter: invert(1);
 }
 
