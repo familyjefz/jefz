@@ -4,6 +4,7 @@ let offsetX = 0;
 let offsetY = 0;
 
 let isDragging = false;
+let pendingDrag = false;
 let startX = 0;
 let startY = 0;
 let startOffsetX = 0;
@@ -12,6 +13,9 @@ let startOffsetY = 0;
 let isPinching = false;
 let startDist = 0;
 let startScale = 1;
+let pinchCooldown = 0;
+
+const DRAG_THRESHOLD = 8;
 
 // ========== ELEMENT REFERENCES ==========
 const getContainer = () => document.getElementById("tree-zoom-container");
@@ -27,26 +31,26 @@ function applyTransform() {
 // ========== ZOOM FUNCTION ==========
 function setZoom(zoom, centerX = null, centerY = null) {
   zoom = Math.max(30, Math.min(300, zoom));
-  
+
   const newScale = zoom / 100;
   const el = getContainer();
   if (!el) return;
-  
+
   if (centerX === null || centerY === null) {
     centerX = window.innerWidth / 2;
     centerY = window.innerHeight / 2;
   }
-  
+
   const rect = el.getBoundingClientRect();
   const dx = centerX - rect.left;
   const dy = centerY - rect.top;
-  
+
   offsetX -= dx * (newScale / scale - 1);
   offsetY -= dy * (newScale / scale - 1);
-  
+
   scale = newScale;
   applyTransform();
-  
+
   updateZoomUI(zoom);
   currentZoom = newScale;
 }
@@ -54,7 +58,7 @@ function setZoom(zoom, centerX = null, centerY = null) {
 function updateZoomUI(zoom) {
   const zoomValue = document.getElementById("zoom-value");
   if (zoomValue) zoomValue.textContent = Math.round(zoom) + "%";
-  
+
   const slider = document.getElementById("zoom-slider");
   if (slider && slider.value != zoom) slider.value = zoom;
 }
@@ -68,39 +72,85 @@ function zoomReset() {
   offsetX = 0;
   offsetY = 0;
   currentZoom = 1;
-  
+
   applyTransform();
   updateZoomUI(100);
   document.getElementById("zoom-slider").value = 100;
 }
 
-// ========== DRAG PAN ==========
+// ========== HELPERS ==========
+function isAlwaysInteractive(target) {
+  if (!target) return false;
+  return !!(target.closest("textarea") ||
+            target.closest("input") ||
+            target.closest(".zoom-slider") ||
+            target.closest(".modal") ||
+            target.closest(".custom-popup"));
+}
+
+function isClickable(target) {
+  if (!target) return false;
+  return !!(target.closest("button") || target.closest(".node-box"));
+}
+
+function suppressNextClick() {
+  const handler = (ev) => {
+    ev.stopPropagation();
+    ev.preventDefault();
+  };
+  document.addEventListener("click", handler, { capture: true, once: true });
+  // Safety: remove if no click fires
+  setTimeout(() => {
+    document.removeEventListener("click", handler, { capture: true });
+  }, 400);
+}
+
+// ========== MOUSE / PEN DRAG PAN ==========
 function startDrag(e) {
-  if (e.target.closest("button") || 
-      e.target.closest("textarea") || 
-      e.target.closest(".node-box") ||
-      e.target.closest("input") ||
-      e.target.closest(".zoom-slider")) {
-    return;
-  }
-  
-  isDragging = true;
+  const t = e.target;
+  if (isAlwaysInteractive(t)) return;
+
+  pendingDrag = true;
+  isDragging = false;
   startX = e.clientX;
   startY = e.clientY;
   startOffsetX = offsetX;
   startOffsetY = offsetY;
-  e.preventDefault();
+
+  // If not on a clickable, we can drag right away and prevent text selection
+  if (!isClickable(t)) {
+    isDragging = true;
+    e.preventDefault();
+  }
 }
 
 function moveDrag(e) {
-  if (!isDragging) return;
-  offsetX = startOffsetX + (e.clientX - startX);
-  offsetY = startOffsetY + (e.clientY - startY);
+  if (!pendingDrag && !isDragging) return;
+
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+
+  if (!isDragging) {
+    if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    isDragging = true;
+  }
+
+  offsetX = startOffsetX + dx;
+  offsetY = startOffsetY + dy;
   applyTransform();
 }
 
-function endDrag() {
+function endDrag(e) {
+  if (isDragging && e) {
+    const dx = (e.clientX ?? startX) - startX;
+    const dy = (e.clientY ?? startY) - startY;
+    if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+      // A real pan happened — swallow the resulting click on buttons
+      suppressNextClick();
+    }
+  }
   isDragging = false;
+  pendingDrag = false;
 }
 
 // ========== PINCH ZOOM ==========
@@ -111,52 +161,92 @@ function getDist(touches) {
 }
 
 function touchStart(e) {
-  if (e.touches.length === 2) {
+  if (e.touches.length >= 2) {
     isPinching = true;
+    isDragging = false;
+    pendingDrag = false;
     startDist = getDist(e.touches);
     startScale = scale;
     e.preventDefault();
-  } else if (e.touches.length === 1) {
+    return;
+  }
+
+  if (e.touches.length === 1) {
+    // If we are still inside the pinch cooldown, don't start a drag —
+    // this prevents jumps when fingers are released non-simultaneously.
+    if (isPinching || Date.now() < pinchCooldown) return;
+
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-    if (target && (
-      target.closest("button") || 
-      target.closest("textarea") || 
-      target.closest(".node-box") ||
-      target.closest("input") ||
-      target.closest(".zoom-slider")
-    )) {
-      return;
-    }
-    
-    isDragging = true;
+
+    if (isAlwaysInteractive(target)) return;
+
+    pendingDrag = true;
+    isDragging = false;
     startX = touch.clientX;
     startY = touch.clientY;
     startOffsetX = offsetX;
     startOffsetY = offsetY;
+
+    if (!isClickable(target)) {
+      isDragging = true;
+    }
   }
 }
 
 function touchMove(e) {
-  if (isPinching && e.touches.length === 2) {
+  if (isPinching && e.touches.length >= 2) {
     e.preventDefault();
     const dist = getDist(e.touches);
+    if (startDist <= 0) return;
     const factor = dist / startDist;
     const zoom = (startScale * factor) * 100;
     const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
     const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     setZoom(zoom, centerX, centerY);
-  } else if (isDragging && e.touches.length === 1) {
+    return;
+  }
+
+  if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching) {
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+
+    if (!isDragging) {
+      if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+      isDragging = true;
+    }
+
     e.preventDefault();
-    offsetX = startOffsetX + (e.touches[0].clientX - startX);
-    offsetY = startOffsetY + (e.touches[0].clientY - startY);
+    offsetX = startOffsetX + dx;
+    offsetY = startOffsetY + dy;
     applyTransform();
   }
 }
 
 function touchEnd(e) {
-  if (e.touches.length < 2) isPinching = false;
-  if (e.touches.length === 0) isDragging = false;
+  // Coming out of pinch: when fewer than 2 touches remain, end the pinch
+  // and DO NOT promote the leftover finger into a drag (that's what
+  // caused the tree to "loncat" when fingers lifted at different times).
+  if (isPinching && e.touches.length < 2) {
+    isPinching = false;
+    isDragging = false;
+    pendingDrag = false;
+    // Brief cooldown so a stray remaining finger can't immediately start a drag
+    pinchCooldown = Date.now() + 250;
+  }
+
+  if (e.touches.length === 0) {
+    if (isDragging) {
+      const ct = e.changedTouches && e.changedTouches[0];
+      const dx = (ct ? ct.clientX : startX) - startX;
+      const dy = (ct ? ct.clientY : startY) - startY;
+      if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+        suppressNextClick();
+      }
+    }
+    isDragging = false;
+    pendingDrag = false;
+  }
 }
 /*Stable*/
