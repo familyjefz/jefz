@@ -15,23 +15,38 @@
   <div class="header">
     <h2>Silsilah Keluarga</h2>
     <div class="header-controls">
+      <button id="addtree-btn" class="addtree-btn" style="display:none;">🌳 Tree Baru</button>
+      <button id="filter-btn" class="filter-btn">🔎 Filter</button>
+      <button id="reposition-btn" class="reposition-btn" style="display:none;">📍 Reposisi</button>
       <button id="undo-btn" class="undo-btn" style="display:none;">↩️ Undo</button>
       <button id="redo-btn" class="redo-btn" style="display:none;">↪️ Redo</button>
       <button id="invert-btn" class="invert-btn">🎨 Invert</button>
       <button id="login-btn" class="login-btn">👤 Login Admin</button>
     </div>
   </div>
-  
+
   <div class="tree-wrapper" id="tree-wrapper">
     <div class="tree-zoom-container" id="tree-zoom-container">
       <div id="tree"></div>
     </div>
   </div>
-  
+
   <div class="bottom-zoom-bar">
     <button id="zoom-reset" class="zoom-reset-btn">⟳</button>
     <input type="range" id="zoom-slider" class="zoom-slider" min="30" max="300" value="100" step="1">
     <span id="zoom-value" class="zoom-value">100%</span>
+  </div>
+
+  <!-- Banner mode koneksi (manual line) -->
+  <div id="connect-banner" class="connect-banner">
+    <span>🔗 Pilih node tujuan untuk menghubungkan…</span>
+    <button id="connect-cancel-btn">Batal</button>
+  </div>
+
+  <!-- Banner mode reposisi -->
+  <div id="reposition-banner" class="reposition-banner">
+    <span>📍 Mode Reposisi: geser tree dengan menyentuh nodenya</span>
+    <button id="reposition-done-btn">Selesai</button>
   </div>
 </div>
 
@@ -62,6 +77,49 @@
   </div>
 </div>
 
+<!-- Modal Filter Tree -->
+<div id="filter-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Filter Tree</h3>
+      <span class="close-filter">&times;</span>
+    </div>
+    <div class="modal-body">
+      <label class="filter-all-row">
+        <input type="checkbox" id="filter-all-checkbox"> <strong>Semua Keluarga</strong>
+      </label>
+      <hr style="margin:10px 0; border:0; border-top:1px solid #ddd;">
+      <div class="filter-actions">
+        <button id="filter-select-all" type="button">Select All</button>
+        <button id="filter-deselect-all" type="button">Deselect All</button>
+      </div>
+      <div id="filter-tree-list" class="filter-tree-list"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button id="filter-apply" class="filter-apply" type="button">Terapkan</button>
+        <button id="filter-cancel" class="filter-cancel" type="button">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tambah Tree -->
+<div id="addtree-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Tambah Tree Baru</h3>
+      <span class="close-addtree">&times;</span>
+    </div>
+    <div class="modal-body">
+      <p>Nama root tree baru:</p>
+      <input type="text" id="addtree-name-input" class="pin-input" placeholder="Contoh: Keluarga Baru">
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button id="addtree-submit" class="pin-submit" style="flex:1;">Buat</button>
+        <button id="addtree-cancel" class="pin-submit" style="flex:1;">Batal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Custom Popup -->
 <div id="custom-popup" class="custom-popup">
   <div class="custom-popup-content">
@@ -81,6 +139,7 @@
 <script src="js/admin-undo.js"></script>
 <script src="js/family-tree.js"></script>
 <script src="js/family-info.js"></script>
+<script src="js/multi-tree.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
