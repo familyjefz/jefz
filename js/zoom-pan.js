@@ -15,10 +15,35 @@ let startDist = 0;
 let startScale = 1;
 let pinchCooldown = 0;
 
+// Pinch zoom state for the Info popup text (independent from tree zoom)
+let isInfoPinching = false;
+let infoZoom = 1;
+let startInfoZoom = 1;
+
 const DRAG_THRESHOLD = 8;
+const INFO_ZOOM_MIN = 0.6;
+const INFO_ZOOM_MAX = 4;
 
 // ========== ELEMENT REFERENCES ==========
 const getContainer = () => document.getElementById("tree-zoom-container");
+const getInfoModal = () => document.getElementById("info-modal");
+
+function isInfoModalOpen() {
+  const m = getInfoModal();
+  if (!m) return false;
+  const disp = m.style.display;
+  return disp === "flex" || disp === "block";
+}
+
+function applyInfoZoom() {
+  const body = document.getElementById("info-body");
+  if (body) body.style.setProperty("--info-zoom", String(infoZoom));
+}
+
+function resetInfoZoom() {
+  infoZoom = 1;
+  applyInfoZoom();
+}
 
 // ========== APPLY TRANSFORM ==========
 function applyTransform() {
@@ -99,7 +124,6 @@ function suppressNextClick() {
     ev.preventDefault();
   };
   document.addEventListener("click", handler, { capture: true, once: true });
-  // Safety: remove if no click fires
   setTimeout(() => {
     document.removeEventListener("click", handler, { capture: true });
   }, 400);
@@ -117,7 +141,6 @@ function startDrag(e) {
   startOffsetX = offsetX;
   startOffsetY = offsetY;
 
-  // If not on a clickable, we can drag right away and prevent text selection
   if (!isClickable(t)) {
     isDragging = true;
     e.preventDefault();
@@ -145,7 +168,6 @@ function endDrag(e) {
     const dx = (e.clientX ?? startX) - startX;
     const dy = (e.clientY ?? startY) - startY;
     if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
-      // A real pan happened — swallow the resulting click on buttons
       suppressNextClick();
     }
   }
@@ -162,6 +184,19 @@ function getDist(touches) {
 
 function touchStart(e) {
   if (e.touches.length >= 2) {
+    // If the Info popup is open, route pinch to the info-text zoom
+    // (position stays fixed, only text size changes).
+    if (isInfoModalOpen()) {
+      isInfoPinching = true;
+      isPinching = false;
+      isDragging = false;
+      pendingDrag = false;
+      startDist = getDist(e.touches);
+      startInfoZoom = infoZoom;
+      e.preventDefault();
+      return;
+    }
+
     isPinching = true;
     isDragging = false;
     pendingDrag = false;
@@ -172,9 +207,7 @@ function touchStart(e) {
   }
 
   if (e.touches.length === 1) {
-    // If we are still inside the pinch cooldown, don't start a drag —
-    // this prevents jumps when fingers are released non-simultaneously.
-    if (isPinching || Date.now() < pinchCooldown) return;
+    if (isPinching || isInfoPinching || Date.now() < pinchCooldown) return;
 
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -195,6 +228,18 @@ function touchStart(e) {
 }
 
 function touchMove(e) {
+  if (isInfoPinching && e.touches.length >= 2) {
+    e.preventDefault();
+    const dist = getDist(e.touches);
+    if (startDist <= 0) return;
+    const factor = dist / startDist;
+    let z = startInfoZoom * factor;
+    z = Math.max(INFO_ZOOM_MIN, Math.min(INFO_ZOOM_MAX, z));
+    infoZoom = z;
+    applyInfoZoom();
+    return;
+  }
+
   if (isPinching && e.touches.length >= 2) {
     e.preventDefault();
     const dist = getDist(e.touches);
@@ -207,7 +252,7 @@ function touchMove(e) {
     return;
   }
 
-  if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching) {
+  if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching && !isInfoPinching) {
     const t = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
@@ -225,14 +270,13 @@ function touchMove(e) {
 }
 
 function touchEnd(e) {
-  // Coming out of pinch: when fewer than 2 touches remain, end the pinch
-  // and DO NOT promote the leftover finger into a drag (that's what
-  // caused the tree to "loncat" when fingers lifted at different times).
-  if (isPinching && e.touches.length < 2) {
+  // Coming out of any pinch (tree or info): when fewer than 2 touches
+  // remain, stop pinch and DO NOT promote the leftover finger into a drag.
+  if ((isPinching || isInfoPinching) && e.touches.length < 2) {
     isPinching = false;
+    isInfoPinching = false;
     isDragging = false;
     pendingDrag = false;
-    // Brief cooldown so a stray remaining finger can't immediately start a drag
     pinchCooldown = Date.now() + 250;
   }
 
