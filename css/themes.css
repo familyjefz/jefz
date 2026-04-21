@@ -1,10 +1,13 @@
 /* ========== INVERT MODE ========== */
-/* Apply filter to specific sections (NOT body) so position:fixed elements
-   like .bottom-zoom-bar are not affected. A `filter` on <body> creates a
-   containing block for fixed descendants, which on mobile makes the
-   zoom slider get clipped or disappear. */
+/* Apply filter to specific elements (NOT body) so position:fixed elements
+   like .bottom-zoom-bar / .modal aren't affected by an ancestor filter
+   (which would create a containing block and break fixed positioning on
+   mobile). Putting `filter` directly on a fixed element itself is safe. */
 body.invert-mode .header,
-body.invert-mode .tree-wrapper {
+body.invert-mode .tree-wrapper,
+body.invert-mode .bottom-zoom-bar,
+body.invert-mode .modal,
+body.invert-mode .custom-popup {
   filter: invert(1);
 }
 
@@ -13,12 +16,12 @@ body.invert-mode .tree-wrapper {
   .info-grid-2col {
     grid-template-columns: 1fr;
   }
-  
+
   .bottom-zoom-bar {
     padding: 8px 16px;
     bottom: 12px;
   }
-  
+
   .bottom-zoom-bar .zoom-slider {
     width: 140px;
   }
