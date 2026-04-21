@@ -7,7 +7,9 @@ function resetSiblingColors() {
 }
 
 function getOrCreateSiblingColor(siblingGroupId) {
-  if (siblingColorMap.has(siblingGroupId)) return siblingColorMap.get(siblingGroupId);
+  if (siblingColorMap.has(siblingGroupId)) {
+    return siblingColorMap.get(siblingGroupId);
+  }
   const hue = (siblingGroupId * 37) % 360;
   const color = `hsl(${hue}, 75%, 65%)`;
   siblingColorMap.set(siblingGroupId, color);
@@ -26,7 +28,9 @@ function assignSiblingGroups(node) {
 }
 
 function getNodeColor(node) {
-  if (!node || node._siblingGroupId === undefined) return `hsl(0, 75%, 65%)`;
+  if (!node || node._siblingGroupId === undefined) {
+    return `hsl(0, 75%, 65%)`;
+  }
   return getOrCreateSiblingColor(node._siblingGroupId);
 }
 
@@ -72,6 +76,10 @@ let isFirstLoad = true;
 let currentZoom = 1;
 let isAdmin = false;
 
+// State penambahan (di-define di multi-tree.js):
+//   extraTrees, manualLinks, treeOffsets, visibleTrees
+// Dipakai di sini lewat helper getAllTrees() / isTreeVisible().
+
 async function loadTree() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
@@ -80,6 +88,7 @@ async function loadTree() {
     resetSiblingColors();
     assignSiblingGroups(currentTreeData);
 
+    // Muat state multi-tree (extras/links/offsets/visible) dari Supabase + localStorage
     if (typeof loadMultiState === "function") {
       await loadMultiState();
     }
@@ -137,6 +146,7 @@ function renderTree() {
 
   container.innerHTML = "";
 
+  // SVG overlay untuk manual links (di belakang tree-instance)
   const svgNS = "http://www.w3.org/2000/svg";
   const overlay = document.createElementNS(svgNS, "svg");
   overlay.setAttribute("id", "manual-links-svg");
@@ -157,6 +167,7 @@ function renderTree() {
     div.style.transform = `translate(${t.offset.x}px, ${t.offset.y}px)`;
     container.appendChild(div);
 
+    // Reset warna sibling per tree (tampilan independen)
     if (t.id !== "main") {
       assignSiblingGroups(t.data);
     }
@@ -182,8 +193,9 @@ function renderTree() {
   setTimeout(() => {
     if (wrapper) {
       if (isFirstLoad) {
+        // Restore zoom & pan terakhir, kalau tidak ada → center ke main tree
         if (typeof loadViewState === "function") loadViewState();
-        else { wrapper.scrollLeft = 800; wrapper.scrollTop = 400; }
+        else if (typeof centerOnMainTree === "function") centerOnMainTree();
         isFirstLoad = false;
       } else {
         wrapper.scrollLeft = savedLeft;
@@ -275,14 +287,19 @@ function getCurrentScroll() {
 function restoreScroll(left, top) {
   const w = document.getElementById("tree-wrapper");
   if (w) {
-    setTimeout(() => { w.scrollLeft = left; w.scrollTop = top; }, 50);
+    setTimeout(() => {
+      w.scrollLeft = left;
+      w.scrollTop = top;
+    }, 50);
   }
 }
 
 function openOptions(path, treeId = "main") {
   if (!isAdmin) return;
   const scroll = getCurrentScroll();
-  activePath = path; activeMode = null; activeTreeId = treeId;
+  activePath = path;
+  activeMode = null;
+  activeTreeId = treeId;
   renderTree();
   restoreScroll(scroll.left, scroll.top);
 }
@@ -290,7 +307,9 @@ function openOptions(path, treeId = "main") {
 function setMode(path, mode, treeId = "main") {
   if (!isAdmin) return;
   const scroll = getCurrentScroll();
-  activePath = path; activeMode = mode; activeTreeId = treeId;
+  activePath = path;
+  activeMode = mode;
+  activeTreeId = treeId;
   renderTree();
   restoreScroll(scroll.left, scroll.top);
 }
@@ -298,7 +317,8 @@ function setMode(path, mode, treeId = "main") {
 function cancelInline() {
   if (!isAdmin) return;
   const scroll = getCurrentScroll();
-  activePath = null; activeMode = null;
+  activePath = null;
+  activeMode = null;
   renderTree();
   restoreScroll(scroll.left, scroll.top);
 }
@@ -346,6 +366,7 @@ async function submitInline(path) {
       showCustomPopup("Error: " + err.message, "Error");
     }
   } else {
+    // Edit lokal pada extra tree
     saveToUndo();
     const tree = getTreeDataById(treeId);
     if (!tree) return;
