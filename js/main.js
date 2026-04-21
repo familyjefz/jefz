@@ -1,5 +1,7 @@
 // ========== EVENT LISTENERS & INIT ==========
 document.addEventListener("click", (e) => {
+  if (typeof connectFromKey !== "undefined" && connectFromKey) return;
+  if (typeof repositionMode !== "undefined" && repositionMode) return;
   if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
     activePath = null;
     activeMode = null;
@@ -9,13 +11,13 @@ document.addEventListener("click", (e) => {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadInvertSetting();
-  
+
   if (isLoggedIn()) {
     isAdmin = true;
     updateLoginButton();
     updateUndoRedoButtons();
   }
-  
+
   const slider = document.getElementById("zoom-slider");
   if (slider) {
     slider.min = "30";
@@ -24,18 +26,18 @@ document.addEventListener("DOMContentLoaded", () => {
     slider.value = "100";
     slider.addEventListener("input", updateZoomFromSlider);
   }
-  
-  zoomReset();
-  
+
+  loadViewState();
+
   document.addEventListener("mousedown", startDrag);
   document.addEventListener("mousemove", moveDrag);
   document.addEventListener("mouseup", endDrag);
-  
+
   document.addEventListener("touchstart", touchStart, { passive: false });
   document.addEventListener("touchmove", touchMove, { passive: false });
   document.addEventListener("touchend", touchEnd);
   document.addEventListener("touchcancel", touchEnd);
-  
+
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
   document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
@@ -47,6 +49,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("pin-input")?.addEventListener("keypress", (e) => {
     if (e.key === "Enter") checkPin();
   });
+
+  if (typeof initMultiTree === "function") initMultiTree();
+
+  window.addEventListener("resize", () => {
+    if (typeof drawManualLinks === "function") drawManualLinks();
+  });
 });
 
 window.addEventListener("click", (e) => {
@@ -55,5 +63,12 @@ window.addEventListener("click", (e) => {
   if (e.target.id === "custom-popup") closeCustomPopup();
 });
 
+// Patch updateUndoRedoButtons supaya juga toggle tombol admin baru
+const _origUpdateUndoRedo = updateUndoRedoButtons;
+updateUndoRedoButtons = function() {
+  _origUpdateUndoRedo();
+  if (typeof updateAdminButtons === "function") updateAdminButtons();
+};
+
 loadTree();
-/*Stable*/
+/*Stable + multi-tree*/
