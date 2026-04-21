@@ -1,13 +1,23 @@
 /* ========== INVERT MODE ========== */
-/* Apply filter to specific elements (NOT body) so position:fixed elements
-   like .bottom-zoom-bar / .modal aren't affected by an ancestor filter
-   (which would create a containing block and break fixed positioning on
-   mobile). Putting `filter` directly on a fixed element itself is safe. */
+/* IMPORTANT:
+   - Don't apply `filter` to `.modal` / `.custom-popup` themselves, because
+     any ancestor with `filter` cancels `backdrop-filter` on descendants
+     (so the iOS-style blur on the popup background would disappear).
+   - Instead, invert only the inner content blocks (header/body/buttons),
+     leaving the blurred `.modal-content` / `.custom-popup-content` wrapper
+     untouched so its 20px backdrop-blur keeps working.
+   - Same reasoning for body: filter on <body> would break fixed elements. */
 body.invert-mode .header,
 body.invert-mode .tree-wrapper,
-body.invert-mode .bottom-zoom-bar,
-body.invert-mode .modal,
-body.invert-mode .custom-popup {
+body.invert-mode .bottom-zoom-bar {
+  filter: invert(1);
+}
+
+body.invert-mode .modal .modal-header,
+body.invert-mode .modal .modal-body,
+body.invert-mode .custom-popup .custom-popup-header,
+body.invert-mode .custom-popup .custom-popup-body,
+body.invert-mode .custom-popup .custom-popup-buttons {
   filter: invert(1);
 }
 
