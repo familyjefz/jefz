@@ -1,4 +1,8 @@
 async function showInfo(path) {
+  return showInfoFor("main", path);
+}
+
+async function showInfoFor(treeId, path) {
   let parsedPath = path;
   if (typeof path === 'string') {
     try {
@@ -8,28 +12,34 @@ async function showInfo(path) {
       return;
     }
   }
-  
+
+  const treeData = (typeof getTreeDataById === "function") ? getTreeDataById(treeId) : currentTreeData;
+  if (!treeData) {
+    alert("Gagal memuat info. Silakan coba lagi.");
+    return;
+  }
+
   let node = null;
   if (!parsedPath || parsedPath.length === 0) {
-    node = currentTreeData;
+    node = treeData;
   } else {
-    node = getNodeByPath(currentTreeData, parsedPath);
+    node = getNodeByPath(treeData, parsedPath);
   }
-  
+
   if (!node) {
     alert("Gagal memuat info. Silakan coba lagi.");
     return;
   }
-  
-  const info = generateFamilyInfo(currentTreeData, parsedPath || [], node);
-  
+
+  const info = generateFamilyInfo(treeData, parsedPath || [], node);
+
   let displayName = node.name;
   if (displayName && displayName.includes("|")) {
     displayName = displayName.split("|")[0].trim();
   }
-  
+
   document.getElementById("info-title").innerHTML = `📋 Info: ${escapeHtml(displayName).replace(/\n/g, '<br>')}`;
-  
+
   let bodyHtml = `
     <div class="info-grid">
       <div><div class="info-label">👤 Nama</div><div class="info-value">${escapeHtml(displayName).replace(/\n/g, '<br>')}</div></div>
@@ -46,7 +56,7 @@ async function showInfo(path) {
       <div><div class="info-label">📜 7 Keturunan ke Bawah</div><div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada</span>'}</div></div>
     </div>
   `;
-  
+
   document.getElementById("info-body").innerHTML = bodyHtml;
   document.getElementById("info-modal").style.display = "flex";
 }
@@ -54,7 +64,7 @@ async function showInfo(path) {
 function generateFamilyInfo(treeData, path, node) {
   const parentPath = path.slice(0, -1);
   let parent = null;
-  
+
   if (path.length === 0) {
     parent = null;
   } else if (parentPath.length === 0) {
@@ -62,31 +72,30 @@ function generateFamilyInfo(treeData, path, node) {
   } else {
     parent = getNodeByPath(treeData, parentPath);
   }
-  
+
   let siblings = [];
   let currentNodeIndex = -1;
-  
+
   if (parent && parent.children && path.length > 0) {
     if (parentPath.length === 0) {
       currentNodeIndex = parent.children.findIndex(c => c.name === node.name);
     } else {
       currentNodeIndex = path[path.length - 1];
     }
-    
     if (currentNodeIndex !== -1) {
       siblings = parent.children.filter((_, idx) => idx !== currentNodeIndex);
     } else {
       siblings = parent.children.filter(c => c.name !== node.name);
     }
   }
-  
+
   let nephews = [];
   siblings.forEach(sibling => {
     if (sibling.children && sibling.children.length > 0) {
       nephews = nephews.concat(sibling.children);
     }
   });
-  
+
   let auntsUncles = [];
   if (parent && parentPath.length > 0) {
     let grandparent = null;
@@ -96,19 +105,18 @@ function generateFamilyInfo(treeData, path, node) {
       const grandparentPath = parentPath.slice(0, -1);
       grandparent = getNodeByPath(treeData, grandparentPath);
     }
-    
     if (grandparent && grandparent.children) {
       auntsUncles = grandparent.children.filter(p => p !== parent);
     }
   }
-  
+
   let cousins = [];
   auntsUncles.forEach(au => {
     if (au.children && au.children.length > 0) {
       cousins = cousins.concat(au.children);
     }
   });
-  
+
   let spouse = null;
   if (node.name && node.name.includes("|")) {
     const parts = node.name.split("|");
@@ -116,12 +124,12 @@ function generateFamilyInfo(treeData, path, node) {
       spouse = parts[1].trim();
     }
   }
-  
+
   const children = node.children || [];
-  const childrenList = children.length > 0 
+  const childrenList = children.length > 0
     ? children.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
-  
+
   let grandchildren = [];
   children.forEach(child => {
     if (child.children && child.children.length > 0) {
@@ -131,9 +139,9 @@ function generateFamilyInfo(treeData, path, node) {
   const grandchildrenList = grandchildren.length > 0
     ? grandchildren.map((gc, i) => `${i + 1}. ${gc.name.replace(/\n/g, '<br>')}`).join('<br>')
     : null;
-  
+
   const parents = parent ? parent.name.replace(/\n/g, '<br>') : null;
-  
+
   let grandparent = null;
   if (parentPath.length > 0) {
     const grandparentPath = parentPath.slice(0, -1);
@@ -147,12 +155,12 @@ function generateFamilyInfo(treeData, path, node) {
       grandparent = grandparentNode.name.replace(/\n/g, '<br>');
     }
   }
-  
+
   let ancestors = [];
   let currentParent = parent;
   let gen = 1;
   let maxGen = 7;
-  
+
   while (currentParent && gen <= maxGen) {
     ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
     const currentParentPath = getPathOfNode(treeData, currentParent);
@@ -172,7 +180,7 @@ function generateFamilyInfo(treeData, path, node) {
     gen++;
   }
   const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
-  
+
   let descendants = [];
   let queue = [{ node: node, level: 1 }];
   while (queue.length > 0) {
@@ -185,7 +193,7 @@ function generateFamilyInfo(treeData, path, node) {
     }
   }
   const descendants7 = descendants.length > 0 ? descendants.join('<br>') : null;
-  
+
   return {
     spouse,
     childrenList,
@@ -199,4 +207,5 @@ function generateFamilyInfo(treeData, path, node) {
     cousins: cousins.length > 0 ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
     descendants7
   };
-    }
+}
+/*Stable + multi-tree*/
