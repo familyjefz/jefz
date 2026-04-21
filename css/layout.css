@@ -66,7 +66,17 @@
   height: fit-content;
   min-width: max-content;
   min-height: max-content;
-  will-change: transform;
+  /* Avoid `will-change: transform` here: it forces a GPU layer that gets
+     rasterized once and stretched, making text blurry when zoomed in.
+     Without it the browser re-rasterizes text crisply at each scale. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+}
+
+.tree-zoom-container,
+.tree-zoom-container * {
+  backface-visibility: hidden;
 }
 
 #tree {
