@@ -76,6 +76,25 @@ let isFirstLoad = true;
 let currentZoom = 1;
 let isAdmin = false;
 
+// ========== CENTERING FUNCTION ==========
+function centerOnMainTree() {
+  const wrapper = document.getElementById("tree-wrapper");
+  if (!wrapper) return;
+  
+  const off = getTreeOffset("main");
+  
+  // Hitung posisi tengah viewport
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const centerX = wrapperRect.width / 2;
+  const centerY = wrapperRect.height / 2;
+  
+  // Scroll ke area main tree dengan padding
+  wrapper.scrollLeft = off.x - centerX + 150;
+  wrapper.scrollTop = off.y - centerY + 100;
+  
+  if (typeof saveViewState === "function") saveViewState();
+}
+
 // State penambahan (di-define di multi-tree.js):
 //   extraTrees, manualLinks, treeOffsets, visibleTrees
 // Dipakai di sini lewat helper getAllTrees() / isTreeVisible().
