@@ -11,6 +11,17 @@ let visibleTrees = "all";
 const DEFAULT_MAIN_OFFSET = { x: 2300, y: 50 };
 const TREE_VERTICAL_GAP   = 600;
 
+// Escape HTML lokal
+function escapeHtmlMT(str) {
+  if (!str) return "";
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
 function newId(prefix) {
   return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
 }
@@ -149,13 +160,15 @@ function cssEscapeMT(s) {
 function openFilterModal() {
   const list = document.getElementById("filter-tree-list");
   list.innerHTML = "";
-  const trees = getAllTrees();
+  
+  // Gunakan window.getAllTrees jika ada, atau fallback
+  const trees = (typeof window.getAllTrees === 'function') ? window.getAllTrees() : [];
   
   trees.forEach((t, index) => {
     const id = `flt-${t.id}`;
-    const checked = isTreeVisible(t.id) ? "checked" : "";
+    const checked = (typeof isTreeVisible === 'function') ? isTreeVisible(t.id) : true;
     const row = document.createElement("label");
-    row.innerHTML = `<input type="checkbox" id="${id}" data-tree-id="${t.id}" ${checked}> ${index + 1}. ${escapeHtml(t.name)}`;
+    row.innerHTML = `<input type="checkbox" id="${id}" data-tree-id="${t.id}" ${checked ? 'checked' : ''}> ${index + 1}. ${escapeHtmlMT(t.name)}`;
     list.appendChild(row);
     
     const checkbox = row.querySelector('input');
@@ -273,7 +286,7 @@ async function finalizeManualLink(fromKey, toKey) {
   showCustomPopup("Tautan manual dibuat!", "Sukses");
 }
 
-function onEdgeClickForConnect(e) {
+window.onEdgeClickForConnect = function(e) {
   if (!isAdmin) return;
   const edge = e.target.closest(".node-edge-left");
   if (!edge) return;
@@ -298,7 +311,7 @@ function onEdgeClickForConnect(e) {
   } else {
     lastEdgeTap = { key, time: now };
   }
-}
+};
 
 function onNodeClickForConnectTarget(e) {
   if (!connectFromKey) return;
@@ -570,4 +583,4 @@ function updateAdminButtons() {
 
 window.initMultiTree = initMultiTree;
 window.updateAdminButtons = updateAdminButtons;
-/*New: multi-tree + filter-nomor-otomatis*/
+/*New: multi-tree + filter-nomor-otomatis + escapeHtml-lokal*/
