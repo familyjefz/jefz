@@ -15,12 +15,12 @@ let startDist = 0;
 let startScale = 1;
 let pinchCooldown = 0;
 
-// Pinch zoom state for the Info popup text (independent from tree zoom)
+// Pinch zoom state for the Info popup text
 let isInfoPinching = false;
 let infoZoom = 1;
 let startInfoZoom = 1;
 
-// Reposition mode (di-set oleh multi-tree.js)
+// Reposition mode
 let repositionMode = false;
 
 const DRAG_THRESHOLD = 8;
@@ -112,22 +112,29 @@ function zoomReset() {
   saveViewState();
 }
 
-// Scroll wrapper supaya tree utama berada di tengah viewport
+// ========== CENTER SCROLL KE MAIN TREE ==========
 function centerOnMainTree() {
   const wrapper = document.getElementById("tree-wrapper");
-  if (!wrapper) return;
   const main = document.getElementById("tree-instance-main");
-  if (!main) {
-    wrapper.scrollLeft = Math.max(0, 2500 - wrapper.clientWidth / 2);
-    wrapper.scrollTop  = 0;
-    return;
-  }
-  const rect = main.getBoundingClientRect();
-  const wRect = wrapper.getBoundingClientRect();
-  const centerX = (rect.left + rect.width / 2) - wRect.left + wrapper.scrollLeft;
-  const topY    = rect.top - wRect.top + wrapper.scrollTop;
-  wrapper.scrollLeft = Math.max(0, centerX - wrapper.clientWidth / 2);
-  wrapper.scrollTop  = Math.max(0, topY - 30);
+  if (!wrapper || !main) return;
+  
+  // Dapatkan posisi main tree relatif terhadap container #tree
+  const mainRect = main.getBoundingClientRect();
+  const treeRect = document.getElementById("tree").getBoundingClientRect();
+  const wrapperRect = wrapper.getBoundingClientRect();
+  
+  // Hitung posisi absolut main tree di dalam #tree
+  const mainLeft = main.offsetLeft;
+  const mainTop = main.offsetTop;
+  const mainWidth = main.offsetWidth;
+  const mainHeight = main.offsetHeight;
+  
+  // Scroll agar main tree center di viewport
+  const targetScrollX = mainLeft - (wrapper.clientWidth / 2) + (mainWidth / 2);
+  const targetScrollY = mainTop - (wrapper.clientHeight / 2) + (mainHeight / 2);
+  
+  wrapper.scrollLeft = Math.max(0, targetScrollX);
+  wrapper.scrollTop = Math.max(0, targetScrollY);
 }
 
 // ========== PERSIST VIEW STATE ==========
@@ -161,8 +168,8 @@ function loadViewState() {
     applyTransform();
     updateZoomUI(Math.round(scale * 100));
     if (w) {
-      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 800;
-      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 400;
+      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 0;
+      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 0;
     }
   } catch (e) {
     centerOnMainTree();
@@ -364,7 +371,7 @@ function touchEnd(e) {
   }
 }
 
-// Persist scrollLeft/scrollTop changes too (in case of scrollbar use)
+// Persist scroll changes
 document.addEventListener("DOMContentLoaded", () => {
   const w = document.getElementById("tree-wrapper");
   if (w) {
@@ -375,4 +382,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + view persist*/
+/*Stable + center-scroll*/
