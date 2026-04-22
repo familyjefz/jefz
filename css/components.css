@@ -124,13 +124,13 @@ button:not(.tree-wrapper button) { cursor: pointer; }
 .modal {
   display: none; position: fixed; z-index: 1000; left: 0; top: 0;
   width: 100%; height: 100%;
-  background: #ffe0b2; /* LAYER 7 - ORANGE MUDA (overlay) */
+  background: #8b4513; /* LAYER 7 - COKLAT (overlay) */
   align-items: center; justify-content: center;
 }
 .modal[style*="display: block"],
 .modal[style*="display: flex"] { display: flex !important; }
 .modal-content {
-  background: #ffcc80; /* LAYER 7 CONTENT - ORANGE */
+  background: #000000; /* LAYER 7 CONTENT - HITAM */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   width: 90%; max-width: 400px; border-radius: 10px;
@@ -149,28 +149,32 @@ button:not(.tree-wrapper button) { cursor: pointer; }
 .info-header { background: #8cabe5; }
 
 .close, .close-info, .close-filter, .close-addtree {
-  color: rgba(0, 0, 0, 0.979); font-size: 28px; font-weight: bold; cursor: pointer;
+  color: rgba(255, 255, 255, 0.979); font-size: 28px; font-weight: bold; cursor: pointer;
 }
 .close:hover, .close-info:hover, .close-filter:hover, .close-addtree:hover { color: #ddd; }
-.modal-body { padding: 20px; }
+.modal-body { 
+  padding: 20px; 
+  color: #ffffff; /* Teks putih untuk kontras dengan background hitam */
+}
 
 /* ========== PIN INPUT ========== */
 .pin-input {
   width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd;
-  background: rgba(255,255,255,0); border-radius: 5px; font-size: 16px; text-align: center;
+  background: rgba(255,255,255,0.1); border-radius: 5px; font-size: 16px; text-align: center;
+  color: #ffffff;
 }
 .pin-submit {
-  background: #52525254; color: rgb(0,0,0); border: none; padding: 10px 20px;
+  background: #52525254; color: rgb(255,255,255); border: none; padding: 10px 20px;
   border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%;
 }
 .pin-submit:hover { background: #5f5f5f4b; }
-.pin-error { color: red; font-size: 12px; margin: 5px 0; }
+.pin-error { color: #ff6b6b; font-size: 12px; margin: 5px 0; }
 
 /* ========== INFO GRID ========== */
 .info-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 15px; }
 .info-section { margin-bottom: 0; padding-bottom: 8px; border-bottom: 1px solid #eee; }
 .info-label { font-weight: bold; color: #2196f3; margin-bottom: 5px; font-size: 12px; }
-.info-value { color: #333; font-size: 11px; line-height: 1.4; }
+.info-value { color: #ddd; font-size: 11px; line-height: 1.4; }
 
 /* ========== INFO BODY ZOOM ========== */
 #info-body { zoom: var(--info-zoom, 1); }
@@ -179,24 +183,25 @@ button:not(.tree-wrapper button) { cursor: pointer; }
 .custom-popup {
   display: none; position: fixed; z-index: 1001; left: 0; top: 0;
   width: 100%; height: 100%;
-  background: #f8bbd0; /* LAYER 8 - PINK MUDA (overlay) */
+  background: #ffffff; /* LAYER 8 - PUTIH (overlay) */
   align-items: center; justify-content: center;
 }
 .custom-popup[style*="display: block"],
 .custom-popup[style*="display: flex"] { display: flex !important; }
 .custom-popup-content {
-  background: #f48fb1; /* LAYER 8 CONTENT - PINK */
+  background: #000000; /* LAYER 8 CONTENT - HITAM */
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   width: 90%; max-width: 400px; border-radius: 10px;
   box-shadow: 0 4px 20px rgb(158,232,255);
   position: relative; overflow: hidden;
+  border: 2px solid #ffffff;
 }
 .custom-popup-header { padding: 15px; background: #76abc4; color: black; text-align: center; }
-.custom-popup-body { padding: 20px; text-align: center; font-size: 14px; color: #333; }
+.custom-popup-body { padding: 20px; text-align: center; font-size: 14px; color: #ffffff; }
 .custom-popup-buttons { display: flex; gap: 10px; padding: 0 20px 20px 20px; }
 .custom-popup-buttons button {
   flex: 1; padding: 8px; border: none; border-radius: 5px;
-  cursor: pointer; font-size: 14px; background: #52525254; color: black;
+  cursor: pointer; font-size: 14px; background: #52525254; color: white;
 }
 .custom-popup-buttons button:first-child { background: #4caf50; color: white; }
 .custom-popup-buttons button:last-child { background: #004ec2; color: white; }
@@ -209,7 +214,7 @@ button:not(.tree-wrapper button) { cursor: pointer; }
   position: absolute; left: -4px; top: 0;
   width: 10px; height: 100%;
   cursor: pointer;
-  background: #a5d6a7; /* LAYER 4 - HIJAU */
+  background: #800080; /* LAYER 4 - UNGU */
   z-index: 2;
 }
 .node-box.connect-source { outline: 2px dashed #8cabe5; outline-offset: 2px; }
@@ -218,14 +223,14 @@ body.connect-mode .node-box { cursor: pointer; }
 /* ========== LAYER 2: TREE INSTANCE ========== */
 .tree-instance {
   position: absolute; top: 0; left: 0; z-index: 1;
-  background: #ce93d8; /* LAYER 2 - UNGU */
+  background: #00ffff; /* LAYER 2 - AQUA */
 }
 
 /* ========== LAYER 3: MANUAL LINKS SVG ========== */
 .manual-links-svg {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   pointer-events: none; overflow: visible; z-index: 0;
-  background: #ef9a9a; /* LAYER 3 - MERAH */
+  background: #800080; /* LAYER 3 - UNGU */
 }
 .manual-links-svg line { pointer-events: stroke; cursor: pointer; }
 
@@ -234,7 +239,7 @@ body.connect-mode .node-box { cursor: pointer; }
 .reposition-banner {
   display: none; position: fixed; top: 56px; left: 50%;
   transform: translateX(-50%);
-  background: #80cbc4; /* LAYER 6 - TEAL */
+  background: #00ffff; /* LAYER 6 - AQUA */
   color: #000;
   padding: 8px 14px; border-radius: 24px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
@@ -251,18 +256,19 @@ body.connect-mode .node-box { cursor: pointer; }
 .filter-actions { display: flex; gap: 8px; margin-bottom: 10px; }
 .filter-actions button {
   flex: 1; padding: 6px; border: none; border-radius: 4px;
-  background: #52525254; color: #000; cursor: pointer; font-size: 12px;
+  background: #52525254; color: #fff; cursor: pointer; font-size: 12px;
 }
 .filter-tree-list {
   max-height: 220px; overflow-y: auto;
   border: 1px solid #ddd; border-radius: 4px; padding: 8px;
-  background: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.1);
 }
 .filter-tree-list label {
   display: flex; align-items: center; gap: 8px;
   padding: 4px 0; font-size: 13px; cursor: pointer;
+  color: #ffffff;
 }
-.filter-all-row { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.filter-all-row { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; color: #ffffff; }
 .filter-apply, .filter-cancel {
   flex: 1; padding: 8px; border: none; border-radius: 5px;
   cursor: pointer; font-size: 14px;
