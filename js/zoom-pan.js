@@ -43,18 +43,8 @@ function loadViewState() {
         if (state.scrollLeft !== undefined) wrapper.scrollLeft = state.scrollLeft;
         if (state.scrollTop !== undefined) wrapper.scrollTop = state.scrollTop;
       }
-    } else {
-      // Tidak ada state tersimpan → center ke main tree
-      if (typeof centerOnMainTree === "function") {
-        setTimeout(() => centerOnMainTree(), 150);
-      }
     }
-  } catch (e) {
-    // Fallback centering
-    if (typeof centerOnMainTree === "function") {
-      setTimeout(() => centerOnMainTree(), 150);
-    }
-  }
+  } catch (e) {}
 }
 
 function updateZoomFromSlider() {
@@ -93,8 +83,13 @@ function zoomReset() {
   if (slider) slider.value = "100";
   if (valSpan) valSpan.textContent = "100%";
 
-  if (wrapper && typeof centerOnMainTree === "function") {
-    centerOnMainTree();
+  // Center view ke main tree
+  const mainTree = document.getElementById("tree-instance-main");
+  if (wrapper && mainTree) {
+    const off = treeOffsets && treeOffsets["main"] ? treeOffsets["main"] : { x: 2000, y: 100 };
+    const wrapperRect = wrapper.getBoundingClientRect();
+    wrapper.scrollLeft = off.x - wrapperRect.width / 2 + 100;
+    wrapper.scrollTop = off.y - wrapperRect.height / 2 + 50;
   }
 
   saveViewState();
