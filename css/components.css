@@ -316,4 +316,22 @@ body.reposition-mode .tree-instance .node-box {
     grid-template-columns: 1fr;
   }
 }
+/* ========== HALAMAN TREE ======== */
+.tree-instance {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  background: #00ffff; /* LAYER 2 - AQUA */
+  overflow: visible !important;
+}
+
+.tree-instance svg {
+  display: block;
+  overflow: visible !important;
+}
+
+.tree-instance .Treant {
+  overflow: visible !important;
+}
 /*Stable*/
