@@ -7,7 +7,7 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: #4374d6;
+  background: #ffcdd2; /* LAYER 0 - MERAH MUDA */
   height: 100vh;
   overflow: hidden;
 }
