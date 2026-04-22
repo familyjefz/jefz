@@ -24,9 +24,8 @@ function newId(prefix) {
   return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
 }
 
-// Default posisi main tree: kira-kira tengah canvas 5000x5000 (atas-tengah)
-const DEFAULT_MAIN_OFFSET = { x: 2300, y: 50 };
-const TREE_VERTICAL_GAP   = 600;
+const DEFAULT_MAIN_OFFSET = { x: 0, y: 200 };  // x tidak dipakai, y untuk top
+const TREE_VERTICAL_GAP = 600;
 
 function getTreeOffset(treeId) {
   if (!treeOffsets[treeId]) {
