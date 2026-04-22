@@ -193,11 +193,16 @@ function renderTree() {
   setTimeout(() => {
     if (wrapper) {
       if (isFirstLoad) {
-        // Restore zoom & pan terakhir, kalau tidak ada → center ke main tree
-        if (typeof loadViewState === "function") loadViewState();
-        else if (typeof centerOnMainTree === "function") centerOnMainTree();
-        isFirstLoad = false;
-      } else {
+  // Restore zoom & pan terakhir
+  if (typeof loadViewState === "function") loadViewState();
+
+  // Center sempurna setelah render
+  setTimeout(() => {
+    perfectCenterMainTree();
+  }, 80);
+
+  isFirstLoad = false;
+} else {
         wrapper.scrollLeft = savedLeft;
         wrapper.scrollTop = savedTop;
       }
