@@ -63,7 +63,7 @@ window.addEventListener("click", (e) => {
   if (e.target.id === "custom-popup") closeCustomPopup();
 });
 
-// Patch updateUndoRedoButtons supaya juga toggle tombol admin baru
+// Patch updateUndoRedoButtons
 const _origUpdateUndoRedo = updateUndoRedoButtons;
 updateUndoRedoButtons = function() {
   _origUpdateUndoRedo();
