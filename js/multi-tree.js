@@ -264,7 +264,7 @@ async function finalizeManualLink(fromKey, toKey) {
   showCustomPopup("Tautan manual dibuat!", "Sukses");
 }
 
-function onEdgeClickForConnect(e) {
+window.onEdgeClickForConnect = function(e) {
   if (!isAdmin) return;
   const edge = e.target.closest(".node-edge-left");
   if (!edge) return;
