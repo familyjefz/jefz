@@ -420,4 +420,34 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
+function perfectCenterMainTree() {
+  const wrapper = document.getElementById("tree-wrapper");
+  const container = document.getElementById("tree-zoom-container");
+  const main = document.getElementById("tree-instance-main");
+
+  if (!wrapper || !container || !main) return;
+
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const mainRect = main.getBoundingClientRect();
+
+  // tengah layar
+  const centerX = wrapperRect.width / 2;
+  const centerY = wrapperRect.height / 2;
+
+  // tengah tree (posisi sekarang)
+  const treeCenterX = mainRect.left + mainRect.width / 2;
+  const treeCenterY = mainRect.top + mainRect.height / 2;
+
+  // selisih posisi
+  const dx = centerX - treeCenterX;
+  const dy = centerY - treeCenterY;
+
+  // geser via zoom-pan (AMAN)
+  offsetX += dx;
+  offsetY += dy;
+
+  applyTransform();
+
+  if (typeof drawManualLinks === "function") drawManualLinks();
+}
 /*Stable + multi-tree*/
