@@ -25,7 +25,7 @@ function newId(prefix) {
 }
 
 // Default posisi main tree: kira-kira tengah canvas 5000x5000 (atas-tengah)
-const DEFAULT_MAIN_OFFSET = { x: 2500, y: 150 };
+const DEFAULT_MAIN_OFFSET = { x: 2300, y: 50 };
 const TREE_VERTICAL_GAP   = 600;
 
 function getTreeOffset(treeId) {
@@ -59,19 +59,11 @@ function applyMultiStateObject(obj) {
   treeOffsets  = (obj.offsets && typeof obj.offsets === "object") ? obj.offsets : {};
   visibleTrees = (obj.visible === "all" || Array.isArray(obj.visible)) ? obj.visible : "all";
 
-  // PERBAIKAN: Reset offset yang terlalu kecil (kurang dari 500) agar pohon tidak terpotong
+  // Bersihkan offset broken {0,0} sisa testing → biar default centered kepakai
   Object.keys(treeOffsets).forEach(k => {
     const o = treeOffsets[k];
-    // Hapus offset yang 0,0 ATAU yang x/y-nya kurang dari 500 (terlalu dekat tepi)
-    if (!o || (o.x === 0 && o.y === 0) || o.x < 500 || o.y < 100) {
-      delete treeOffsets[k];
-    }
+    if (!o || (o.x === 0 && o.y === 0)) delete treeOffsets[k];
   });
-  
-  // Pastikan main tree selalu punya offset valid
-  if (!treeOffsets["main"]) {
-    treeOffsets["main"] = { x: DEFAULT_MAIN_OFFSET.x, y: DEFAULT_MAIN_OFFSET.y };
-  }
 }
 
 async function loadMultiState() {
