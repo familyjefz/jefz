@@ -1,12 +1,4 @@
 /* ========== INVERT MODE ========== */
-/* IMPORTANT:
-   - Don't apply `filter` to `.modal` / `.custom-popup` themselves, because
-     any ancestor with `filter` cancels `backdrop-filter` on descendants
-     (so the iOS-style blur on the popup background would disappear).
-   - Instead, invert only the inner content blocks (header/body/buttons),
-     leaving the blurred `.modal-content` / `.custom-popup-content` wrapper
-     untouched so its 20px backdrop-blur keeps working.
-   - Same reasoning for body: filter on <body> would break fixed elements. */
 body.invert-mode .header,
 body.invert-mode .tree-wrapper,
 body.invert-mode .bottom-zoom-bar {
