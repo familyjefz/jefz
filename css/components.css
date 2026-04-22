@@ -120,16 +120,17 @@
 button:not(.tree-wrapper button) { cursor: pointer; }
 .pin-input, .node-input { cursor: text; }
 
-/* ========== MODAL ========== */
+/* ========== MODAL - LAYER 7 ========== */
 .modal {
   display: none; position: fixed; z-index: 1000; left: 0; top: 0;
-  width: 100%; height: 100%; background: rgba(0, 0, 0, 0.014);
+  width: 100%; height: 100%;
+  background: #ffe0b2; /* LAYER 7 - ORANGE MUDA (overlay) */
   align-items: center; justify-content: center;
 }
 .modal[style*="display: block"],
 .modal[style*="display: flex"] { display: flex !important; }
 .modal-content {
-  background: rgba(255, 255, 255, 0);
+  background: #ffcc80; /* LAYER 7 CONTENT - ORANGE */
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   width: 90%; max-width: 400px; border-radius: 10px;
@@ -174,16 +175,17 @@ button:not(.tree-wrapper button) { cursor: pointer; }
 /* ========== INFO BODY ZOOM ========== */
 #info-body { zoom: var(--info-zoom, 1); }
 
-/* ========== CUSTOM POPUP ========== */
+/* ========== CUSTOM POPUP - LAYER 8 ========== */
 .custom-popup {
   display: none; position: fixed; z-index: 1001; left: 0; top: 0;
-  width: 100%; height: 100%; background: rgba(0,0,0,0.014);
+  width: 100%; height: 100%;
+  background: #f8bbd0; /* LAYER 8 - PINK MUDA (overlay) */
   align-items: center; justify-content: center;
 }
 .custom-popup[style*="display: block"],
 .custom-popup[style*="display: flex"] { display: flex !important; }
 .custom-popup-content {
-  background: rgba(255,255,255,0);
+  background: #f48fb1; /* LAYER 8 CONTENT - PINK */
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   width: 90%; max-width: 400px; border-radius: 10px;
   box-shadow: 0 4px 20px rgb(158,232,255);
@@ -202,31 +204,38 @@ button:not(.tree-wrapper button) { cursor: pointer; }
 
 .zoom-value { color: white; font-size: 12px; font-weight: bold; min-width: 45px; text-align: center; }
 
-/* ========== NEW: NODE LEFT EDGE (handle koneksi manual) ========== */
+/* ========== LAYER 4: NODE EDGE LEFT ========== */
 .node-edge-left {
   position: absolute; left: -4px; top: 0;
   width: 10px; height: 100%;
-  cursor: pointer; background: transparent; z-index: 2;
+  cursor: pointer;
+  background: #a5d6a7; /* LAYER 4 - HIJAU */
+  z-index: 2;
 }
 .node-box.connect-source { outline: 2px dashed #8cabe5; outline-offset: 2px; }
 body.connect-mode .node-box { cursor: pointer; }
 
-/* ========== NEW: TREE INSTANCE ========== */
-.tree-instance { position: absolute; top: 0; left: 0; z-index: 1; }
+/* ========== LAYER 2: TREE INSTANCE ========== */
+.tree-instance {
+  position: absolute; top: 0; left: 0; z-index: 1;
+  background: #ce93d8; /* LAYER 2 - UNGU */
+}
 
-/* ========== NEW: MANUAL LINKS SVG OVERLAY ========== */
+/* ========== LAYER 3: MANUAL LINKS SVG ========== */
 .manual-links-svg {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   pointer-events: none; overflow: visible; z-index: 0;
+  background: #ef9a9a; /* LAYER 3 - MERAH */
 }
 .manual-links-svg line { pointer-events: stroke; cursor: pointer; }
 
-/* ========== NEW: CONNECT BANNER & REPOSITION BANNER ========== */
+/* ========== LAYER 6: CONNECT BANNER & REPOSITION BANNER ========== */
 .connect-banner,
 .reposition-banner {
   display: none; position: fixed; top: 56px; left: 50%;
   transform: translateX(-50%);
-  background: #8cabe5; color: #000;
+  background: #80cbc4; /* LAYER 6 - TEAL */
+  color: #000;
   padding: 8px 14px; border-radius: 24px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   z-index: 900; align-items: center; gap: 10px;
@@ -238,7 +247,7 @@ body.connect-mode .node-box { cursor: pointer; }
   padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;
 }
 
-/* ========== NEW: FILTER MODAL ========== */
+/* ========== FILTER MODAL ========== */
 .filter-actions { display: flex; gap: 8px; margin-bottom: 10px; }
 .filter-actions button {
   flex: 1; padding: 6px; border: none; border-radius: 4px;
@@ -261,10 +270,17 @@ body.connect-mode .node-box { cursor: pointer; }
 .filter-apply { background: #4caf50; color: #fff; }
 .filter-cancel { background: #607d8b; color: #fff; }
 
-/* ========== NEW: REPOSITION MODE ========== */
+/* ========== REPOSITION MODE ========== */
 body.reposition-mode .tree-wrapper { cursor: default; }
 body.reposition-mode .tree-instance .node-box {
   cursor: move !important;
   outline: 1px dashed #8cabe5;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 600px) {
+  .info-grid-2col {
+    grid-template-columns: 1fr;
+  }
 }
 /*Stable*/
