@@ -190,7 +190,6 @@ function renderTree() {
   setTimeout(() => {
     if (wrapper) {
       if (isFirstLoad) {
-        // Scroll ke main tree
         if (typeof centerOnMainTree === "function") {
           centerOnMainTree();
         } else {
@@ -420,4 +419,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + scroll-center-final*/
+/*Stable + flex-center-final*/
