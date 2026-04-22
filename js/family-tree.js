@@ -76,6 +76,11 @@ let isFirstLoad = true;
 let currentZoom = 1;
 let isAdmin = false;
 
+// State untuk mode Hubungkan
+let connectMode = null; // null, 'parent', 'child'
+let connectSourcePath = null;
+let connectSourceTreeId = null;
+
 async function loadTree() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
@@ -188,7 +193,6 @@ function renderTree() {
   });
 
   setTimeout(() => {
-    // ===== AQUA MENYESUAIKAN UKURAN KE ISI (NODE & LINE) =====
     trees.forEach(t => {
       if (!isTreeVisible(t.id)) return;
       const inst = document.getElementById(`tree-instance-${t.id}`);
@@ -219,7 +223,6 @@ function renderTree() {
       treantDiv.style.height = newHeight + 'px';
     });
     
-    // ===== PASANG EVENT LISTENER UNTUK KONEKSI MANUAL =====
     if (typeof isAdmin !== 'undefined' && isAdmin && typeof onEdgeClickForConnect === 'function') {
       document.querySelectorAll('.node-edge-left').forEach(edge => {
         edge.removeEventListener('dblclick', onEdgeClickForConnect);
@@ -286,6 +289,8 @@ function convert(node, path = [], generation = 1, treeId = "main") {
           <button onclick='showHapusPopup(${pathJson}, ${tIdQ})'>❌ Hapus</button>
           <button onclick='setMode(${pathJson}, "parent", ${tIdQ})'>⬆️ Tambah Parent</button>
           <button onclick='setMode(${pathJson}, "order", ${tIdQ})'>🔢 Ubah Urutan</button>
+          <button onclick='startConnect(${pathJson}, ${tIdQ})'>🔗 Hubungkan</button>
+          <button onclick='disconnectNode(${pathJson}, ${tIdQ})'>✂️ Putuskan</button>
         </div>
       </div>
     `;
@@ -312,6 +317,199 @@ function convert(node, path = [], generation = 1, treeId = "main") {
     innerHTML: innerHTML,
     children: node.children?.map((child, i) => convert(child, [...path, i], generation + 1, treeId))
   };
+}
+
+// ========== FUNGSI HUBUNGKAN & PUTUSKAN ==========
+
+function startConnect(path, treeId) {
+  if (!isAdmin) return;
+  
+  const scroll = getCurrentScroll();
+  activePath = null;
+  activeMode = null;
+  
+  showCustomPopup(
+    'Pilih jenis hubungan:',
+    'Hubungkan Node',
+    null,
+    true
+  );
+  
+  // Ganti tombol popup
+  setTimeout(() => {
+    const popupButtons = document.getElementById('popup-buttons');
+    if (popupButtons) {
+      popupButtons.innerHTML = '';
+      
+      const btnParent = document.createElement('button');
+      btnParent.textContent = '⬆️ Sebagai Orang Tua';
+      btnParent.style.background = '#4caf50';
+      btnParent.onclick = () => {
+        closeCustomPopup();
+        connectMode = 'parent';
+        connectSourcePath = path;
+        connectSourceTreeId = treeId;
+        showCustomPopup('Klik node yang akan menjadi ORANG TUA', 'Pilih Node Tujuan');
+      };
+      
+      const btnChild = document.createElement('button');
+      btnChild.textContent = '⬇️ Sebagai Anak';
+      btnChild.style.background = '#2196f3';
+      btnChild.onclick = () => {
+        closeCustomPopup();
+        connectMode = 'child';
+        connectSourcePath = path;
+        connectSourceTreeId = treeId;
+        showCustomPopup('Klik node yang akan menjadi ANAK', 'Pilih Node Tujuan');
+      };
+      
+      const btnCancel = document.createElement('button');
+      btnCancel.textContent = 'Batal';
+      btnCancel.style.background = '#607d8b';
+      btnCancel.onclick = () => {
+        closeCustomPopup();
+        restoreScroll(scroll.left, scroll.top);
+      };
+      
+      popupButtons.appendChild(btnParent);
+      popupButtons.appendChild(btnChild);
+      popupButtons.appendChild(btnCancel);
+    }
+  }, 50);
+}
+
+async function executeConnect(targetPath, targetTreeId) {
+  if (!connectMode || !connectSourcePath || !connectSourceTreeId) return;
+  
+  saveToUndo();
+  
+  const sourceTree = getTreeDataById(connectSourceTreeId);
+  const targetTree = getTreeDataById(targetTreeId);
+  if (!sourceTree || !targetTree) return;
+  
+  const sourceNode = getNodeByPath(sourceTree, connectSourcePath);
+  const targetNode = getNodeByPath(targetTree, connectSourcePath === null ? [] : connectSourcePath);
+  
+  if (!sourceNode || !targetNode) {
+    showCustomPopup('Node tidak ditemukan', 'Error');
+    return;
+  }
+  
+  if (connectMode === 'parent') {
+    // Target menjadi parent dari Source
+    if (!targetNode.children) targetNode.children = [];
+    targetNode.children.push(sourceNode);
+    
+    // Hapus Source dari tree asalnya
+    removeNodeFromTree(sourceTree, connectSourcePath);
+    
+  } else if (connectMode === 'child') {
+    // Target menjadi anak dari Source
+    if (!sourceNode.children) sourceNode.children = [];
+    sourceNode.children.push(targetNode);
+    
+    // Hapus Target dari tree asalnya
+    removeNodeFromTree(targetTree, targetPath);
+  }
+  
+  // Bersihkan tree kosong
+  cleanEmptyTrees();
+  
+  connectMode = null;
+  connectSourcePath = null;
+  connectSourceTreeId = null;
+  
+  await persistMultiState();
+  resetSiblingColors();
+  assignSiblingGroups(currentTreeData);
+  renderTree();
+  showCustomPopup('Node berhasil dihubungkan!', 'Sukses');
+}
+
+function removeNodeFromTree(tree, path) {
+  if (!path || path.length === 0) {
+    // Root dihapus - ganti dengan anak pertama
+    if (tree.children && tree.children.length > 0) {
+      const firstChild = tree.children[0];
+      tree.name = firstChild.name;
+      tree.children = firstChild.children || [];
+    } else {
+      tree.name = 'Root Kosong';
+      tree.children = [];
+    }
+    return;
+  }
+  
+  const parentPath = path.slice(0, -1);
+  const nodeIndex = path[path.length - 1];
+  const parent = parentPath.length === 0 ? tree : getNodeByPath(tree, parentPath);
+  
+  if (parent && parent.children) {
+    parent.children.splice(nodeIndex, 1);
+  }
+}
+
+function cleanEmptyTrees() {
+  // Main tree tidak boleh kosong
+  if (!currentTreeData || !currentTreeData.name) {
+    currentTreeData = { name: 'Keluarga Utama', children: [] };
+  }
+  
+  // Hapus extra tree yang kosong
+  if (typeof extraTrees !== 'undefined') {
+    extraTrees = extraTrees.filter(t => t.data && t.data.name);
+  }
+}
+
+async function disconnectNode(path, treeId) {
+  if (!isAdmin) return;
+  
+  const tree = getTreeDataById(treeId);
+  if (!tree) return;
+  
+  const node = getNodeByPath(tree, path);
+  if (!node) return;
+  
+  // Cek apakah node memiliki parent
+  if (!path || path.length === 0) {
+    showCustomPopup('Node ini sudah menjadi Root', 'Info');
+    return;
+  }
+  
+  saveToUndo();
+  
+  // Hapus node dari parent-nya
+  const parentPath = path.slice(0, -1);
+  const nodeIndex = path[path.length - 1];
+  const parent = parentPath.length === 0 ? tree : getNodeByPath(tree, parentPath);
+  
+  if (parent && parent.children) {
+    parent.children.splice(nodeIndex, 1);
+  }
+  
+  // Jadikan node sebagai tree baru
+  const newId = newIdMT('t');
+  extraTrees.push({
+    id: newId,
+    name: node.name.split('|')[0].trim(),
+    data: node
+  });
+  
+  treeOffsets[newId] = {
+    x: DEFAULT_MAIN_OFFSET.x,
+    y: DEFAULT_MAIN_OFFSET.y + TREE_VERTICAL_GAP * extraTrees.length
+  };
+  
+  await persistMultiState();
+  resetSiblingColors();
+  assignSiblingGroups(currentTreeData);
+  renderTree();
+  showCustomPopup('Node diputuskan dan menjadi Root baru!', 'Sukses');
+}
+
+// Helper untuk newId (dari multi-tree.js)
+function newIdMT(prefix) {
+  return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
 }
 
 function getCurrentScroll() {
@@ -454,4 +652,9 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + edge-dblclick-fix*/
+
+// Expose fungsi untuk onclick global
+window.startConnect = startConnect;
+window.disconnectNode = disconnectNode;
+window.executeConnect = executeConnect;
+/*Stable + Hubungkan-Putuskan*/
