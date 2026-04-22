@@ -154,15 +154,26 @@ function renderTree() {
     if (!isTreeVisible(t.id)) return;
     if (!t.data) return;
 
-    const div = document.createElement("div");
-    div.className = "tree-instance";
-    div.id = `tree-instance-${t.id}`;
-    div.dataset.treeId = t.id;
-    div.style.transform = `translate(${t.offset.x}px, ${t.offset.y}px)`;
-    div.style.position = 'absolute';
-    div.style.overflow = 'visible';
+    // Container Aqua
+    const aquaDiv = document.createElement("div");
+    aquaDiv.className = "tree-instance";
+    aquaDiv.id = `tree-instance-${t.id}`;
+    aquaDiv.dataset.treeId = t.id;
+    aquaDiv.style.transform = `translate(${t.offset.x}px, ${t.offset.y}px)`;
+    aquaDiv.style.position = 'absolute';
+    aquaDiv.style.overflow = 'visible';
     
-    container.appendChild(div);
+    // WRAPPER UNTUK CENTERING
+    const centerWrapper = document.createElement("div");
+    centerWrapper.className = "treant-center-wrapper";
+    centerWrapper.style.display = "flex";
+    centerWrapper.style.justifyContent = "center";
+    centerWrapper.style.alignItems = "flex-start";
+    centerWrapper.style.width = "fit-content";
+    centerWrapper.style.minWidth = "100%";
+    
+    aquaDiv.appendChild(centerWrapper);
+    container.appendChild(aquaDiv);
 
     if (t.id !== "main") {
       assignSiblingGroups(t.data);
@@ -171,7 +182,7 @@ function renderTree() {
     try {
       new Treant({
         chart: {
-          container: `#tree-instance-${t.id}`,
+          container: centerWrapper,  // Render ke wrapper, bukan ke aquaDiv
           rootOrientation: "NORTH",
           connectors: { type: "step" },
           animateOnInit: false,
@@ -419,4 +430,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + flex-center-final*/
+/*Stable + wrapper-center*/
