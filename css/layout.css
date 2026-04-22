@@ -3,6 +3,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #f3e5f5; /* LAYER 0.5 - UNGU MUDA */
 }
 
 /* ========== HEADER ========== */
@@ -43,11 +44,11 @@
   display: none;
 }
 
-/* ========== TREE WRAPPER ========== */
+/* ========== TREE WRAPPER - LAYER 1 ========== */
 .tree-wrapper {
   flex: 1;
-  overflow: hidden;
-  background: #f1fcff;
+  overflow: auto !important;
+  background: #c8e6c9; /* LAYER 1 - HIJAU MUDA */
   position: relative;
   touch-action: none;
   cursor: grab;
@@ -69,6 +70,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: geometricPrecision;
+  background: transparent;
 }
 
 .tree-zoom-container,
@@ -78,11 +80,12 @@
 
 #tree {
   position: relative;
-  width: 5000px;
-  height: 5000px;
+  width: 10000px;
+  height: 10000px;
+  background: #fff9c4; /* LAYER 1 - KUNING MUDA */
 }
 
-/* ========== BOTTOM ZOOM BAR ========== */
+/* ========== BOTTOM ZOOM BAR - LAYER 5 ========== */
 .bottom-zoom-bar {
   position: fixed;
   bottom: 16px;
@@ -91,7 +94,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.7);
+  background: #b3e5fc; /* LAYER 5 - BIRU MUDA */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   padding: 10px 20px;
@@ -167,5 +170,16 @@
   background: #00a8f7;
   cursor: pointer;
   border: none;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 600px) {
+  .bottom-zoom-bar {
+    padding: 8px 16px;
+    bottom: 12px;
+  }
+  .bottom-zoom-bar .zoom-slider {
+    width: 140px;
+  }
 }
 /*Stable*/
