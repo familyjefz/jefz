@@ -145,8 +145,8 @@ function renderTree() {
   const overlay = document.createElementNS(svgNS, "svg");
   overlay.setAttribute("id", "manual-links-svg");
   overlay.setAttribute("class", "manual-links-svg");
-  overlay.setAttribute("width", "5000");
-  overlay.setAttribute("height", "5000");
+  overlay.setAttribute("width", "10000");
+  overlay.setAttribute("height", "10000");
   container.appendChild(overlay);
 
   const trees = getAllTrees();
@@ -159,6 +159,9 @@ function renderTree() {
     div.id = `tree-instance-${t.id}`;
     div.dataset.treeId = t.id;
     div.style.transform = `translate(${t.offset.x}px, ${t.offset.y}px)`;
+    div.style.position = 'absolute';
+    div.style.overflow = 'visible';
+    
     container.appendChild(div);
 
     if (t.id !== "main") {
@@ -172,9 +175,10 @@ function renderTree() {
           rootOrientation: "NORTH",
           connectors: { type: "step" },
           animateOnInit: false,
-          levelSeparation: 12,
-          siblingSeparation: 8,
-          subTeeSeparation: 8
+          levelSeparation: 50,
+          siblingSeparation: 30,
+          subTeeSeparation: 30,
+          padding: 50
         },
         nodeStructure: convert(t.data, [], 1, t.id)
       });
@@ -184,6 +188,46 @@ function renderTree() {
   });
 
   setTimeout(() => {
+    // ===== AQUA MENYESUAIKAN UKURAN KE ISI (NODE & LINE) =====
+    trees.forEach(t => {
+      if (!isTreeVisible(t.id)) return;
+      const inst = document.getElementById(`tree-instance-${t.id}`);
+      if (!inst) return;
+      
+      const treantDiv = inst.querySelector('.Treant');
+      const svg = inst.querySelector('svg');
+      if (!treantDiv || !svg) return;
+      
+      // Set .Treant width 100% dulu agar SVG terukur penuh
+      treantDiv.style.width = '100%';
+      treantDiv.style.height = '100%';
+      
+      // Ambil ukuran konten SVG
+      let contentWidth = 0, contentHeight = 0;
+      try {
+        const bbox = svg.getBBox();
+        contentWidth = bbox.width;
+        contentHeight = bbox.height;
+      } catch (e) {
+        // Fallback
+        contentWidth = 500;
+        contentHeight = 300;
+      }
+      
+      // Padding agar tidak mepet
+      const PADDING = 80;
+      
+      // Set ukuran .Treant sesuai konten + padding
+      const newWidth = contentWidth + PADDING;
+      const newHeight = contentHeight + PADDING;
+      
+      treantDiv.style.width = newWidth + 'px';
+      treantDiv.style.height = newHeight + 'px';
+      
+      // Aqua akan otomatis mengikuti ukuran .Treant
+      // Tidak perlu set inst.style.width/height karena sudah mengikuti
+    });
+    
     if (wrapper) {
       if (isFirstLoad) {
         if (typeof loadViewState === "function") loadViewState();
@@ -195,7 +239,7 @@ function renderTree() {
       }
     }
     if (typeof drawManualLinks === "function") drawManualLinks();
-  }, 100);
+  }, 200);
 }
 
 function convert(node, path = [], generation = 1, treeId = "main") {
@@ -411,4 +455,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + multi-tree*/
+/*Stable + aqua-fit-content*/
