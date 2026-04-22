@@ -115,19 +115,20 @@ function zoomReset() {
 // Scroll wrapper supaya tree utama berada di tengah viewport
 function centerOnMainTree() {
   const wrapper = document.getElementById("tree-wrapper");
-  if (!wrapper) return;
-  const main = document.getElementById("tree-instance-main");
-  if (!main) {
-    wrapper.scrollLeft = Math.max(0, 2500 - wrapper.clientWidth / 2);
-    wrapper.scrollTop  = 0;
-    return;
-  }
-  const rect = main.getBoundingClientRect();
-  const wRect = wrapper.getBoundingClientRect();
-  const centerX = (rect.left + rect.width / 2) - wRect.left + wrapper.scrollLeft;
-  const topY    = rect.top - wRect.top + wrapper.scrollTop;
-  wrapper.scrollLeft = Math.max(0, centerX - wrapper.clientWidth / 2);
-  wrapper.scrollTop  = Math.max(0, topY - 30);
+  const container = document.getElementById("tree");
+  if (!wrapper || !container) return;
+  
+  // Hitung posisi tengah container relatif terhadap wrapper
+  const containerWidth = container.offsetWidth;
+  const containerHeight = container.offsetHeight;
+  const wrapperWidth = wrapper.clientWidth;
+  const wrapperHeight = wrapper.clientHeight;
+  
+  const centerScrollX = Math.max(0, (containerWidth - wrapperWidth) / 2);
+  const centerScrollY = Math.max(0, (containerHeight - wrapperHeight) / 2);
+  
+  wrapper.scrollLeft = centerScrollX;
+  wrapper.scrollTop = centerScrollY;
 }
 
 // ========== PERSIST VIEW STATE ==========
@@ -375,4 +376,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + view persist*/
+/*Stable + view persist + center-fix*/
