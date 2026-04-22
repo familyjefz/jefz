@@ -173,7 +173,7 @@ function renderTree() {
         chart: {
           container: `#tree-instance-${t.id}`,
           rootOrientation: "NORTH",
-          connectors: { type: "curve" },
+          connectors: { type: "step" },
           animateOnInit: false,
           levelSeparation: 50,
           siblingSeparation: 30,
@@ -188,6 +188,107 @@ function renderTree() {
   });
 
   setTimeout(() => {
+    // ===== PERBESAR SVG VIEWBOX AGAR GARIS TIDAK TERPOTONG =====
+    trees.forEach(t => {
+      if (!isTreeVisible(t.id)) return;
+      const inst = document.getElementById(`tree-instance-${t.id}`);
+      if (!inst) return;
+      
+      const svg = inst.querySelector('svg');
+      if (!svg) return;
+      
+      // Reset posisi SVG
+      svg.style.left = '0px';
+      svg.style.top = '0px';
+      svg.style.position = 'relative';
+      svg.style.overflow = 'visible';
+      
+      // Ambil semua node-box untuk hitung bounding box
+      const nodes = inst.querySelectorAll('.node-box');
+      if (nodes.length === 0) return;
+      
+      let minX = Infinity, minY = Infinity;
+      let maxX = -Infinity, maxY = -Infinity;
+      
+      nodes.forEach(node => {
+        const left = parseFloat(node.style.left) || 0;
+        const top = parseFloat(node.style.top) || 0;
+        const width = node.offsetWidth || 80;
+        const height = node.offsetHeight || 50;
+        
+        minX = Math.min(minX, left);
+        minY = Math.min(minY, top);
+        maxX = Math.max(maxX, left + width);
+        maxY = Math.max(maxY, top + height);
+      });
+      
+      // Cek juga garis konektor (path, line) untuk bounding box
+      const connectors = svg.querySelectorAll('path, line, polyline');
+      connectors.forEach(conn => {
+        if (conn.tagName === 'line') {
+          const x1 = parseFloat(conn.getAttribute('x1')) || 0;
+          const y1 = parseFloat(conn.getAttribute('y1')) || 0;
+          const x2 = parseFloat(conn.getAttribute('x2')) || 0;
+          const y2 = parseFloat(conn.getAttribute('y2')) || 0;
+          minX = Math.min(minX, x1, x2);
+          minY = Math.min(minY, y1, y2);
+          maxX = Math.max(maxX, x1, x2);
+          maxY = Math.max(maxY, y1, y2);
+        } else if (conn.tagName === 'path' && conn.hasAttribute('d')) {
+          const d = conn.getAttribute('d');
+          const matches = d.match(/[ML]\s*([\d.-]+)\s+([\d.-]+)/g);
+          if (matches) {
+            matches.forEach(m => {
+              const parts = m.split(/[\s,]+/);
+              const x = parseFloat(parts[1]);
+              const y = parseFloat(parts[2]);
+              if (!isNaN(x) && !isNaN(y)) {
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
+              }
+            });
+          }
+        } else if (conn.tagName === 'polyline' && conn.hasAttribute('points')) {
+          const points = conn.getAttribute('points').trim().split(/\s+/);
+          points.forEach(p => {
+            const [x, y] = p.split(',').map(parseFloat);
+            if (!isNaN(x) && !isNaN(y)) {
+              minX = Math.min(minX, x);
+              minY = Math.min(minY, y);
+              maxX = Math.max(maxX, x);
+              maxY = Math.max(maxY, y);
+            }
+          });
+        }
+      });
+      
+      // Fallback jika tidak ada data
+      if (minX === Infinity) {
+        minX = 0; minY = 0; maxX = 1000; maxY = 800;
+      }
+      
+      // Tambah padding besar untuk garis yang keluar
+      const PADDING = 400;
+      minX -= PADDING;
+      minY -= PADDING;
+      maxX += PADDING;
+      maxY += PADDING;
+      
+      const newWidth = maxX - minX;
+      const newHeight = maxY - minY;
+      
+      // Update viewBox SVG
+      svg.setAttribute('viewBox', `${minX} ${minY} ${newWidth} ${newHeight}`);
+      svg.style.width = newWidth + 'px';
+      svg.style.height = newHeight + 'px';
+      
+      // Update ukuran Aqua
+      inst.style.width = newWidth + 'px';
+      inst.style.height = newHeight + 'px';
+    });
+    
     if (wrapper) {
       if (isFirstLoad) {
         if (typeof loadViewState === "function") loadViewState();
@@ -199,7 +300,7 @@ function renderTree() {
       }
     }
     if (typeof drawManualLinks === "function") drawManualLinks();
-  }, 200);
+  }, 250);
 }
 
 function convert(node, path = [], generation = 1, treeId = "main") {
@@ -415,4 +516,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + auto-size*/
+/*Stable + svg-viewbox-fix*/
