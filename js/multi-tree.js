@@ -24,8 +24,8 @@ function newId(prefix) {
   return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
 }
 
-const DEFAULT_MAIN_OFFSET = { x: 500, y: 200 };
-const TREE_VERTICAL_GAP = 800;
+const DEFAULT_MAIN_OFFSET = { x: 2300, y: 50 };
+const TREE_VERTICAL_GAP = 600;
 
 function getTreeOffset(treeId) {
   if (!treeOffsets[treeId]) {
