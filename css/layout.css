@@ -46,7 +46,7 @@
 /* ========== TREE WRAPPER ========== */
 .tree-wrapper {
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
   background: #f1fcff;
   position: relative;
   touch-action: none;
@@ -78,8 +78,8 @@
 
 #tree {
   position: relative;
-  min-width: 100%;
-  min-height: 100%;
+  width: 5000px;
+  height: 5000px;
 }
 
 /* ========== BOTTOM ZOOM BAR ========== */
