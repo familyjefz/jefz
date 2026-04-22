@@ -220,10 +220,37 @@ button:not(.tree-wrapper button) { cursor: pointer; }
 .node-box.connect-source { outline: 2px dashed #8cabe5; outline-offset: 2px; }
 body.connect-mode .node-box { cursor: pointer; }
 
-/* ========== LAYER 2: TREE INSTANCE ========== */
+/* ========== LAYER 2: TREE INSTANCE (AQUA) ========== */
 .tree-instance {
   position: absolute; top: 0; left: 0; z-index: 1;
   background: #00ffff; /* LAYER 2 - AQUA */
+}
+
+/* ========== CENTERING ISI AQUA (TREANT TREE) ========== */
+.tree-instance .Treant {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-width: max-content;
+  min-height: max-content;
+}
+
+.tree-instance .Treant > svg {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Fallback jika Treant tidak menggunakan .Treant class */
+.tree-instance > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tree-instance svg {
+  display: block;
+  margin: 0 auto;
 }
 
 /* ========== LAYER 3: MANUAL LINKS SVG ========== */
