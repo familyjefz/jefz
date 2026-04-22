@@ -114,27 +114,10 @@ function zoomReset() {
 
 // ========== CENTER SCROLL KE MAIN TREE ==========
 function centerOnMainTree() {
-  const wrapper = document.getElementById("tree-wrapper");
   const main = document.getElementById("tree-instance-main");
-  if (!wrapper || !main) return;
+  if (!main) return;
   
-  // Dapatkan posisi main tree relatif terhadap container #tree
-  const mainRect = main.getBoundingClientRect();
-  const treeRect = document.getElementById("tree").getBoundingClientRect();
-  const wrapperRect = wrapper.getBoundingClientRect();
-  
-  // Hitung posisi absolut main tree di dalam #tree
-  const mainLeft = main.offsetLeft;
-  const mainTop = main.offsetTop;
-  const mainWidth = main.offsetWidth;
-  const mainHeight = main.offsetHeight;
-  
-  // Scroll agar main tree center di viewport
-  const targetScrollX = mainLeft - (wrapper.clientWidth / 2) + (mainWidth / 2);
-  const targetScrollY = mainTop - (wrapper.clientHeight / 2) + (mainHeight / 2);
-  
-  wrapper.scrollLeft = Math.max(0, targetScrollX);
-  wrapper.scrollTop = Math.max(0, targetScrollY);
+  main.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
 }
 
 // ========== PERSIST VIEW STATE ==========
