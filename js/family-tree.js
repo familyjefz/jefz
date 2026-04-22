@@ -172,9 +172,9 @@ function renderTree() {
           rootOrientation: "NORTH",
           connectors: { type: "step" },
           animateOnInit: false,
-          levelSeparation: 12,
-          siblingSeparation: 8,
-          subTeeSeparation: 8
+          levelSeparation: 40,      // JARAK VERTIKAL ANTAR GENERASI
+          siblingSeparation: 25,    // JARAK HORIZONTAL ANTAR SAUDARA
+          subTeeSeparation: 30      // JARAK ANTAR SUB-TREE
         },
         nodeStructure: convert(t.data, [], 1, t.id)
       });
@@ -184,7 +184,7 @@ function renderTree() {
   });
 
   setTimeout(() => {
-    // ========== CENTER ISI AQUA (NODE & GARIS) ==========
+    // ========== CENTER ISI AQUA & PERBESAR AQUA ==========
     trees.forEach(t => {
       if (!isTreeVisible(t.id)) return;
       const inst = document.getElementById(`tree-instance-${t.id}`);
@@ -197,20 +197,21 @@ function renderTree() {
       svg.style.left = '0px';
       svg.style.top = '0px';
       svg.style.position = 'relative';
+      svg.style.overflow = 'visible';
       
       // Ambil semua node-box
       const nodes = inst.querySelectorAll('.node-box');
       if (nodes.length === 0) return;
       
-      // Cari bounding box semua node (koordinat absolut di dalam SVG)
+      // Cari bounding box semua node
       let minX = Infinity, minY = Infinity;
       let maxX = -Infinity, maxY = -Infinity;
       
       nodes.forEach(node => {
         const left = parseFloat(node.style.left) || 0;
         const top = parseFloat(node.style.top) || 0;
-        const width = node.offsetWidth || 70;
-        const height = node.offsetHeight || 40;
+        const width = node.offsetWidth || 80;
+        const height = node.offsetHeight || 50;
         
         minX = Math.min(minX, left);
         minY = Math.min(minY, top);
@@ -221,16 +222,19 @@ function renderTree() {
       const treeWidth = maxX - minX;
       const treeHeight = maxY - minY;
       
+      // PADDING BESAR agar tidak kepotong
+      const PADDING = 200;
+      
       // Set ukuran container Aqua
-      inst.style.width = (treeWidth + 100) + 'px';
-      inst.style.height = (treeHeight + 100) + 'px';
+      const newWidth = treeWidth + PADDING * 2;
+      const newHeight = treeHeight + PADDING * 2;
       
-      // Hitung offset untuk center node di dalam Aqua
-      const aquaWidth = inst.offsetWidth;
-      const aquaHeight = inst.offsetHeight;
+      inst.style.width = newWidth + 'px';
+      inst.style.height = newHeight + 'px';
       
-      const offsetX = (aquaWidth - treeWidth) / 2 - minX;
-      const offsetY = (aquaHeight - treeHeight) / 2 - minY;
+      // Hitung offset untuk center node di dalam Aqua (dengan padding)
+      const offsetX = PADDING - minX;
+      const offsetY = PADDING - minY;
       
       // Geser semua node-box
       nodes.forEach(node => {
@@ -240,49 +244,43 @@ function renderTree() {
         node.style.top = (top + offsetY) + 'px';
       });
       
-      // Geser semua teks di dalam node (Treant kadang bikin span absolut)
-      const texts = inst.querySelectorAll('.node-name, .node-buttons, .node-menu, .node-actions');
-      texts.forEach(el => {
-        // Elemen ini biasanya tidak pakai left/top, jadi tidak perlu digeser
-      });
+      // Update viewBox SVG agar garis tidak hilang
+      svg.setAttribute('viewBox', `0 0 ${newWidth} ${newHeight}`);
+      svg.style.width = newWidth + 'px';
+      svg.style.height = newHeight + 'px';
       
-      // Geser garis konektor (path, line, polyline) di dalam SVG
-      const connectors = svg.querySelectorAll('path, line, polyline');
-      connectors.forEach(conn => {
-        // Untuk path: transformasi string 'd'
-        if (conn.tagName === 'path' && conn.hasAttribute('d')) {
-          const d = conn.getAttribute('d');
-          // Geser koordinat M dan L
+      // JANGAN geser garis konektor - Treant akan render ulang sendiri?
+      // Garis konektor ada di dalam SVG, posisinya absolute terhadap SVG
+      // Karena kita tidak menggeser SVG, hanya menggeser node (HTML di luar SVG),
+      // maka garis akan tetap di tempatnya dan tidak match dengan node.
+      // Solusi: geser juga semua elemen di dalam SVG
+      
+      const allSvgElements = svg.querySelectorAll('path, line, polyline, text:not(.node-name):not(.node-buttons *)');
+      allSvgElements.forEach(el => {
+        if (el.tagName === 'path' && el.hasAttribute('d')) {
+          const d = el.getAttribute('d');
           const newD = d.replace(/[ML]\s*([\d.-]+)\s+([\d.-]+)/g, (match, x, y) => {
             const newX = parseFloat(x) + offsetX;
             const newY = parseFloat(y) + offsetY;
             return match.slice(0, 1) + ' ' + newX + ' ' + newY;
           });
-          conn.setAttribute('d', newD);
+          el.setAttribute('d', newD);
         }
-        // Untuk line: x1, y1, x2, y2
-        if (conn.tagName === 'line') {
-          if (conn.hasAttribute('x1')) conn.setAttribute('x1', parseFloat(conn.getAttribute('x1')) + offsetX);
-          if (conn.hasAttribute('y1')) conn.setAttribute('y1', parseFloat(conn.getAttribute('y1')) + offsetY);
-          if (conn.hasAttribute('x2')) conn.setAttribute('x2', parseFloat(conn.getAttribute('x2')) + offsetX);
-          if (conn.hasAttribute('y2')) conn.setAttribute('y2', parseFloat(conn.getAttribute('y2')) + offsetY);
+        if (el.tagName === 'line') {
+          if (el.hasAttribute('x1')) el.setAttribute('x1', parseFloat(el.getAttribute('x1')) + offsetX);
+          if (el.hasAttribute('y1')) el.setAttribute('y1', parseFloat(el.getAttribute('y1')) + offsetY);
+          if (el.hasAttribute('x2')) el.setAttribute('x2', parseFloat(el.getAttribute('x2')) + offsetX);
+          if (el.hasAttribute('y2')) el.setAttribute('y2', parseFloat(el.getAttribute('y2')) + offsetY);
         }
-        // Untuk polyline: points
-        if (conn.tagName === 'polyline' && conn.hasAttribute('points')) {
-          const points = conn.getAttribute('points').trim().split(/\s+/);
+        if (el.tagName === 'polyline' && el.hasAttribute('points')) {
+          const points = el.getAttribute('points').trim().split(/\s+/);
           const newPoints = points.map(p => {
             const [x, y] = p.split(',').map(parseFloat);
             return (x + offsetX) + ',' + (y + offsetY);
           }).join(' ');
-          conn.setAttribute('points', newPoints);
+          el.setAttribute('points', newPoints);
         }
       });
-      
-      // Update viewBox SVG jika ada
-      if (svg.viewBox && svg.viewBox.baseVal) {
-        const vb = svg.viewBox.baseVal;
-        svg.setAttribute('viewBox', `0 0 ${aquaWidth} ${aquaHeight}`);
-      }
     });
     
     if (wrapper) {
@@ -296,7 +294,7 @@ function renderTree() {
       }
     }
     if (typeof drawManualLinks === "function") drawManualLinks();
-  }, 250);
+  }, 300);
 }
 
 function convert(node, path = [], generation = 1, treeId = "main") {
@@ -512,4 +510,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + multi-tree + center-node-garis-final*/
+/*Stable + multi-tree + center-fix-final-v2*/
