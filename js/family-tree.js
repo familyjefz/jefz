@@ -184,17 +184,20 @@ function renderTree() {
   });
 
   setTimeout(() => {
-    // ========== CENTER ISI AQUA (SVG TREANT) ==========
+    // ========== CENTER ISI AQUA (SVG TREANT) - V3 ==========
     trees.forEach(t => {
       if (!isTreeVisible(t.id)) return;
       const inst = document.getElementById(`tree-instance-${t.id}`);
       if (!inst) return;
       
-      const treantDiv = inst.querySelector('.Treant');
-      if (!treantDiv) return;
-      
-      const svg = treantDiv.querySelector('svg');
+      // Treant langsung menjadi satu dengan inst (class tree-instance Treant)
+      const svg = inst.querySelector('svg');
       if (!svg) return;
+      
+      // Reset posisi SVG yang digeser Treant.js (left/top negatif)
+      svg.style.left = '0px';
+      svg.style.top = '0px';
+      svg.style.position = 'relative';
       
       // Ambil ukuran SVG dari viewBox atau bounding rect
       let svgWidth = 0, svgHeight = 0;
@@ -203,29 +206,27 @@ function renderTree() {
         svgHeight = svg.viewBox.baseVal.height;
       }
       if (!svgWidth || svgWidth === 0) {
-        const bbox = svg.getBBox();
-        if (bbox) {
+        try {
+          const bbox = svg.getBBox();
           svgWidth = bbox.width;
           svgHeight = bbox.height;
-        }
+        } catch(e) {}
       }
       if (!svgWidth || svgWidth === 0) {
         svgWidth = 500;
         svgHeight = 300;
       }
       
-      // Set ukuran container Aqua sesuai ukuran SVG
+      // Set ukuran container Aqua sesuai ukuran SVG + padding
       inst.style.width = (svgWidth + 50) + 'px';
       inst.style.height = (svgHeight + 50) + 'px';
       
-      // Center SVG di dalam Treant div
-      treantDiv.style.display = 'flex';
-      treantDiv.style.justifyContent = 'center';
-      treantDiv.style.alignItems = 'center';
-      treantDiv.style.width = '100%';
-      treantDiv.style.height = '100%';
+      // Center container Aqua (flex)
+      inst.style.display = 'flex';
+      inst.style.justifyContent = 'center';
+      inst.style.alignItems = 'center';
       
-      // Set SVG margin auto
+      // Center SVG
       svg.style.display = 'block';
       svg.style.margin = '0 auto';
     });
@@ -457,4 +458,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + multi-tree + center-isi-aqua*/
+/*Stable + multi-tree + center-isi-aqua-v3*/
