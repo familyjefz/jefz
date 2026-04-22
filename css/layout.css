@@ -171,4 +171,17 @@
   cursor: pointer;
   border: none;
 }
+.tree-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tree-zoom-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: 0 0;
+  transform: translate(-50%, -50%);
+}
 /*Stable*/
