@@ -3,7 +3,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f3e5f5; /* LAYER 0.5 - UNGU MUDA */
+  background: #ffff00; /* LAYER 0.5 - KUNING */
 }
 
 /* ========== HEADER ========== */
@@ -48,7 +48,7 @@
 .tree-wrapper {
   flex: 1;
   overflow: auto !important;
-  background: #c8e6c9; /* LAYER 1 - HIJAU MUDA */
+  background: #00ff00; /* LAYER 1 - HIJAU */
   position: relative;
   touch-action: none;
   cursor: grab;
@@ -82,7 +82,7 @@
   position: relative;
   width: 10000px;
   height: 10000px;
-  background: #fff9c4; /* LAYER 1 - KUNING MUDA */
+  background: #0000ff; /* LAYER 1.5 - BIRU */
 }
 
 /* ========== BOTTOM ZOOM BAR - LAYER 5 ========== */
@@ -94,7 +94,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #b3e5fc; /* LAYER 5 - BIRU MUDA */
+  background: #ffa500; /* LAYER 5 - ORANGE */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   padding: 10px 20px;
