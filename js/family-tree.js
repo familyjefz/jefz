@@ -136,8 +136,8 @@ function renderTree() {
   if (!container) return;
 
   const wrapper = document.getElementById("tree-wrapper");
-  const savedLeft = wrapper ? wrapper.scrollLeft : 0;
-  const savedTop = wrapper ? wrapper.scrollTop : 0;
+  const savedLeft = wrapper ? wrapper.scrollLeft : 800;
+  const savedTop = wrapper ? wrapper.scrollTop : 400;
 
   container.innerHTML = "";
 
@@ -145,8 +145,8 @@ function renderTree() {
   const overlay = document.createElementNS(svgNS, "svg");
   overlay.setAttribute("id", "manual-links-svg");
   overlay.setAttribute("class", "manual-links-svg");
-  overlay.setAttribute("width", "10000");
-  overlay.setAttribute("height", "10000");
+  overlay.setAttribute("width", "5000");
+  overlay.setAttribute("height", "5000");
   container.appendChild(overlay);
 
   const trees = getAllTrees();
@@ -154,26 +154,12 @@ function renderTree() {
     if (!isTreeVisible(t.id)) return;
     if (!t.data) return;
 
-    // Container Aqua
-    const aquaDiv = document.createElement("div");
-    aquaDiv.className = "tree-instance";
-    aquaDiv.id = `tree-instance-${t.id}`;
-    aquaDiv.dataset.treeId = t.id;
-    aquaDiv.style.transform = `translate(${t.offset.x}px, ${t.offset.y}px)`;
-    aquaDiv.style.position = 'absolute';
-    aquaDiv.style.overflow = 'visible';
-    
-    // WRAPPER UNTUK CENTERING
-    const centerWrapper = document.createElement("div");
-    centerWrapper.className = "treant-center-wrapper";
-    centerWrapper.style.display = "flex";
-    centerWrapper.style.justifyContent = "center";
-    centerWrapper.style.alignItems = "flex-start";
-    centerWrapper.style.width = "fit-content";
-    centerWrapper.style.minWidth = "100%";
-    
-    aquaDiv.appendChild(centerWrapper);
-    container.appendChild(aquaDiv);
+    const div = document.createElement("div");
+    div.className = "tree-instance";
+    div.id = `tree-instance-${t.id}`;
+    div.dataset.treeId = t.id;
+    div.style.transform = `translate(${t.offset.x}px, ${t.offset.y}px)`;
+    container.appendChild(div);
 
     if (t.id !== "main") {
       assignSiblingGroups(t.data);
@@ -182,14 +168,13 @@ function renderTree() {
     try {
       new Treant({
         chart: {
-          container: centerWrapper,  // Render ke wrapper, bukan ke aquaDiv
+          container: `#tree-instance-${t.id}`,
           rootOrientation: "NORTH",
           connectors: { type: "step" },
           animateOnInit: false,
-          levelSeparation: 50,
-          siblingSeparation: 30,
-          subTeeSeparation: 30,
-          padding: 50
+          levelSeparation: 12,
+          siblingSeparation: 8,
+          subTeeSeparation: 8
         },
         nodeStructure: convert(t.data, [], 1, t.id)
       });
@@ -201,12 +186,8 @@ function renderTree() {
   setTimeout(() => {
     if (wrapper) {
       if (isFirstLoad) {
-        if (typeof centerOnMainTree === "function") {
-          centerOnMainTree();
-        } else {
-          wrapper.scrollLeft = 500;
-          wrapper.scrollTop = 200;
-        }
+        if (typeof loadViewState === "function") loadViewState();
+        else if (typeof centerOnMainTree === "function") centerOnMainTree();
         isFirstLoad = false;
       } else {
         wrapper.scrollLeft = savedLeft;
@@ -214,7 +195,7 @@ function renderTree() {
       }
     }
     if (typeof drawManualLinks === "function") drawManualLinks();
-  }, 200);
+  }, 100);
 }
 
 function convert(node, path = [], generation = 1, treeId = "main") {
@@ -292,7 +273,7 @@ function convert(node, path = [], generation = 1, treeId = "main") {
 
 function getCurrentScroll() {
   const w = document.getElementById("tree-wrapper");
-  return { left: w ? w.scrollLeft : 0, top: w ? w.scrollTop : 0 };
+  return { left: w ? w.scrollLeft : 800, top: w ? w.scrollTop : 400 };
 }
 
 function restoreScroll(left, top) {
@@ -430,4 +411,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + wrapper-center*/
+/*Stable + multi-tree*/
