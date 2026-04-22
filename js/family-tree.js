@@ -184,51 +184,105 @@ function renderTree() {
   });
 
   setTimeout(() => {
-    // ========== CENTER ISI AQUA (SVG TREANT) - V3 ==========
+    // ========== CENTER ISI AQUA (NODE & GARIS) ==========
     trees.forEach(t => {
       if (!isTreeVisible(t.id)) return;
       const inst = document.getElementById(`tree-instance-${t.id}`);
       if (!inst) return;
       
-      // Treant langsung menjadi satu dengan inst (class tree-instance Treant)
       const svg = inst.querySelector('svg');
       if (!svg) return;
       
-      // Reset posisi SVG yang digeser Treant.js (left/top negatif)
+      // Reset posisi SVG
       svg.style.left = '0px';
       svg.style.top = '0px';
       svg.style.position = 'relative';
       
-      // Ambil ukuran SVG dari viewBox atau bounding rect
-      let svgWidth = 0, svgHeight = 0;
+      // Ambil semua node-box
+      const nodes = inst.querySelectorAll('.node-box');
+      if (nodes.length === 0) return;
+      
+      // Cari bounding box semua node (koordinat absolut di dalam SVG)
+      let minX = Infinity, minY = Infinity;
+      let maxX = -Infinity, maxY = -Infinity;
+      
+      nodes.forEach(node => {
+        const left = parseFloat(node.style.left) || 0;
+        const top = parseFloat(node.style.top) || 0;
+        const width = node.offsetWidth || 70;
+        const height = node.offsetHeight || 40;
+        
+        minX = Math.min(minX, left);
+        minY = Math.min(minY, top);
+        maxX = Math.max(maxX, left + width);
+        maxY = Math.max(maxY, top + height);
+      });
+      
+      const treeWidth = maxX - minX;
+      const treeHeight = maxY - minY;
+      
+      // Set ukuran container Aqua
+      inst.style.width = (treeWidth + 100) + 'px';
+      inst.style.height = (treeHeight + 100) + 'px';
+      
+      // Hitung offset untuk center node di dalam Aqua
+      const aquaWidth = inst.offsetWidth;
+      const aquaHeight = inst.offsetHeight;
+      
+      const offsetX = (aquaWidth - treeWidth) / 2 - minX;
+      const offsetY = (aquaHeight - treeHeight) / 2 - minY;
+      
+      // Geser semua node-box
+      nodes.forEach(node => {
+        const left = parseFloat(node.style.left) || 0;
+        const top = parseFloat(node.style.top) || 0;
+        node.style.left = (left + offsetX) + 'px';
+        node.style.top = (top + offsetY) + 'px';
+      });
+      
+      // Geser semua teks di dalam node (Treant kadang bikin span absolut)
+      const texts = inst.querySelectorAll('.node-name, .node-buttons, .node-menu, .node-actions');
+      texts.forEach(el => {
+        // Elemen ini biasanya tidak pakai left/top, jadi tidak perlu digeser
+      });
+      
+      // Geser garis konektor (path, line, polyline) di dalam SVG
+      const connectors = svg.querySelectorAll('path, line, polyline');
+      connectors.forEach(conn => {
+        // Untuk path: transformasi string 'd'
+        if (conn.tagName === 'path' && conn.hasAttribute('d')) {
+          const d = conn.getAttribute('d');
+          // Geser koordinat M dan L
+          const newD = d.replace(/[ML]\s*([\d.-]+)\s+([\d.-]+)/g, (match, x, y) => {
+            const newX = parseFloat(x) + offsetX;
+            const newY = parseFloat(y) + offsetY;
+            return match.slice(0, 1) + ' ' + newX + ' ' + newY;
+          });
+          conn.setAttribute('d', newD);
+        }
+        // Untuk line: x1, y1, x2, y2
+        if (conn.tagName === 'line') {
+          if (conn.hasAttribute('x1')) conn.setAttribute('x1', parseFloat(conn.getAttribute('x1')) + offsetX);
+          if (conn.hasAttribute('y1')) conn.setAttribute('y1', parseFloat(conn.getAttribute('y1')) + offsetY);
+          if (conn.hasAttribute('x2')) conn.setAttribute('x2', parseFloat(conn.getAttribute('x2')) + offsetX);
+          if (conn.hasAttribute('y2')) conn.setAttribute('y2', parseFloat(conn.getAttribute('y2')) + offsetY);
+        }
+        // Untuk polyline: points
+        if (conn.tagName === 'polyline' && conn.hasAttribute('points')) {
+          const points = conn.getAttribute('points').trim().split(/\s+/);
+          const newPoints = points.map(p => {
+            const [x, y] = p.split(',').map(parseFloat);
+            return (x + offsetX) + ',' + (y + offsetY);
+          }).join(' ');
+          conn.setAttribute('points', newPoints);
+        }
+      });
+      
+      // Update viewBox SVG jika ada
       if (svg.viewBox && svg.viewBox.baseVal) {
-        svgWidth = svg.viewBox.baseVal.width;
-        svgHeight = svg.viewBox.baseVal.height;
+        const vb = svg.viewBox.baseVal;
+        svg.setAttribute('viewBox', `0 0 ${aquaWidth} ${aquaHeight}`);
       }
-      if (!svgWidth || svgWidth === 0) {
-        try {
-          const bbox = svg.getBBox();
-          svgWidth = bbox.width;
-          svgHeight = bbox.height;
-        } catch(e) {}
-      }
-      if (!svgWidth || svgWidth === 0) {
-        svgWidth = 500;
-        svgHeight = 300;
-      }
-      
-      // Set ukuran container Aqua sesuai ukuran SVG + padding
-      inst.style.width = (svgWidth + 50) + 'px';
-      inst.style.height = (svgHeight + 50) + 'px';
-      
-      // Center container Aqua (flex)
-      inst.style.display = 'flex';
-      inst.style.justifyContent = 'center';
-      inst.style.alignItems = 'center';
-      
-      // Center SVG
-      svg.style.display = 'block';
-      svg.style.margin = '0 auto';
     });
     
     if (wrapper) {
@@ -242,7 +296,7 @@ function renderTree() {
       }
     }
     if (typeof drawManualLinks === "function") drawManualLinks();
-  }, 200);
+  }, 250);
 }
 
 function convert(node, path = [], generation = 1, treeId = "main") {
@@ -458,4 +512,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + multi-tree + center-isi-aqua-v3*/
+/*Stable + multi-tree + center-node-garis-final*/
