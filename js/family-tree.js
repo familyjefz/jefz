@@ -159,10 +159,6 @@ function renderTree() {
     div.id = `tree-instance-${t.id}`;
     div.dataset.treeId = t.id;
     div.style.transform = `translate(${t.offset.x}px, ${t.offset.y}px)`;
-    
-    // ===== SET UKURAN AWAL YANG BESAR =====
-    div.style.width = '4000px';
-    div.style.height = '4000px';
     div.style.position = 'absolute';
     div.style.overflow = 'visible';
     
@@ -179,10 +175,10 @@ function renderTree() {
           rootOrientation: "NORTH",
           connectors: { type: "curve" },
           animateOnInit: false,
-          levelSeparation: 80,      // Jarak vertikal antar generasi
-          siblingSeparation: 50,    // Jarak horizontal antar saudara
-          subTeeSeparation: 50,     // Jarak antar sub-tree
-          padding: 100              // Padding internal Treant
+          levelSeparation: 50,
+          siblingSeparation: 30,
+          subTeeSeparation: 30,
+          padding: 50
         },
         nodeStructure: convert(t.data, [], 1, t.id)
       });
@@ -419,4 +415,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + final-native*/
+/*Stable + auto-size*/
