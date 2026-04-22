@@ -46,7 +46,7 @@
 /* ========== TREE WRAPPER ========== */
 .tree-wrapper {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   background: #f1fcff;
   position: relative;
   touch-action: none;
@@ -66,9 +66,6 @@
   height: fit-content;
   min-width: max-content;
   min-height: max-content;
-  /* Avoid `will-change: transform` here: it forces a GPU layer that gets
-     rasterized once and stretched, making text blurry when zoomed in.
-     Without it the browser re-rasterizes text crisply at each scale. */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: geometricPrecision;
@@ -81,8 +78,8 @@
 
 #tree {
   position: relative;
-  width: 2000px;
-  height: 1500px;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 /* ========== BOTTOM ZOOM BAR ========== */
@@ -97,78 +94,3 @@
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 10px 20px;
-  border-radius: 40px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  z-index: 500;
-}
-
-.bottom-zoom-bar .zoom-slider {
-  width: 180px;
-  height: 5px;
-  -webkit-appearance: none;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 5px;
-  outline: none;
-}
-
-.bottom-zoom-bar .zoom-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #00a8f7;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.bottom-zoom-bar .zoom-value {
-  color: white;
-  font-size: 14px;
-  font-weight: bold;
-  min-width: 55px;
-  text-align: center;
-}
-
-.bottom-zoom-bar .zoom-reset-btn {
-  background: #00a8f7;
-  color: white;
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s;
-}
-
-.bottom-zoom-bar .zoom-reset-btn:hover {
-  background: #0088cc;
-  transform: scale(1.05);
-}
-
-.zoom-slider {
-  width: 100px;
-  height: 4px;
-  -webkit-appearance: none;
-  background: #ddd;
-  border-radius: 5px;
-  outline: none;
-}
-
-.zoom-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #00a8f7;
-  cursor: pointer;
-  border: none;
-}
-/*Stable*/
