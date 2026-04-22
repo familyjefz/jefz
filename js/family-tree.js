@@ -77,10 +77,9 @@ let currentZoom = 1;
 let isAdmin = false;
 
 // State Hubungkan
-let connectMode = null;
+let connectMode = null; // 'parent' atau 'child'
 let connectSourcePath = null;
 let connectSourceTreeId = null;
-let connectTargetCallback = null;
 
 async function loadTree() {
   try {
@@ -124,6 +123,8 @@ function getAllTrees() {
   return list;
 }
 
+window.getAllTrees = getAllTrees;
+
 function getTreeDataById(treeId) {
   if (treeId === "main") return currentTreeData;
   if (typeof extraTrees === "undefined") return null;
@@ -136,6 +137,8 @@ function isTreeVisible(treeId) {
   if (Array.isArray(visibleTrees)) return visibleTrees.includes(treeId);
   return true;
 }
+
+window.isTreeVisible = isTreeVisible;
 
 function renderTree() {
   const container = document.getElementById("tree");
@@ -231,7 +234,6 @@ function renderTree() {
       });
     }
     
-    // Pasang listener untuk mode hubungkan
     attachConnectTargetListener();
     
     if (wrapper) {
@@ -349,7 +351,7 @@ function startConnect(path, treeId) {
   activeMode = null;
   
   showCustomPopup(
-    'Pilih jenis hubungan:',
+    'Pilih peran Node ini terhadap Node target:',
     'Hubungkan Node',
     null,
     true
@@ -368,7 +370,7 @@ function startConnect(path, treeId) {
         connectMode = 'parent';
         connectSourcePath = path;
         connectSourceTreeId = treeId;
-        showHubungkanBanner('🔗 Pilih node tujuan sebagai ORANG TUA...');
+        showHubungkanBanner('🔗 Pilih Node ANAK (Node ini akan menjadi ORANG TUA dari target)...');
       };
       
       const btnChild = document.createElement('button');
@@ -379,7 +381,7 @@ function startConnect(path, treeId) {
         connectMode = 'child';
         connectSourcePath = path;
         connectSourceTreeId = treeId;
-        showHubungkanBanner('🔗 Pilih node tujuan sebagai ANAK...');
+        showHubungkanBanner('🔗 Pilih Node ORANG TUA (Node ini akan menjadi ANAK dari target)...');
       };
       
       const btnCancel = document.createElement('button');
@@ -405,9 +407,7 @@ function cancelHubungkanMode() {
 }
 
 function attachConnectTargetListener() {
-  // Hapus listener lama
   document.removeEventListener('click', handleConnectTargetClick, true);
-  // Pasang listener baru
   document.addEventListener('click', handleConnectTargetClick, true);
 }
 
@@ -424,12 +424,10 @@ function handleConnectTargetClick(e) {
   e.stopPropagation();
   e.stopImmediatePropagation();
   
-  // Parse targetKey: "treeId|path"
   const parts = targetKey.split('|');
   const targetTreeId = parts[0];
   const targetPath = parts[1] ? parts[1].split(',').map(Number) : [];
   
-  // Cek jangan sampai source = target
   const sourceKey = `${connectSourceTreeId}|${connectSourcePath.join(',')}`;
   if (targetKey === sourceKey) {
     showCustomPopup('Tidak bisa menghubungkan ke node yang sama!', 'Peringatan');
@@ -461,17 +459,18 @@ async function executeConnect(targetPath, targetTreeId) {
   }
   
   if (connectMode === 'parent') {
-    if (!targetNode.children) targetNode.children = [];
-    targetNode.children.push(sourceNode);
-    removeNodeFromTree(sourceTree, connectSourcePath);
-  } else if (connectMode === 'child') {
+    // A sebagai Orang Tua dari B → B pindah ke bawah A
     if (!sourceNode.children) sourceNode.children = [];
     sourceNode.children.push(targetNode);
     removeNodeFromTree(targetTree, targetPath);
+  } else if (connectMode === 'child') {
+    // A sebagai Anak dari B → A pindah ke bawah B
+    if (!targetNode.children) targetNode.children = [];
+    targetNode.children.push(sourceNode);
+    removeNodeFromTree(sourceTree, connectSourcePath);
   }
   
   cleanEmptyTrees();
-  
   cancelHubungkanMode();
   
   await persistMultiState();
@@ -534,7 +533,7 @@ async function disconnectNode(path, treeId) {
     parent.children.splice(nodeIndex, 1);
   }
   
-  const newId = newIdMT('t');
+  const newId = (typeof newIdMT === 'function') ? newIdMT('t') : 't_' + Date.now().toString(36);
   extraTrees.push({
     id: newId,
     name: node.name.split('|')[0].trim(),
@@ -551,10 +550,6 @@ async function disconnectNode(path, treeId) {
   assignSiblingGroups(currentTreeData);
   renderTree();
   showCustomPopup('Node diputuskan dan menjadi Root baru!', 'Sukses');
-}
-
-function newIdMT(prefix) {
-  return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
 }
 
 function getCurrentScroll() {
@@ -714,4 +709,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + hubungkan-banner-flow*/
+/*Stable + hubungkan-logika-benar*/
