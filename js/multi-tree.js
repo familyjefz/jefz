@@ -1,6 +1,14 @@
 // ========== MULTI-TREE / LINKS / OFFSETS / VISIBILITY ==========
 // Disimpan di Supabase (id=2) sebagai satu dokumen JSON,
 // dengan localStorage sebagai cache offline.
+//
+// Bentuk dokumen:
+// {
+//   extras:   [ { id, name, data: <treeNode> }, ... ],
+//   links:    [ { id, from: "treeId|p,a,t,h", to: "treeId|p,a,t,h" }, ... ],
+//   offsets:  { "<treeId>": {x, y} },
+//   visible:  "all" | [ "<treeId>", ... ]
+// }
 
 const MULTI_LS_KEY    = "silsilah_multi_state";
 const MULTI_TREE_ID   = 2;
@@ -11,17 +19,25 @@ let manualLinks  = [];
 let treeOffsets  = {};
 let visibleTrees = "all";
 
+// ---------- Helper ----------
 function newId(prefix) {
   return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
 }
 
+// Default posisi main tree: kira-kira tengah canvas 5000x5000 (atas-tengah)
+const DEFAULT_MAIN_OFFSET = { x: 2300, y: 50 };
+const TREE_VERTICAL_GAP   = 600;
+
 function getTreeOffset(treeId) {
   if (!treeOffsets[treeId]) {
     if (treeId === "main") {
-      treeOffsets[treeId] = { x: 0, y: 0 };
+      treeOffsets[treeId] = { ...DEFAULT_MAIN_OFFSET };
     } else {
       const idx = extraTrees.findIndex(t => t.id === treeId);
-      treeOffsets[treeId] = { x: 0, y: 600 * (idx + 1) };
+      treeOffsets[treeId] = {
+        x: DEFAULT_MAIN_OFFSET.x,
+        y: DEFAULT_MAIN_OFFSET.y + TREE_VERTICAL_GAP * (idx + 1)
+      };
     }
   }
   return treeOffsets[treeId];
@@ -42,6 +58,12 @@ function applyMultiStateObject(obj) {
   manualLinks  = Array.isArray(obj.links)  ? obj.links  : [];
   treeOffsets  = (obj.offsets && typeof obj.offsets === "object") ? obj.offsets : {};
   visibleTrees = (obj.visible === "all" || Array.isArray(obj.visible)) ? obj.visible : "all";
+
+  // Bersihkan offset broken {0,0} sisa testing → biar default centered kepakai
+  Object.keys(treeOffsets).forEach(k => {
+    const o = treeOffsets[k];
+    if (!o || (o.x === 0 && o.y === 0)) delete treeOffsets[k];
+  });
 }
 
 async function loadMultiState() {
@@ -107,7 +129,10 @@ async function submitAddTree() {
     name: val,
     data: { name: val, children: [] }
   });
-  treeOffsets[id] = { x: 0, y: 600 * extraTrees.length };
+  treeOffsets[id] = {
+    x: DEFAULT_MAIN_OFFSET.x,
+    y: DEFAULT_MAIN_OFFSET.y + TREE_VERTICAL_GAP * extraTrees.length
+  };
   visibleTrees = "all";
   closeAddTreeModal();
 
