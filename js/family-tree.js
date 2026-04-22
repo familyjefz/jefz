@@ -145,8 +145,8 @@ function renderTree() {
   const overlay = document.createElementNS(svgNS, "svg");
   overlay.setAttribute("id", "manual-links-svg");
   overlay.setAttribute("class", "manual-links-svg");
-  overlay.setAttribute("width", "5000");
-  overlay.setAttribute("height", "5000");
+  overlay.setAttribute("width", "10000");
+  overlay.setAttribute("height", "10000");
   container.appendChild(overlay);
 
   const trees = getAllTrees();
@@ -184,6 +184,52 @@ function renderTree() {
   });
 
   setTimeout(() => {
+    // ========== CENTER ISI AQUA (SVG TREANT) ==========
+    trees.forEach(t => {
+      if (!isTreeVisible(t.id)) return;
+      const inst = document.getElementById(`tree-instance-${t.id}`);
+      if (!inst) return;
+      
+      const treantDiv = inst.querySelector('.Treant');
+      if (!treantDiv) return;
+      
+      const svg = treantDiv.querySelector('svg');
+      if (!svg) return;
+      
+      // Ambil ukuran SVG dari viewBox atau bounding rect
+      let svgWidth = 0, svgHeight = 0;
+      if (svg.viewBox && svg.viewBox.baseVal) {
+        svgWidth = svg.viewBox.baseVal.width;
+        svgHeight = svg.viewBox.baseVal.height;
+      }
+      if (!svgWidth || svgWidth === 0) {
+        const bbox = svg.getBBox();
+        if (bbox) {
+          svgWidth = bbox.width;
+          svgHeight = bbox.height;
+        }
+      }
+      if (!svgWidth || svgWidth === 0) {
+        svgWidth = 500;
+        svgHeight = 300;
+      }
+      
+      // Set ukuran container Aqua sesuai ukuran SVG
+      inst.style.width = (svgWidth + 50) + 'px';
+      inst.style.height = (svgHeight + 50) + 'px';
+      
+      // Center SVG di dalam Treant div
+      treantDiv.style.display = 'flex';
+      treantDiv.style.justifyContent = 'center';
+      treantDiv.style.alignItems = 'center';
+      treantDiv.style.width = '100%';
+      treantDiv.style.height = '100%';
+      
+      // Set SVG margin auto
+      svg.style.display = 'block';
+      svg.style.margin = '0 auto';
+    });
+    
     if (wrapper) {
       if (isFirstLoad) {
         if (typeof loadViewState === "function") loadViewState();
@@ -195,7 +241,7 @@ function renderTree() {
       }
     }
     if (typeof drawManualLinks === "function") drawManualLinks();
-  }, 100);
+  }, 200);
 }
 
 function convert(node, path = [], generation = 1, treeId = "main") {
@@ -411,4 +457,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + multi-tree*/
+/*Stable + multi-tree + center-isi-aqua*/
