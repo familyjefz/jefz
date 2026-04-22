@@ -76,10 +76,6 @@ let isFirstLoad = true;
 let currentZoom = 1;
 let isAdmin = false;
 
-// State penambahan (di-define di multi-tree.js):
-//   extraTrees, manualLinks, treeOffsets, visibleTrees
-// Dipakai di sini lewat helper getAllTrees() / isTreeVisible().
-
 async function loadTree() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
@@ -88,7 +84,6 @@ async function loadTree() {
     resetSiblingColors();
     assignSiblingGroups(currentTreeData);
 
-    // Muat state multi-tree (extras/links/offsets/visible) dari Supabase + localStorage
     if (typeof loadMultiState === "function") {
       await loadMultiState();
     }
@@ -136,41 +131,50 @@ function isTreeVisible(treeId) {
   return true;
 }
 
+function getTreeActualBounds(treeId) {
+  const inst = document.getElementById(`tree-instance-${treeId}`);
+  if (!inst) return null;
+  
+  // Cari SVG Treant di dalam tree-instance
+  const treantDiv = inst.querySelector('.Treant');
+  if (!treantDiv) return null;
+  
+  const svg = treantDiv.querySelector('svg');
+  if (!svg) return null;
+  
+  // Ambil viewBox atau ukuran aktual
+  let width = 0, height = 0;
+  if (svg.viewBox && svg.viewBox.baseVal) {
+    width = svg.viewBox.baseVal.width;
+    height = svg.viewBox.baseVal.height;
+  } else if (svg.getBoundingClientRect) {
+    const rect = svg.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+  }
+  
+  // Fallback
+  if (!width || width === 0) width = 400;
+  if (!height || height === 0) height = 300;
+  
+  return { width, height };
+}
+
 function calculateTreesBoundingBox() {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   
   const trees = getAllTrees().filter(t => isTreeVisible(t.id));
-  const wrapper = document.getElementById("tree-wrapper");
   
   trees.forEach(t => {
-    const inst = document.getElementById(`tree-instance-${t.id}`);
-    if (!inst) return;
+    const bounds = getTreeActualBounds(t.id);
+    if (!bounds) return;
     
     const offset = treeOffsets[t.id] || { x: 0, y: 0 };
     
-    // Dapatkan ukuran aktual tree instance
-    const children = inst.children;
-    let treeWidth = 0;
-    let treeHeight = 0;
-    
-    for (let child of children) {
-      if (child.classList && child.classList.contains('Treant')) {
-        const svg = child.querySelector('svg');
-        if (svg) {
-          treeWidth = Math.max(treeWidth, svg.viewBox.baseVal.width || 500);
-          treeHeight = Math.max(treeHeight, svg.viewBox.baseVal.height || 300);
-        }
-      }
-    }
-    
-    // Fallback jika tidak dapat ukuran
-    if (treeWidth === 0) treeWidth = 500;
-    if (treeHeight === 0) treeHeight = 300;
-    
     const left = offset.x;
     const top = offset.y;
-    const right = left + treeWidth;
-    const bottom = top + treeHeight;
+    const right = left + bounds.width;
+    const bottom = top + bounds.height;
     
     minX = Math.min(minX, left);
     minY = Math.min(minY, top);
@@ -178,45 +182,54 @@ function calculateTreesBoundingBox() {
     maxY = Math.max(maxY, bottom);
   });
   
-  // Jika tidak ada tree visible, return default
   if (minX === Infinity) {
-    return { minX: 0, minY: 0, maxX: 2000, maxY: 1500 };
+    return { minX: 0, minY: 0, maxX: 1000, maxY: 800, width: 1000, height: 800 };
   }
   
-  return { minX, minY, maxX, maxY };
+  return { 
+    minX, minY, maxX, maxY,
+    width: maxX - minX,
+    height: maxY - minY
+  };
 }
 
-function centerAllTreesToViewport(bounding, container) {
+function centerAllTrees() {
   const wrapper = document.getElementById("tree-wrapper");
-  if (!wrapper) return;
+  const container = document.getElementById("tree");
+  if (!wrapper || !container) return;
+  
+  const bounding = calculateTreesBoundingBox();
   
   const viewportW = wrapper.clientWidth;
   const viewportH = wrapper.clientHeight;
   
-  const contentW = bounding.maxX - bounding.minX;
-  const contentH = bounding.maxY - bounding.minY;
+  // Padding minimal dari pinggir
+  const PADDING = 200;
   
-  // Hitung offset agar content center di viewport
-  let centerOffsetX = (viewportW - contentW) / 2 - bounding.minX;
-  let centerOffsetY = (viewportH - contentH) / 2 - bounding.minY;
+  // Hitung total offset yang dibutuhkan agar semua tree center dan tidak negatif
+  let shiftX = PADDING - bounding.minX;
+  let shiftY = PADDING - bounding.minY;
   
-  // Pastikan tidak negatif (jika content lebih besar dari viewport, tetap mulai dari 0)
-  centerOffsetX = Math.max(0, centerOffsetX);
-  centerOffsetY = Math.max(0, centerOffsetY);
+  // Jika bounding box lebih kecil dari viewport, center-kan
+  if (bounding.width < viewportW) {
+    shiftX = (viewportW - bounding.width) / 2 - bounding.minX;
+  }
+  if (bounding.height < viewportH) {
+    shiftY = (viewportH - bounding.height) / 2 - bounding.minY;
+  }
   
-  // Tambah padding minimal
-  const MIN_PADDING = 100;
-  centerOffsetX = Math.max(MIN_PADDING - bounding.minX, centerOffsetX);
-  centerOffsetY = Math.max(MIN_PADDING - bounding.minY, centerOffsetY);
+  // Pastikan shiftX dan shiftY tidak membuat tree keluar dari area positif
+  shiftX = Math.max(PADDING - bounding.minX, shiftX);
+  shiftY = Math.max(PADDING - bounding.minY, shiftY);
   
-  // Terapkan ke semua tree
+  // Terapkan shift ke semua offset tree
   const trees = getAllTrees().filter(t => isTreeVisible(t.id));
   trees.forEach(t => {
     if (!treeOffsets[t.id]) {
       treeOffsets[t.id] = { x: 0, y: 0 };
     }
-    treeOffsets[t.id].x += centerOffsetX;
-    treeOffsets[t.id].y += centerOffsetY;
+    treeOffsets[t.id].x += shiftX;
+    treeOffsets[t.id].y += shiftY;
     
     const inst = document.getElementById(`tree-instance-${t.id}`);
     if (inst) {
@@ -224,10 +237,13 @@ function centerAllTreesToViewport(bounding, container) {
     }
   });
   
-  // Update container size
-  const PADDING = 300;
-  container.style.width = (bounding.maxX + centerOffsetX + PADDING) + "px";
-  container.style.height = (bounding.maxY + centerOffsetY + PADDING) + "px";
+  // Update ukuran container
+  const newWidth = bounding.maxX + shiftX + PADDING;
+  const newHeight = bounding.maxY + shiftY + PADDING;
+  container.style.width = Math.max(viewportW + 500, newWidth) + "px";
+  container.style.height = Math.max(viewportH + 500, newHeight) + "px";
+  
+  return { shiftX, shiftY };
 }
 
 function renderTree() {
@@ -235,12 +251,11 @@ function renderTree() {
   if (!container) return;
 
   const wrapper = document.getElementById("tree-wrapper");
-  const savedLeft = wrapper ? wrapper.scrollLeft : 800;
-  const savedTop = wrapper ? wrapper.scrollTop : 400;
+  const savedLeft = wrapper ? wrapper.scrollLeft : 0;
+  const savedTop = wrapper ? wrapper.scrollTop : 0;
 
   container.innerHTML = "";
 
-  // SVG overlay untuk manual links (di belakang tree-instance)
   const svgNS = "http://www.w3.org/2000/svg";
   const overlay = document.createElementNS(svgNS, "svg");
   overlay.setAttribute("id", "manual-links-svg");
@@ -251,7 +266,6 @@ function renderTree() {
 
   const trees = getAllTrees();
   
-  // Reset container size sementara
   container.style.width = "10000px";
   container.style.height = "10000px";
   
@@ -263,10 +277,12 @@ function renderTree() {
     div.className = "tree-instance";
     div.id = `tree-instance-${t.id}`;
     div.dataset.treeId = t.id;
+    div.style.position = "absolute";
+    div.style.left = "0";
+    div.style.top = "0";
     div.style.transform = `translate(${t.offset.x}px, ${t.offset.y}px)`;
     container.appendChild(div);
 
-    // Reset warna sibling per tree (tampilan independen)
     if (t.id !== "main") {
       assignSiblingGroups(t.data);
     }
@@ -290,13 +306,8 @@ function renderTree() {
   });
 
   setTimeout(() => {
-    // Hitung bounding box semua tree yang sudah di-render
-    const bounding = calculateTreesBoundingBox();
+    const shiftResult = centerAllTrees();
     
-    // Center semua tree ke viewport
-    centerAllTreesToViewport(bounding, container);
-    
-    // Simpan offset yang sudah di-center
     if (typeof persistMultiState === "function") {
       persistMultiState();
     }
@@ -304,24 +315,20 @@ function renderTree() {
     if (wrapper) {
       if (isFirstLoad) {
         // Center scroll ke tengah content
-        const containerRect = container.getBoundingClientRect();
-        const wrapperRect = wrapper.getBoundingClientRect();
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        const wrapperWidth = wrapper.clientWidth;
+        const wrapperHeight = wrapper.clientHeight;
         
-        const centerScrollX = (container.offsetWidth - wrapperRect.width) / 2;
-        const centerScrollY = (container.offsetHeight - wrapperRect.height) / 2;
+        wrapper.scrollLeft = Math.max(0, (containerWidth - wrapperWidth) / 2);
+        wrapper.scrollTop = Math.max(0, (containerHeight - wrapperHeight) / 2);
         
-        wrapper.scrollLeft = Math.max(0, centerScrollX);
-        wrapper.scrollTop = Math.max(0, centerScrollY);
-        
-        if (typeof loadViewState === "function") {
-          // Override loadViewState dengan posisi yang sudah di-center
-          scale = 1;
-          offsetX = 0;
-          offsetY = 0;
-          currentZoom = 1;
-          applyTransform();
-          updateZoomUI(100);
-        }
+        scale = 1;
+        offsetX = 0;
+        offsetY = 0;
+        currentZoom = 1;
+        if (typeof applyTransform === "function") applyTransform();
+        if (typeof updateZoomUI === "function") updateZoomUI(100);
         
         isFirstLoad = false;
       } else {
@@ -332,7 +339,7 @@ function renderTree() {
     
     if (typeof drawManualLinks === "function") drawManualLinks();
     if (typeof saveViewState === "function") saveViewState();
-  }, 200);
+  }, 300);
 }
 
 function convert(node, path = [], generation = 1, treeId = "main") {
@@ -495,7 +502,6 @@ async function submitInline(path) {
       showCustomPopup("Error: " + err.message, "Error");
     }
   } else {
-    // Edit lokal pada extra tree
     saveToUndo();
     const tree = getTreeDataById(treeId);
     if (!tree) return;
@@ -549,4 +555,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + multi-tree + center-fix*/
+/*Stable + multi-tree + center-fix-final*/
