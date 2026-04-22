@@ -198,35 +198,34 @@ function renderTree() {
       const svg = inst.querySelector('svg');
       if (!treantDiv || !svg) return;
       
-      // Set .Treant width 100% dulu agar SVG terukur penuh
       treantDiv.style.width = '100%';
       treantDiv.style.height = '100%';
       
-      // Ambil ukuran konten SVG
       let contentWidth = 0, contentHeight = 0;
       try {
         const bbox = svg.getBBox();
         contentWidth = bbox.width;
         contentHeight = bbox.height;
       } catch (e) {
-        // Fallback
         contentWidth = 500;
         contentHeight = 300;
       }
       
-      // Padding agar tidak mepet
-      const PADDING = 80;
-      
-      // Set ukuran .Treant sesuai konten + padding
+      const PADDING = 10;
       const newWidth = contentWidth + PADDING;
       const newHeight = contentHeight + PADDING;
       
       treantDiv.style.width = newWidth + 'px';
       treantDiv.style.height = newHeight + 'px';
-      
-      // Aqua akan otomatis mengikuti ukuran .Treant
-      // Tidak perlu set inst.style.width/height karena sudah mengikuti
     });
+    
+    // ===== PASANG EVENT LISTENER UNTUK KONEKSI MANUAL =====
+    if (typeof isAdmin !== 'undefined' && isAdmin && typeof onEdgeClickForConnect === 'function') {
+      document.querySelectorAll('.node-edge-left').forEach(edge => {
+        edge.removeEventListener('dblclick', onEdgeClickForConnect);
+        edge.addEventListener('dblclick', onEdgeClickForConnect);
+      });
+    }
     
     if (wrapper) {
       if (isFirstLoad) {
@@ -455,4 +454,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + aqua-fit-content*/
+/*Stable + edge-dblclick-fix*/
