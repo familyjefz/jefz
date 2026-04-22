@@ -136,8 +136,8 @@ function renderTree() {
   if (!container) return;
 
   const wrapper = document.getElementById("tree-wrapper");
-  const savedLeft = wrapper ? wrapper.scrollLeft : 800;
-  const savedTop = wrapper ? wrapper.scrollTop : 400;
+  const savedLeft = wrapper ? wrapper.scrollLeft : 0;
+  const savedTop = wrapper ? wrapper.scrollTop : 0;
 
   container.innerHTML = "";
 
@@ -158,6 +158,7 @@ function renderTree() {
     div.className = "tree-instance";
     div.id = `tree-instance-${t.id}`;
     div.dataset.treeId = t.id;
+    div.style.transform = `translate(${t.offset.x}px, ${t.offset.y}px)`;
     div.style.position = 'absolute';
     div.style.overflow = 'visible';
     
@@ -187,27 +188,15 @@ function renderTree() {
   });
 
   setTimeout(() => {
-    // ===== ATUR POSISI AQUA (CENTER + TOP DARI OFFSET) =====
-    trees.forEach(t => {
-      if (!isTreeVisible(t.id)) return;
-      const inst = document.getElementById(`tree-instance-${t.id}`);
-      if (!inst) return;
-      
-      const offset = treeOffsets[t.id] || { x: 0, y: 0 };
-      
-      // Center horizontal, top sesuai offset.y
-      inst.style.left = '50%';
-      inst.style.transform = `translateX(-50%)`;
-      inst.style.top = offset.y + 'px';
-      
-      // Simpan offset.x untuk kompatibilitas (tidak dipakai untuk posisi)
-      // Offset.y tetap dipakai untuk top
-    });
-    
     if (wrapper) {
       if (isFirstLoad) {
-        if (typeof loadViewState === "function") loadViewState();
-        else if (typeof centerOnMainTree === "function") centerOnMainTree();
+        // Scroll ke main tree
+        if (typeof centerOnMainTree === "function") {
+          centerOnMainTree();
+        } else {
+          wrapper.scrollLeft = 500;
+          wrapper.scrollTop = 200;
+        }
         isFirstLoad = false;
       } else {
         wrapper.scrollLeft = savedLeft;
@@ -293,7 +282,7 @@ function convert(node, path = [], generation = 1, treeId = "main") {
 
 function getCurrentScroll() {
   const w = document.getElementById("tree-wrapper");
-  return { left: w ? w.scrollLeft : 800, top: w ? w.scrollTop : 400 };
+  return { left: w ? w.scrollLeft : 0, top: w ? w.scrollTop : 0 };
 }
 
 function restoreScroll(left, top) {
@@ -431,4 +420,4 @@ async function submitInline(path) {
     showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
   }
 }
-/*Stable + final-center*/
+/*Stable + scroll-center-final*/
