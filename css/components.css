@@ -212,19 +212,29 @@ button:not(.tree-wrapper button) { cursor: pointer; }
 .node-box.connect-source { outline: 2px dashed #8cabe5; outline-offset: 2px; }
 body.connect-mode .node-box { cursor: pointer; }
 
-/* ========== TREE INSTANCE (AQUA) ========== */
+/* ========== TREE INSTANCE (AQUA) - TRANSPARAN & TIDAK MENGHALANGI ========== */
 .tree-instance {
   position: absolute;
-  top: 0;
-  left: 0;
   z-index: 1;
-  background: #00ffff;
+  background: transparent !important;
   overflow: visible !important;
-  
-  /* === CENTERING SEPERTI SINGLE TREE === */
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  pointer-events: none !important;
+}
+
+/* Node, line, dan elemen interaktif di dalam Aqua tetap bisa diklik */
+.tree-instance .node-box,
+.tree-instance .node-box *,
+.tree-instance .node-edge-left,
+.tree-instance .Treant line,
+.tree-instance .Treant path,
+.tree-instance .Treant polyline {
+  pointer-events: auto !important;
+}
+
+/* ========== TREANT WRAPPER ========== */
+.Treant {
+  width: 100%;
+  height: 100%;
 }
 
 /* ========== MANUAL LINKS SVG ========== */
@@ -286,16 +296,5 @@ body.reposition-mode .tree-instance .node-box {
   .info-grid-2col {
     grid-template-columns: 1fr;
   }
-}
-.Treant {
-  width: 100%;
-  height: 100%;
-}
-
-.tree-instance {
-  position: absolute;
-  z-index: 1;
-  background: #00ffff;
-  overflow: visible !important;
 }
 /*Stable*/
