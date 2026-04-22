@@ -284,6 +284,15 @@ function getCurrentScroll() {
   return { left: w ? w.scrollLeft : 800, top: w ? w.scrollTop : 400 };
 }
 
+function restoreScroll(left, top) {
+  const w = document.getElementById("tree-wrapper");
+  if (w) {
+    setTimeout(() => {
+      w.scrollLeft = left;
+      w.scrollTop = top;
+    }, 50);
+  }
+}
 
 function openOptions(path, treeId = "main") {
   if (!isAdmin) return;
