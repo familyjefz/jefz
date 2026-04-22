@@ -30,15 +30,8 @@ const TREE_VERTICAL_GAP   = 600;
 
 function getTreeOffset(treeId) {
   if (!treeOffsets[treeId]) {
-    if (treeId === "main") {
-      treeOffsets[treeId] = { ...DEFAULT_MAIN_OFFSET };
-    } else {
-      const idx = extraTrees.findIndex(t => t.id === treeId);
-      treeOffsets[treeId] = {
-        x: DEFAULT_MAIN_OFFSET.x,
-        y: DEFAULT_MAIN_OFFSET.y + TREE_VERTICAL_GAP * (idx + 1)
-      };
-    }
+    // Default offset sementara (nanti di-center oleh renderTree)
+    treeOffsets[treeId] = { x: 0, y: 0 };
   }
   return treeOffsets[treeId];
 }
