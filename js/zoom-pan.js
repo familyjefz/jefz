@@ -15,12 +15,10 @@ let startDist = 0;
 let startScale = 1;
 let pinchCooldown = 0;
 
-// Pinch zoom state for the Info popup text
 let isInfoPinching = false;
 let infoZoom = 1;
 let startInfoZoom = 1;
 
-// Reposition mode
 let repositionMode = false;
 
 const DRAG_THRESHOLD = 8;
@@ -29,7 +27,6 @@ const INFO_ZOOM_MAX = 4;
 
 const VIEW_KEY = "silsilah_view_state_v2";
 
-// ========== ELEMENT REFERENCES ==========
 const getContainer = () => document.getElementById("tree-zoom-container");
 const getInfoModal = () => document.getElementById("info-modal");
 
@@ -50,7 +47,6 @@ function resetInfoZoom() {
   applyInfoZoom();
 }
 
-// ========== APPLY TRANSFORM ==========
 function applyTransform() {
   const el = getContainer();
   if (!el) return;
@@ -58,7 +54,6 @@ function applyTransform() {
   el.style.transformOrigin = "0 0";
 }
 
-// ========== ZOOM FUNCTION ==========
 function setZoom(zoom, centerX = null, centerY = null) {
   zoom = Math.max(30, Math.min(300, zoom));
 
@@ -112,15 +107,23 @@ function zoomReset() {
   saveViewState();
 }
 
-// ========== CENTER SCROLL KE MAIN TREE ==========
 function centerOnMainTree() {
+  const wrapper = document.getElementById("tree-wrapper");
+  if (!wrapper) return;
   const main = document.getElementById("tree-instance-main");
-  if (!main) return;
-  
-  main.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
+  if (!main) {
+    wrapper.scrollLeft = Math.max(0, 2500 - wrapper.clientWidth / 2);
+    wrapper.scrollTop  = 0;
+    return;
+  }
+  const rect = main.getBoundingClientRect();
+  const wRect = wrapper.getBoundingClientRect();
+  const centerX = (rect.left + rect.width / 2) - wRect.left + wrapper.scrollLeft;
+  const topY    = rect.top - wRect.top + wrapper.scrollTop;
+  wrapper.scrollLeft = Math.max(0, centerX - wrapper.clientWidth / 2);
+  wrapper.scrollTop  = Math.max(0, topY - 30);
 }
 
-// ========== PERSIST VIEW STATE ==========
 function saveViewState() {
   try {
     const w = document.getElementById("tree-wrapper");
@@ -151,15 +154,14 @@ function loadViewState() {
     applyTransform();
     updateZoomUI(Math.round(scale * 100));
     if (w) {
-      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 0;
-      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 0;
+      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 800;
+      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 400;
     }
   } catch (e) {
     centerOnMainTree();
   }
 }
 
-// ========== HELPERS ==========
 function isAlwaysInteractive(target) {
   if (!target) return false;
   return !!(target.closest("textarea") ||
@@ -185,7 +187,6 @@ function suppressNextClick() {
   }, 400);
 }
 
-// ========== MOUSE / PEN DRAG PAN ==========
 function startDrag(e) {
   if (repositionMode) return;
   const t = e.target;
@@ -235,7 +236,6 @@ function endDrag(e) {
   pendingDrag = false;
 }
 
-// ========== PINCH ZOOM ==========
 function getDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
@@ -354,7 +354,6 @@ function touchEnd(e) {
   }
 }
 
-// Persist scroll changes
 document.addEventListener("DOMContentLoaded", () => {
   const w = document.getElementById("tree-wrapper");
   if (w) {
@@ -365,4 +364,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + center-scroll*/
+/*Stable + view persist*/
