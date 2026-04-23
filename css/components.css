@@ -75,6 +75,13 @@
   gap: 2px;
   margin-top: 4px;
 }
+/* ========== NODE MENU ========== */
+.node-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
 .node-menu button {
   font-size: 7px;
   padding: 2px;
@@ -85,11 +92,13 @@
   transition: opacity 0.2s;
 }
 .node-menu button:hover { opacity: 0.85; }
-.node-menu button:nth-child(1) { background: #4caf50; }
-.node-menu button:nth-child(2) { background: #2196f3; }
-.node-menu button:nth-child(3) { background: #f44336; }
-.node-menu button:nth-child(4) { background: #ff9800; }
-.node-menu button:nth-child(5) { background: #9c27b0; }
+.node-menu button:nth-child(1) { background: #4caf50; }  /* Tambah Anak */
+.node-menu button:nth-child(2) { background: #2196f3; }  /* Ubah Nama */
+.node-menu button:nth-child(3) { background: #f44336; }  /* Hapus */
+.node-menu button:nth-child(4) { background: #ff9800; }  /* Tambah Parent */
+.node-menu button:nth-child(5) { background: #9c27b0; }  /* Ubah Urutan */
+.node-menu button:nth-child(6) { background: #00bcd4; }  /* Hubungkan */
+.node-menu button:nth-child(7) { background: #795548; }  /* Putuskan */
 
 /* ========== NODE INPUT ========== */
 .node-input {
@@ -338,4 +347,5 @@ body.hubungkan-mode .node-box {
 body.hubungkan-mode .node-box:hover {
   outline: 2px solid #00a8f7;
 }
+
 /*Stable*/
