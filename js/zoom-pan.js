@@ -94,43 +94,26 @@ function updateZoomFromSlider(e) {
 }
 
 function zoomReset() {
-  centerOnMainTree("Muhammad Jabbar", 200);
+  centerOnMainTree();
 }
 
-// ========== CENTER KE NODE TERTENTU ==========
-function centerOnMainTree(targetName, targetZoom) {
-  const zoomLevel = Math.max(30, Math.min(300, targetZoom || 100));
-  scale = zoomLevel / 100;
+// ========== CENTER HARDCORE ==========
+function centerOnMainTree() {
+  scale = 2;
   offsetX = 0;
   offsetY = 0;
-  currentZoom = scale;
+  currentZoom = 2;
   applyTransform();
-  updateZoomUI(zoomLevel);
+  updateZoomUI(200);
   
   const slider = document.getElementById("zoom-slider");
-  if (slider) slider.value = zoomLevel;
+  if (slider) slider.value = 200;
   
   const wrapper = document.getElementById('tree-wrapper');
   if (!wrapper) return;
   
-  let targetNode = null;
-  
-  if (targetName) {
-    const allNodes = document.querySelectorAll('.node-name');
-    allNodes.forEach(el => {
-      if (el.textContent.trim().split('|')[0].trim() === targetName) {
-        targetNode = el.closest('.node-box');
-      }
-    });
-  }
-  
-  if (!targetNode) {
-    targetNode = document.querySelector('#tree-instance-main .node-box');
-  }
-  
-  if (targetNode) {
-    targetNode.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
-  }
+  wrapper.scrollLeft = 9200;
+  wrapper.scrollTop = 7100;
   
   saveViewState();
 }
@@ -369,4 +352,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + fokus-muhammad-jabbar-200*/
+/*Stable + hardcore-200-9200-7100*/
