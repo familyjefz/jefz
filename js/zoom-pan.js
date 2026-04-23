@@ -104,16 +104,15 @@ function centerOnMainTree() {
   offsetY = 0;
   currentZoom = 2;
   applyTransform();
-  updateZoomUI(200);
+  updateZoomUI(100);
   
   const slider = document.getElementById("zoom-slider");
-  if (slider) slider.value = 200;
+  if (slider) slider.value = 100;
   
-  const wrapper = document.getElementById('tree-wrapper');
-  if (!wrapper) return;
-  
-  wrapper.scrollLeft = 9200;
-  wrapper.scrollTop = 7100;
+  const rootNode = document.querySelector('#tree-instance-main .node-box');
+  if (rootNode) {
+    rootNode.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
+  }
   
   saveViewState();
 }
