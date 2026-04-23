@@ -695,4 +695,103 @@ async function submitInline(path) {
 
   if (treeId === "main") {
     let action, body = { path };
-    if (activeMode === "add") { action
+    if (activeMode === "add") { action = "add"; body.name = val; }
+    else if (activeMode === "edit") { action = "edit"; body.name = val; }
+    else if (activeMode === "parent") { action = "addParent"; body.name = val; }
+    else if (activeMode === "order") {
+      action = "reorder"; body.position = parseInt(val);
+      if (isNaN(body.position)) {
+        showCustomPopup("Masukkan angka untuk urutan!", "Peringatan");
+        return;
+      }
+    } else return;
+
+    try {
+      saveToUndo();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...body })
+      });
+      const result = await res.json();
+      if (result.success) {
+        activePath = null; activeMode = null;
+        await loadTree();
+        showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
+      } else {
+        showCustomPopup("Gagal: " + (result.error || "Error"), "Error");
+      }
+    } catch (err) {
+      showCustomPopup("Error: " + err.message, "Error");
+    }
+  } else {
+    saveToUndo();
+    const tree = getTreeDataById(treeId);
+    if (!tree) return;
+
+    if (activeMode === "add") {
+      const target = getNodeByPath(tree, path);
+      if (!target) return;
+      if (!target.children) target.children = [];
+      target.children.push({ name: val });
+    } else if (activeMode === "edit") {
+      const target = getNodeByPath(tree, path);
+      if (!target) return;
+      target.name = val;
+    } else if (activeMode === "parent") {
+      const target = getNodeByPath(tree, path);
+      if (!target) return;
+      if (path.length === 0) {
+        const newRoot = { name: val, children: [tree] };
+        const idx = extraTrees.findIndex(x => x.id === treeId);
+        if (idx >= 0) extraTrees[idx].data = newRoot;
+      } else {
+        const parentPath = path.slice(0, -1);
+        const idxInParent = path[path.length - 1];
+        const parent = getNodeByPath(tree, parentPath);
+        if (!parent || !parent.children) return;
+        const orig = parent.children[idxInParent];
+        const newParent = { name: val, children: [orig] };
+        parent.children[idxInParent] = newParent;
+      }
+    } else if (activeMode === "order") {
+      const pos = parseInt(val);
+      if (isNaN(pos)) {
+        showCustomPopup("Masukkan angka untuk urutan!", "Peringatan");
+        return;
+      }
+      if (path.length === 0) return;
+      const parentPath = path.slice(0, -1);
+      const idxInParent = path[path.length - 1];
+      const parent = getNodeByPath(tree, parentPath);
+      if (!parent || !parent.children) return;
+      const item = parent.children.splice(idxInParent, 1)[0];
+      const newPos = Math.max(0, Math.min(parent.children.length, pos));
+      parent.children.splice(newPos, 0, item);
+    }
+
+    activePath = null; activeMode = null;
+    await persistMultiState();
+    resetSiblingColors();
+    assignSiblingGroups(currentTreeData);
+    renderTree();
+    showCustomPopup("Perubahan berhasil disimpan!", "Sukses");
+  }
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  const cancelBtn = document.getElementById('hubungkan-cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', cancelHubungkanMode);
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && connectMode) {
+      cancelHubungkanMode();
+    }
+  });
+});
+
+window.startConnect = startConnect;
+window.disconnectNode = disconnectNode;
+/*Stable + reset-unsaved-sama*/
