@@ -196,34 +196,68 @@ function renderTree() {
   });
 
   setTimeout(() => {
+    // ===== SESUAIKAN UKURAN AQUA & SVG DENGAN KONTEN =====
     trees.forEach(t => {
       if (!isTreeVisible(t.id)) return;
       const inst = document.getElementById(`tree-instance-${t.id}`);
       if (!inst) return;
       
-      const treantDiv = inst.querySelector('.Treant');
       const svg = inst.querySelector('svg');
-      if (!treantDiv || !svg) return;
+      if (!svg) return;
       
-      treantDiv.style.width = '100%';
-      treantDiv.style.height = '100%';
+      // Reset ukuran sementara
+      svg.style.width = 'auto';
+      svg.style.height = 'auto';
       
-      let contentWidth = 0, contentHeight = 0;
-      try {
-        const bbox = svg.getBBox();
-        contentWidth = bbox.width;
-        contentHeight = bbox.height;
-      } catch (e) {
-        contentWidth = 500;
-        contentHeight = 300;
+      // Cari bounding box semua elemen
+      let minX = Infinity, minY = Infinity;
+      let maxX = -Infinity, maxY = -Infinity;
+      
+      const nodes = inst.querySelectorAll('.node-box');
+      nodes.forEach(node => {
+        const left = parseFloat(node.style.left) || 0;
+        const top = parseFloat(node.style.top) || 0;
+        const width = node.offsetWidth || 70;
+        const height = node.offsetHeight || 40;
+        
+        minX = Math.min(minX, left);
+        minY = Math.min(minY, top);
+        maxX = Math.max(maxX, left + width);
+        maxY = Math.max(maxY, top + height);
+      });
+      
+      const paths = svg.querySelectorAll('path, line, polyline');
+      paths.forEach(p => {
+        if (p.tagName === 'line') {
+          const x1 = parseFloat(p.getAttribute('x1')) || 0;
+          const y1 = parseFloat(p.getAttribute('y1')) || 0;
+          const x2 = parseFloat(p.getAttribute('x2')) || 0;
+          const y2 = parseFloat(p.getAttribute('y2')) || 0;
+          minX = Math.min(minX, x1, x2);
+          minY = Math.min(minY, y1, y2);
+          maxX = Math.max(maxX, x1, x2);
+          maxY = Math.max(maxY, y1, y2);
+        }
+      });
+      
+      if (minX === Infinity) {
+        minX = 0; minY = 0; maxX = 500; maxY = 300;
       }
       
-      const PADDING = 10;
-      const newWidth = contentWidth + PADDING;
-      const newHeight = contentHeight + PADDING;
+      const PAD = 50;
+      const newWidth = maxX - minX + PAD * 2;
+      const newHeight = maxY - minY + PAD * 2;
       
-      treantDiv.style.width = newWidth + 'px';
-      treantDiv.style.height = newHeight + 'px';
+      // Set ukuran SVG
+      svg.setAttribute('width', newWidth);
+      svg.setAttribute('height', newHeight);
+      svg.style.width = newWidth + 'px';
+      svg.style.height = newHeight + 'px';
+      svg.setAttribute('viewBox', `${minX - PAD} ${minY - PAD} ${newWidth} ${newHeight}`);
+      
+      // Set ukuran Aqua
+      inst.style.width = newWidth + 'px';
+      inst.style.height = newHeight + 'px';
     });
     
     if (typeof isAdmin !== 'undefined' && isAdmin && typeof onEdgeClickForConnect === 'function') {
@@ -239,12 +273,10 @@ function renderTree() {
       if (isFirstLoad) {
         const hasSaved = (typeof loadViewState === "function") ? loadViewState() : false;
         if (!hasSaved) {
-          // Tidak ada saved state, lakukan Reset
           setTimeout(() => {
             centerOnMainTree();
           }, 150);
         }
-        // Jika hasSaved = true, loadViewState sudah mengatur scroll
         isFirstLoad = false;
       } else {
         wrapper.scrollLeft = savedLeft;
@@ -793,4 +825,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + saved-fix-final*/
+/*Stable + fit-content-size*/
