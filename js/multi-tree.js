@@ -119,10 +119,10 @@ async function submitAddTree() {
   saveToUndo();
   const id = newId("t");
   
-  // Hitung posisi tengah viewport saat ini
+  // Hitung posisi tengah viewport saat ini (seperti disconnectNode)
   const wrapper = document.getElementById("tree-wrapper");
-  const viewportCenterX = (wrapper.scrollLeft + wrapper.clientWidth / 2);
-  const viewportCenterY = (wrapper.scrollTop + wrapper.clientHeight / 2);
+  const viewportCenterX = wrapper.scrollLeft + wrapper.clientWidth / 2;
+  const viewportCenterY = wrapper.scrollTop + wrapper.clientHeight / 2;
   
   extraTrees.push({
     id,
@@ -132,8 +132,8 @@ async function submitAddTree() {
   
   // Tree baru muncul di tengah viewport
   treeOffsets[id] = {
-    x: viewportCenterX - 100,
-    y: viewportCenterY - 50
+    x: viewportCenterX,
+    y: viewportCenterY
   };
   
   visibleTrees = "all";
@@ -141,8 +141,6 @@ async function submitAddTree() {
 
   await persistMultiState();
   renderTree();
-
-  setTimeout(() => focusOnNodeKey(`${id}|`), 200);
   showCustomPopup("Tree baru berhasil dibuat!", "Sukses");
 }
 
@@ -590,4 +588,4 @@ function updateAdminButtons() {
 
 window.initMultiTree = initMultiTree;
 window.updateAdminButtons = updateAdminButtons;
-/*New: multi-tree + viewport-center-addtree*/
+/*New: multi-tree + viewport-center-addtree-final*/
