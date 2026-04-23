@@ -121,9 +121,13 @@ async function submitAddTree() {
   
   const wrapper = document.getElementById("tree-wrapper");
   
-  // Viewport center = offset Aqua (root node muncul di pojok kiri-atas Aqua)
-  const targetX = wrapper.scrollLeft + wrapper.clientWidth / 2;
-  const targetY = wrapper.scrollTop + wrapper.clientHeight / 2;
+  // Viewport center
+  const viewX = wrapper.scrollLeft + wrapper.clientWidth / 2;
+  const viewY = wrapper.scrollTop + wrapper.clientHeight / 2;
+  
+  // Ukuran root node (estimasi)
+  const NODE_W = 70;
+  const NODE_H = 40;
   
   extraTrees.push({
     id,
@@ -131,9 +135,10 @@ async function submitAddTree() {
     data: { name: val, children: [] }
   });
   
+  // Offset Aqua agar root node di tengah viewport
   treeOffsets[id] = {
-    x: targetX,
-    y: targetY
+    x: viewX - NODE_W / 2,
+    y: viewY - NODE_H / 2
   };
   
   visibleTrees = "all";
@@ -588,4 +593,4 @@ function updateAdminButtons() {
 
 window.initMultiTree = initMultiTree;
 window.updateAdminButtons = updateAdminButtons;
-/*New: multi-tree + viewport-center-final*/
+/*New: multi-tree + addtree-center-final*/
