@@ -144,8 +144,8 @@ function renderTree() {
   if (!container) return;
 
   const wrapper = document.getElementById("tree-wrapper");
-  const savedLeft = wrapper ? wrapper.scrollLeft : 800;
-  const savedTop = wrapper ? wrapper.scrollTop : 400;
+  const savedLeft = wrapper ? wrapper.scrollLeft : 0;
+  const savedTop = wrapper ? wrapper.scrollTop : 0;
 
   container.innerHTML = "";
 
@@ -237,10 +237,13 @@ function renderTree() {
     
     if (wrapper) {
       if (isFirstLoad) {
-        if (typeof loadViewState === "function") {
-          loadViewState();
-        } else {
-          centerOnMainTree();
+        // Coba load saved state
+        const hasSaved = (typeof loadViewState === "function") ? loadViewState() : false;
+        if (!hasSaved) {
+          // Tidak ada saved state, lakukan reset
+          setTimeout(() => {
+            centerOnMainTree();
+          }, 100);
         }
         isFirstLoad = false;
       } else {
@@ -790,4 +793,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + awal-buka-fix*/
+/*Stable + awal-buka-fix-final*/
