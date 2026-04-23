@@ -3,7 +3,6 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #ffa500; /* LAYER 0.5 - ORANGE */
 }
 
 /* ========== HEADER ========== */
@@ -44,11 +43,11 @@
   display: none;
 }
 
-/* ========== TREE WRAPPER - LAYER 1 ========== */
+/* ========== TREE WRAPPER ========== */
 .tree-wrapper {
   flex: 1;
-  overflow: auto !important;
-  background: #8b4513; /* LAYER 1 - COKLAT */
+  overflow: hidden;
+  background: #f1fcff;
   position: relative;
   touch-action: none;
   cursor: grab;
@@ -70,7 +69,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: geometricPrecision;
-  background: transparent;
 }
 
 .tree-zoom-container,
@@ -80,12 +78,11 @@
 
 #tree {
   position: relative;
-  width: 10000px;
-  height: 10000px;
-  background: #ff0000; /* LAYER 1.5 - MERAH */
+  width: 5000px;
+  height: 5000px;
 }
 
-/* ========== BOTTOM ZOOM BAR - LAYER 5 ========== */
+/* ========== BOTTOM ZOOM BAR ========== */
 .bottom-zoom-bar {
   position: fixed;
   bottom: 16px;
@@ -94,7 +91,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #000000; /* LAYER 5 - HITAM */
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   padding: 10px 20px;
@@ -170,16 +167,5 @@
   background: #00a8f7;
   cursor: pointer;
   border: none;
-}
-
-/* ========== RESPONSIVE ========== */
-@media (max-width: 600px) {
-  .bottom-zoom-bar {
-    padding: 8px 16px;
-    bottom: 12px;
-  }
-  .bottom-zoom-bar .zoom-slider {
-    width: 140px;
-  }
 }
 /*Stable*/
