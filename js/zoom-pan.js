@@ -107,12 +107,8 @@ function zoomReset() {
   saveViewState();
 }
 
-// ========== CENTER KE ROOT NODE MAIN TREE ==========
+// ========== CENTER KE ROOT NODE MAIN TREE DENGAN SCROLLINTOVIEW ==========
 function centerOnMainTree() {
-  const wrapper = document.getElementById("tree-wrapper");
-  const main = document.getElementById("tree-instance-main");
-  if (!wrapper || !main) return;
-  
   // Reset zoom ke 100%
   scale = 1;
   offsetX = 0;
@@ -121,29 +117,17 @@ function centerOnMainTree() {
   applyTransform();
   updateZoomUI(100);
   
-  // Dapatkan root node dari main tree
-  const rootNode = main.querySelector('.node-box');
-  if (!rootNode) {
-    // Fallback ke offset Aqua
-    wrapper.scrollLeft = main.offsetLeft - (wrapper.clientWidth / 2) + (main.offsetWidth / 2);
-    wrapper.scrollTop = main.offsetTop - (wrapper.clientHeight / 2) + (main.offsetHeight / 2);
-    return;
+  // Cari root node main tree
+  const rootNode = document.querySelector('#tree-instance-main .node-box');
+  if (rootNode) {
+    rootNode.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
+  } else {
+    // Fallback ke Aqua
+    const main = document.getElementById('tree-instance-main');
+    if (main) {
+      main.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
+    }
   }
-  
-  // Hitung posisi root node di dalam Aqua
-  const nodeLeft = parseFloat(rootNode.style.left) || 0;
-  const nodeTop = parseFloat(rootNode.style.top) || 0;
-  const nodeWidth = rootNode.offsetWidth;
-  const nodeHeight = rootNode.offsetHeight;
-  
-  // Posisi absolut root node di container #tree
-  const absoluteX = main.offsetLeft + nodeLeft;
-  const absoluteY = main.offsetTop + nodeTop;
-  
-  // Scroll agar root node center
-  wrapper.scrollLeft = absoluteX - (wrapper.clientWidth / 2) + (nodeWidth / 2);
-  wrapper.scrollTop = absoluteY - (wrapper.clientHeight / 2) + (nodeHeight / 2);
-  
   saveViewState();
 }
 
@@ -381,4 +365,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + center-root-node*/
+/*Stable + scrollIntoView-center*/
