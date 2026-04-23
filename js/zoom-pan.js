@@ -36,6 +36,7 @@ function isInfoModalOpen() {
   const disp = m.style.display;
   return disp === "flex" || disp === "block";
 }
+
 function applyInfoZoom() {
   const body = document.getElementById("info-body");
   if (body) body.style.setProperty("--info-zoom", String(infoZoom));
@@ -93,27 +94,34 @@ function updateZoomFromSlider(e) {
 }
 
 function zoomReset() {
-  centerOnMainTree();
-}
-
-// ========== CENTER KE ROOT NODE ==========
-function centerOnMainTree() {
   scale = 1;
   offsetX = 0;
   offsetY = 0;
   currentZoom = 1;
+
   applyTransform();
   updateZoomUI(100);
-  
   const slider = document.getElementById("zoom-slider");
   if (slider) slider.value = 100;
-  
-  const rootNode = document.querySelector('#tree-instance-main .node-box');
-  if (rootNode) {
-    rootNode.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
-  }
-  
+  centerOnMainTree();
   saveViewState();
+}
+
+function centerOnMainTree() {
+  const wrapper = document.getElementById("tree-wrapper");
+  if (!wrapper) return;
+  const main = document.getElementById("tree-instance-main");
+  if (!main) {
+    wrapper.scrollLeft = Math.max(0, 2500 - wrapper.clientWidth / 2);
+    wrapper.scrollTop  = 0;
+    return;
+  }
+  const rect = main.getBoundingClientRect();
+  const wRect = wrapper.getBoundingClientRect();
+  const centerX = (rect.left + rect.width / 2) - wRect.left + wrapper.scrollLeft;
+  const topY    = rect.top - wRect.top + wrapper.scrollTop;
+  wrapper.scrollLeft = Math.max(0, centerX - wrapper.clientWidth / 2);
+  wrapper.scrollTop  = Math.max(0, topY - 30);
 }
 
 function saveViewState() {
@@ -135,7 +143,8 @@ function loadViewState() {
     const raw = localStorage.getItem(VIEW_KEY);
     const w = document.getElementById("tree-wrapper");
     if (!raw) {
-      return false;
+      centerOnMainTree();
+      return;
     }
     const data = JSON.parse(raw);
     scale = data.scale || 1;
@@ -145,12 +154,11 @@ function loadViewState() {
     applyTransform();
     updateZoomUI(Math.round(scale * 100));
     if (w) {
-      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 0;
-      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 0;
+      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 800;
+      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 400;
     }
-    return true;
   } catch (e) {
-    return false;
+    centerOnMainTree();
   }
 }
 
@@ -180,6 +188,7 @@ function suppressNextClick() {
 }
 
 function startDrag(e) {
+  if (repositionMode) return;
   const t = e.target;
   if (isAlwaysInteractive(t)) return;
 
@@ -197,6 +206,7 @@ function startDrag(e) {
 }
 
 function moveDrag(e) {
+  if (repositionMode) return;
   if (!pendingDrag && !isDragging) return;
 
   const dx = e.clientX - startX;
@@ -213,6 +223,7 @@ function moveDrag(e) {
 }
 
 function endDrag(e) {
+  if (repositionMode) return;
   if (isDragging && e) {
     const dx = (e.clientX ?? startX) - startX;
     const dy = (e.clientY ?? startY) - startY;
@@ -243,6 +254,7 @@ function touchStart(e) {
       e.preventDefault();
       return;
     }
+    if (repositionMode) return;
     isPinching = true;
     isDragging = false;
     pendingDrag = false;
@@ -254,6 +266,7 @@ function touchStart(e) {
 
   if (e.touches.length === 1) {
     if (isPinching || isInfoPinching || Date.now() < pinchCooldown) return;
+    if (repositionMode) return;
 
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -299,6 +312,7 @@ function touchMove(e) {
   }
 
   if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching && !isInfoPinching) {
+    if (repositionMode) return;
     const t = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
@@ -350,4 +364,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + scrollIntoView-100*/
+/*Stable + view persist + reposisi-drag*/
