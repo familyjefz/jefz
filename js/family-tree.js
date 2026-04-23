@@ -237,12 +237,8 @@ function renderTree() {
     
     if (wrapper) {
       if (isFirstLoad) {
-        const hasSaved = (typeof loadViewState === "function") ? loadViewState() : false;
-        if (!hasSaved) {
-          setTimeout(() => {
-            centerOnMainTree();
-          }, 150);
-        }
+        if (typeof loadViewState === "function") loadViewState();
+        else if (typeof centerOnMainTree === "function") centerOnMainTree();
         isFirstLoad = false;
       } else {
         wrapper.scrollLeft = savedLeft;
@@ -521,6 +517,7 @@ async function executeConnect(targetPath, targetTreeId) {
   if (connectMode === 'child') {
     const nodeToMove = JSON.parse(JSON.stringify(sourceNode));
     
+    // Jika yang dipindah adalah ROOT
     if (!connectSourcePath || connectSourcePath.length === 0) {
       if (connectSourceTreeId !== 'main') {
         const idx = extraTrees.findIndex(t => t.id === connectSourceTreeId);
@@ -791,4 +788,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + no-rerender*/
+/*Stable + cutting-root-fix*/
