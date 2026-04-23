@@ -182,8 +182,8 @@ function renderTree() {
           container: `#tree-instance-${t.id}`,
           rootOrientation: "NORTH",
           connectors: { type: "step" },
-          animateOnInit: false,
-          levelSeparation: 50,
+          animateOnInit: true,
+          levelSeparation: 30,
           siblingSeparation: 30,
           subTeeSeparation: 30,
           padding: 50
