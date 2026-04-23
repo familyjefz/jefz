@@ -107,21 +107,32 @@ function zoomReset() {
   saveViewState();
 }
 
+// ========== CENTER AKURAT KE ROOT NODE ==========
 function centerOnMainTree() {
-  const wrapper = document.getElementById("tree-wrapper");
-  if (!wrapper) return;
-  const main = document.getElementById("tree-instance-main");
-  if (!main) {
-    wrapper.scrollLeft = Math.max(0, 2500 - wrapper.clientWidth / 2);
-    wrapper.scrollTop  = 0;
-    return;
-  }
-  const rect = main.getBoundingClientRect();
-  const wRect = wrapper.getBoundingClientRect();
-  const centerX = (rect.left + rect.width / 2) - wRect.left + wrapper.scrollLeft;
-  const topY    = rect.top - wRect.top + wrapper.scrollTop;
-  wrapper.scrollLeft = Math.max(0, centerX - wrapper.clientWidth / 2);
-  wrapper.scrollTop  = Math.max(0, topY - 30);
+  scale = 1;
+  offsetX = 0;
+  offsetY = 0;
+  currentZoom = 1;
+  applyTransform();
+  updateZoomUI(100);
+  
+  const wrapper = document.getElementById('tree-wrapper');
+  const rootNode = document.querySelector('#tree-instance-main .node-box');
+  
+  if (!wrapper || !rootNode) return;
+  
+  // Posisi root node relatif terhadap viewport
+  const rootRect = rootNode.getBoundingClientRect();
+  const wrapperRect = wrapper.getBoundingClientRect();
+  
+  // Hitung scroll yang diperlukan agar root node center di wrapper
+  const targetScrollLeft = wrapper.scrollLeft + (rootRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (rootRect.width / 2);
+  const targetScrollTop = wrapper.scrollTop + (rootRect.top - wrapperRect.top) - (wrapper.clientHeight / 2) + (rootRect.height / 2);
+  
+  wrapper.scrollLeft = Math.max(0, targetScrollLeft);
+  wrapper.scrollTop = Math.max(0, targetScrollTop);
+  
+  saveViewState();
 }
 
 function saveViewState() {
@@ -143,8 +154,7 @@ function loadViewState() {
     const raw = localStorage.getItem(VIEW_KEY);
     const w = document.getElementById("tree-wrapper");
     if (!raw) {
-      centerOnMainTree();
-      return;
+      return false;
     }
     const data = JSON.parse(raw);
     scale = data.scale || 1;
@@ -154,11 +164,12 @@ function loadViewState() {
     applyTransform();
     updateZoomUI(Math.round(scale * 100));
     if (w) {
-      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 800;
-      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 400;
+      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 0;
+      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 0;
     }
+    return true;
   } catch (e) {
-    centerOnMainTree();
+    return false;
   }
 }
 
@@ -187,9 +198,7 @@ function suppressNextClick() {
   }, 400);
 }
 
-// ========== MOUSE DRAG (REPOSISI MODE DIIZINKAN) ==========
 function startDrag(e) {
-  // HAPUS: if (repositionMode) return;
   const t = e.target;
   if (isAlwaysInteractive(t)) return;
 
@@ -207,7 +216,6 @@ function startDrag(e) {
 }
 
 function moveDrag(e) {
-  // HAPUS: if (repositionMode) return;
   if (!pendingDrag && !isDragging) return;
 
   const dx = e.clientX - startX;
@@ -224,7 +232,6 @@ function moveDrag(e) {
 }
 
 function endDrag(e) {
-  // HAPUS: if (repositionMode) return;
   if (isDragging && e) {
     const dx = (e.clientX ?? startX) - startX;
     const dy = (e.clientY ?? startY) - startY;
@@ -237,7 +244,6 @@ function endDrag(e) {
   pendingDrag = false;
 }
 
-// ========== PINCH ZOOM ==========
 function getDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
@@ -256,7 +262,6 @@ function touchStart(e) {
       e.preventDefault();
       return;
     }
-    // HAPUS: if (repositionMode) return;
     isPinching = true;
     isDragging = false;
     pendingDrag = false;
@@ -268,7 +273,6 @@ function touchStart(e) {
 
   if (e.touches.length === 1) {
     if (isPinching || isInfoPinching || Date.now() < pinchCooldown) return;
-    // HAPUS: if (repositionMode) return;
 
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -314,7 +318,6 @@ function touchMove(e) {
   }
 
   if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching && !isInfoPinching) {
-    // HAPUS: if (repositionMode) return;
     const t = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
@@ -366,4 +369,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + reposisi-bisa-digeser*/
+/*Stable + center-boundingrect-fix*/
