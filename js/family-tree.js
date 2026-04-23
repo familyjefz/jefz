@@ -177,19 +177,22 @@ function renderTree() {
     }
 
     try {
-      new Treant({
-  chart: {
-    container: `#tree-instance-${t.id}`,
-    rootOrientation: "NORTH",
-    connectors: { type: "step" },
-    animateOnInit: false,
-    levelSeparation: 30,      // Sebelumnya 50, sekarang lebih rapat
-    siblingSeparation: 15,    // Sebelumnya 30, sekarang lebih rapat
-    subTeeSeparation: 15,     // Sebelumnya 30, sekarang lebih rapat
-    padding: 20               // Sebelumnya 50, sekarang lebih kecil
-  },
-  nodeStructure: convert(t.data, [], 1, t.id)
-});
+  new Treant({
+    chart: {
+      container: `#tree-instance-${t.id}`,
+      rootOrientation: "NORTH",
+      connectors: { type: "step" },
+      animateOnInit: false,
+      levelSeparation: 50,
+      siblingSeparation: 30,
+      subTeeSeparation: 30,
+      padding: 50
+    },
+    nodeStructure: convert(t.data, [], 1, t.id)
+  });
+} catch (err) {
+  console.error("Treant error tree", t.id, err);
+}
 
   setTimeout(() => {
     trees.forEach(t => {
