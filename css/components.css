@@ -226,7 +226,7 @@ body.connect-mode .node-box { cursor: pointer; }
 .tree-instance {
   position: absolute;
   z-index: 1;
-  background: #ffff00; /* LAYER 2 - KUNING */
+  background: #ffff0000; /* LAYER 2 - KUNING */
   overflow: visible !important;
   pointer-events: none !important;
 }
