@@ -76,8 +76,7 @@ let isFirstLoad = true;
 let currentZoom = 1;
 let isAdmin = false;
 
-// State Hubungkan
-let connectMode = null; // 'parent' atau 'child'
+let connectMode = null;
 let connectSourcePath = null;
 let connectSourceTreeId = null;
 
@@ -359,12 +358,30 @@ function removeNodeFromTree(tree, path) {
   }
 }
 
+function deleteTreeIfEmpty(treeId) {
+  if (treeId === 'main') return;
+  const tree = getTreeDataById(treeId);
+  if (!tree || !tree.name || tree.name === 'Root Kosong' || (tree.children && tree.children.length === 0 && tree.name === 'Root Kosong')) {
+    const idx = extraTrees.findIndex(t => t.id === treeId);
+    if (idx >= 0) {
+      extraTrees.splice(idx, 1);
+      delete treeOffsets[treeId];
+    }
+  }
+}
+
 function cleanEmptyTrees() {
   if (!currentTreeData || !currentTreeData.name) {
     currentTreeData = { name: 'Keluarga Utama', children: [] };
   }
   if (typeof extraTrees !== 'undefined') {
-    extraTrees = extraTrees.filter(t => t.data && t.data.name);
+    extraTrees = extraTrees.filter(t => {
+      if (!t.data || !t.data.name || t.data.name === 'Root Kosong') {
+        delete treeOffsets[t.id];
+        return false;
+      }
+      return true;
+    });
   }
 }
 
@@ -492,7 +509,6 @@ async function executeConnect(targetPath, targetTreeId) {
     return;
   }
   
-  // AMBIL NODE SEBELUM DIPUTUS
   let sourceNode = getNodeByPath(sourceTree, connectSourcePath);
   let targetNode = getNodeByPath(targetTree, targetPath);
   
@@ -502,7 +518,6 @@ async function executeConnect(targetPath, targetTreeId) {
     return;
   }
   
-  // Cegah circular reference
   if (isDescendant(sourceNode, targetNode) || isDescendant(targetNode, sourceNode)) {
     showCustomPopup('Tidak bisa menghubungkan ke keturunan sendiri!', 'Peringatan');
     cancelHubungkanMode();
@@ -510,34 +525,20 @@ async function executeConnect(targetPath, targetTreeId) {
   }
   
   if (connectMode === 'child') {
-    // A menjadi Anak dari B
-    
-    // 1. Simpan node A (deep copy)
     const nodeToMove = JSON.parse(JSON.stringify(sourceNode));
-    
-    // 2. Hapus A dari tree asalnya (CUT)
     removeNodeFromTree(sourceTree, connectSourcePath);
+    deleteTreeIfEmpty(connectSourceTreeId);
     
-    // 3. Dapatkan ulang referensi B (karena tree mungkin berubah)
     targetNode = getNodeByPath(targetTree, targetPath);
-    
-    // 4. Tambahkan A sebagai anak B
     if (!targetNode.children) targetNode.children = [];
     targetNode.children.push(nodeToMove);
     
   } else if (connectMode === 'parent') {
-    // A menjadi Orang Tua dari B
-    
-    // 1. Simpan node B (deep copy)
     const nodeToMove = JSON.parse(JSON.stringify(targetNode));
-    
-    // 2. Hapus B dari tree asalnya (CUT)
     removeNodeFromTree(targetTree, targetPath);
+    deleteTreeIfEmpty(targetTreeId);
     
-    // 3. Dapatkan ulang referensi A
     sourceNode = getNodeByPath(sourceTree, connectSourcePath);
-    
-    // 4. Tambahkan B sebagai anak A
     if (!sourceNode.children) sourceNode.children = [];
     sourceNode.children.push(nodeToMove);
   }
@@ -552,7 +553,7 @@ async function executeConnect(targetPath, targetTreeId) {
   showCustomPopup('Node berhasil dihubungkan!', 'Sukses');
 }
 
-// ========== PUTUSKAN (TIDAK DIUBAH) ==========
+// ========== PUTUSKAN (HANYA PUTUS GARIS, TIDAK PINDAH POSISI) ==========
 
 async function disconnectNode(path, treeId) {
   if (!isAdmin) return;
@@ -579,22 +580,21 @@ async function disconnectNode(path, treeId) {
   }
   
   const newId = (typeof newIdMT === 'function') ? newIdMT('t') : 't_' + Date.now().toString(36);
+  const currentOffset = treeOffsets[treeId] || { x: DEFAULT_MAIN_OFFSET.x, y: DEFAULT_MAIN_OFFSET.y };
+  
   extraTrees.push({
     id: newId,
     name: node.name.split('|')[0].trim(),
     data: node
   });
   
-  treeOffsets[newId] = {
-    x: DEFAULT_MAIN_OFFSET.x,
-    y: DEFAULT_MAIN_OFFSET.y + TREE_VERTICAL_GAP * extraTrees.length
-  };
+  treeOffsets[newId] = { ...currentOffset };
   
   await persistMultiState();
   resetSiblingColors();
   assignSiblingGroups(currentTreeData);
   renderTree();
-  showCustomPopup('Node diputuskan dan menjadi Root baru!', 'Sukses');
+  showCustomPopup('Node diputuskan dan menjadi Root mandiri!', 'Sukses');
 }
 
 // ========== STANDARD FUNCTIONS ==========
@@ -755,4 +755,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + cut-moving-final*/
+/*Stable + final-cut + putus-tanpa-pindah*/
