@@ -109,7 +109,6 @@ function zoomReset() {
 
 // ========== CENTER AKURAT KE ROOT NODE ==========
 function centerOnMainTree() {
-  // Reset zoom ke 100%
   scale = 1;
   offsetX = 0;
   offsetY = 0;
@@ -118,24 +117,26 @@ function centerOnMainTree() {
   updateZoomUI(100);
   
   const wrapper = document.getElementById('tree-wrapper');
-  const rootNode = document.querySelector('#tree-instance-main .node-box');
+  const main = document.getElementById('tree-instance-main');
   
-  if (wrapper && rootNode) {
-    // Dapatkan posisi root node relatif terhadap viewport
-    const nodeRect = rootNode.getBoundingClientRect();
-    const wrapperRect = wrapper.getBoundingClientRect();
+  if (!wrapper || !main) return;
+  
+  const rootNode = main.querySelector('.node-box');
+  
+  if (rootNode) {
+    // Posisi absolut root node di dalam #tree
+    const nodeLeft = parseFloat(rootNode.style.left) || 0;
+    const nodeTop = parseFloat(rootNode.style.top) || 0;
+    const absoluteX = main.offsetLeft + nodeLeft;
+    const absoluteY = main.offsetTop + nodeTop;
     
-    // Hitung target scroll agar node persis di tengah wrapper
-    const targetScrollLeft = wrapper.scrollLeft + (nodeRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (nodeRect.width / 2);
-    const targetScrollTop = wrapper.scrollTop + (nodeRect.top - wrapperRect.top) - (wrapper.clientHeight / 2) + (nodeRect.height / 2);
-    
-    wrapper.scrollLeft = Math.max(0, targetScrollLeft);
-    wrapper.scrollTop = Math.max(0, targetScrollTop);
-  } else if (wrapper) {
-    const main = document.getElementById('tree-instance-main');
-    if (main) {
-      main.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
-    }
+    // Scroll agar root node center di viewport
+    wrapper.scrollLeft = Math.max(0, absoluteX - wrapper.clientWidth / 2 + rootNode.offsetWidth / 2);
+    wrapper.scrollTop = Math.max(0, absoluteY - wrapper.clientHeight / 2 + rootNode.offsetHeight / 2);
+  } else {
+    // Fallback: center ke Aqua
+    wrapper.scrollLeft = Math.max(0, main.offsetLeft - wrapper.clientWidth / 2 + main.offsetWidth / 2);
+    wrapper.scrollTop = Math.max(0, main.offsetTop - wrapper.clientHeight / 2 + main.offsetHeight / 2);
   }
   saveViewState();
 }
@@ -159,7 +160,6 @@ function loadViewState() {
     const raw = localStorage.getItem(VIEW_KEY);
     const w = document.getElementById("tree-wrapper");
     if (!raw) {
-      // Tidak ada saved state, return false agar caller tahu
       return false;
     }
     const data = JSON.parse(raw);
@@ -375,4 +375,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + center-akurat + loadviewstate-return*/
+/*Stable + center-absolut-final*/
