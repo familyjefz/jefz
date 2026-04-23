@@ -93,37 +93,32 @@ function updateZoomFromSlider(e) {
   setZoom(parseInt(e.target.value));
 }
 
+// ========== RESET = UNSAVED ==========
 function zoomReset() {
+  centerOnMainTree();
+}
+
+function centerOnMainTree() {
   scale = 1;
   offsetX = 0;
   offsetY = 0;
   currentZoom = 1;
-
   applyTransform();
   updateZoomUI(100);
+  
   const slider = document.getElementById("zoom-slider");
   if (slider) slider.value = 100;
-  centerOnMainTree();
+  
+  const wrapper = document.getElementById('tree-wrapper');
+  if (!wrapper) return;
+  
+  wrapper.scrollLeft = 9000;
+  wrapper.scrollTop = 6850;
+  
   saveViewState();
 }
 
-function centerOnMainTree() {
-  const wrapper = document.getElementById("tree-wrapper");
-  if (!wrapper) return;
-  const main = document.getElementById("tree-instance-main");
-  if (!main) {
-    wrapper.scrollLeft = Math.max(0, 2500 - wrapper.clientWidth / 2);
-    wrapper.scrollTop  = 0;
-    return;
-  }
-  const rect = main.getBoundingClientRect();
-  const wRect = wrapper.getBoundingClientRect();
-  const centerX = (rect.left + rect.width / 2) - wRect.left + wrapper.scrollLeft;
-  const topY    = rect.top - wRect.top + wrapper.scrollTop;
-  wrapper.scrollLeft = Math.max(0, centerX - wrapper.clientWidth / 2);
-  wrapper.scrollTop  = Math.max(0, topY - 30);
-}
-
+// ========== SAVE & LOAD ==========
 function saveViewState() {
   try {
     const w = document.getElementById("tree-wrapper");
@@ -143,8 +138,8 @@ function loadViewState() {
     const raw = localStorage.getItem(VIEW_KEY);
     const w = document.getElementById("tree-wrapper");
     if (!raw) {
-      centerOnMainTree();
-      return;
+      // Tidak ada saved state
+      return false;
     }
     const data = JSON.parse(raw);
     scale = data.scale || 1;
@@ -154,14 +149,16 @@ function loadViewState() {
     applyTransform();
     updateZoomUI(Math.round(scale * 100));
     if (w) {
-      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 800;
-      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 400;
+      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 0;
+      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 0;
     }
+    return true; // Berhasil load saved state
   } catch (e) {
-    centerOnMainTree();
+    return false;
   }
 }
 
+// ========== HELPERS ==========
 function isAlwaysInteractive(target) {
   if (!target) return false;
   return !!(target.closest("textarea") ||
@@ -188,7 +185,6 @@ function suppressNextClick() {
 }
 
 function startDrag(e) {
-  if (repositionMode) return;
   const t = e.target;
   if (isAlwaysInteractive(t)) return;
 
@@ -206,7 +202,6 @@ function startDrag(e) {
 }
 
 function moveDrag(e) {
-  if (repositionMode) return;
   if (!pendingDrag && !isDragging) return;
 
   const dx = e.clientX - startX;
@@ -223,7 +218,6 @@ function moveDrag(e) {
 }
 
 function endDrag(e) {
-  if (repositionMode) return;
   if (isDragging && e) {
     const dx = (e.clientX ?? startX) - startX;
     const dy = (e.clientY ?? startY) - startY;
@@ -254,7 +248,6 @@ function touchStart(e) {
       e.preventDefault();
       return;
     }
-    if (repositionMode) return;
     isPinching = true;
     isDragging = false;
     pendingDrag = false;
@@ -266,7 +259,6 @@ function touchStart(e) {
 
   if (e.touches.length === 1) {
     if (isPinching || isInfoPinching || Date.now() < pinchCooldown) return;
-    if (repositionMode) return;
 
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -312,7 +304,6 @@ function touchMove(e) {
   }
 
   if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching && !isInfoPinching) {
-    if (repositionMode) return;
     const t = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
@@ -364,4 +355,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + view persist + reposisi-drag*/
+/*Stable + reset-unsaved-sama + saved*/
