@@ -107,7 +107,7 @@ function zoomReset() {
   saveViewState();
 }
 
-// ========== CENTER KE MAIN TREE DENGAN ZOOM 100% ==========
+// ========== CENTER KE ROOT NODE MAIN TREE ==========
 function centerOnMainTree() {
   const wrapper = document.getElementById("tree-wrapper");
   const main = document.getElementById("tree-instance-main");
@@ -121,12 +121,28 @@ function centerOnMainTree() {
   applyTransform();
   updateZoomUI(100);
   
-  // Scroll ke tengah main tree
-  const targetScrollX = main.offsetLeft - (wrapper.clientWidth / 2) + (main.offsetWidth / 2);
-  const targetScrollY = main.offsetTop - (wrapper.clientHeight / 2) + (main.offsetHeight / 2);
+  // Dapatkan root node dari main tree
+  const rootNode = main.querySelector('.node-box');
+  if (!rootNode) {
+    // Fallback ke offset Aqua
+    wrapper.scrollLeft = main.offsetLeft - (wrapper.clientWidth / 2) + (main.offsetWidth / 2);
+    wrapper.scrollTop = main.offsetTop - (wrapper.clientHeight / 2) + (main.offsetHeight / 2);
+    return;
+  }
   
-  wrapper.scrollLeft = Math.max(0, targetScrollX);
-  wrapper.scrollTop = Math.max(0, targetScrollY);
+  // Hitung posisi root node di dalam Aqua
+  const nodeLeft = parseFloat(rootNode.style.left) || 0;
+  const nodeTop = parseFloat(rootNode.style.top) || 0;
+  const nodeWidth = rootNode.offsetWidth;
+  const nodeHeight = rootNode.offsetHeight;
+  
+  // Posisi absolut root node di container #tree
+  const absoluteX = main.offsetLeft + nodeLeft;
+  const absoluteY = main.offsetTop + nodeTop;
+  
+  // Scroll agar root node center
+  wrapper.scrollLeft = absoluteX - (wrapper.clientWidth / 2) + (nodeWidth / 2);
+  wrapper.scrollTop = absoluteY - (wrapper.clientHeight / 2) + (nodeHeight / 2);
   
   saveViewState();
 }
@@ -365,4 +381,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + center-main-zoom100*/
+/*Stable + center-root-node*/
