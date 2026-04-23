@@ -187,8 +187,9 @@ function suppressNextClick() {
   }, 400);
 }
 
+// ========== MOUSE DRAG (REPOSISI MODE DIIZINKAN) ==========
 function startDrag(e) {
-  if (repositionMode) return;
+  // HAPUS: if (repositionMode) return;
   const t = e.target;
   if (isAlwaysInteractive(t)) return;
 
@@ -206,7 +207,7 @@ function startDrag(e) {
 }
 
 function moveDrag(e) {
-  if (repositionMode) return;
+  // HAPUS: if (repositionMode) return;
   if (!pendingDrag && !isDragging) return;
 
   const dx = e.clientX - startX;
@@ -223,7 +224,7 @@ function moveDrag(e) {
 }
 
 function endDrag(e) {
-  if (repositionMode) return;
+  // HAPUS: if (repositionMode) return;
   if (isDragging && e) {
     const dx = (e.clientX ?? startX) - startX;
     const dy = (e.clientY ?? startY) - startY;
@@ -236,6 +237,7 @@ function endDrag(e) {
   pendingDrag = false;
 }
 
+// ========== PINCH ZOOM ==========
 function getDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
@@ -254,7 +256,7 @@ function touchStart(e) {
       e.preventDefault();
       return;
     }
-    if (repositionMode) return;
+    // HAPUS: if (repositionMode) return;
     isPinching = true;
     isDragging = false;
     pendingDrag = false;
@@ -266,7 +268,7 @@ function touchStart(e) {
 
   if (e.touches.length === 1) {
     if (isPinching || isInfoPinching || Date.now() < pinchCooldown) return;
-    if (repositionMode) return;
+    // HAPUS: if (repositionMode) return;
 
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -312,7 +314,7 @@ function touchMove(e) {
   }
 
   if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching && !isInfoPinching) {
-    if (repositionMode) return;
+    // HAPUS: if (repositionMode) return;
     const t = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
@@ -364,4 +366,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + view persist*/
+/*Stable + reposisi-bisa-digeser*/
