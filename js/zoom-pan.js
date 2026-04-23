@@ -97,12 +97,12 @@ function zoomReset() {
   centerOnMainTree();
 }
 
-// ========== CENTER HARDCORE ==========
+// ========== CENTER KE ROOT NODE ==========
 function centerOnMainTree() {
-  scale = 2;
+  scale = 1;
   offsetX = 0;
   offsetY = 0;
-  currentZoom = 2;
+  currentZoom = 1;
   applyTransform();
   updateZoomUI(100);
   
@@ -351,4 +351,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + hardcore-200-9200-7100*/
+/*Stable + scrollIntoView-100*/
