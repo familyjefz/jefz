@@ -119,9 +119,9 @@ async function submitAddTree() {
   saveToUndo();
   const id = newId("t");
   
-  // Ukuran root node baru (estimasi)
-  const NODE_WIDTH = 100;
-  const NODE_HEIGHT = 60;
+  // Ukuran root node (estimasi akurat)
+  const NODE_WIDTH = 70;
+  const NODE_HEIGHT = 40;
   
   // Viewport center
   const wrapper = document.getElementById("tree-wrapper");
@@ -134,7 +134,7 @@ async function submitAddTree() {
     data: { name: val, children: [] }
   });
   
-  // Offset Aqua agar root node center di viewport
+  // Offset Aqua agar root node persis di tengah viewport
   treeOffsets[id] = {
     x: viewportCenterX - NODE_WIDTH / 2,
     y: viewportCenterY - NODE_HEIGHT / 2
