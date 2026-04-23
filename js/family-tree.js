@@ -144,8 +144,8 @@ function renderTree() {
   if (!container) return;
 
   const wrapper = document.getElementById("tree-wrapper");
-  const savedLeft = wrapper ? wrapper.scrollLeft : 0;
-  const savedTop = wrapper ? wrapper.scrollTop : 0;
+  const savedLeft = wrapper ? wrapper.scrollLeft : 800;
+  const savedTop = wrapper ? wrapper.scrollTop : 400;
 
   container.innerHTML = "";
 
@@ -237,14 +237,14 @@ function renderTree() {
     
     if (wrapper) {
       if (isFirstLoad) {
-        // Coba load saved state
         const hasSaved = (typeof loadViewState === "function") ? loadViewState() : false;
         if (!hasSaved) {
-          // Tidak ada saved state, lakukan reset
+          // Tidak ada saved state, lakukan Reset
           setTimeout(() => {
             centerOnMainTree();
-          }, 100);
+          }, 150);
         }
+        // Jika hasSaved = true, loadViewState sudah mengatur scroll
         isFirstLoad = false;
       } else {
         wrapper.scrollLeft = savedLeft;
@@ -793,4 +793,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + awal-buka-fix-final*/
+/*Stable + saved-fix-final*/
