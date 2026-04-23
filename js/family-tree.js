@@ -237,8 +237,22 @@ function renderTree() {
     
     if (wrapper) {
       if (isFirstLoad) {
-        if (typeof loadViewState === "function") loadViewState();
-        else if (typeof centerOnMainTree === "function") centerOnMainTree();
+        // Reset zoom ke 100%
+        scale = 1;
+        offsetX = 0;
+        offsetY = 0;
+        currentZoom = 1;
+        if (typeof applyTransform === 'function') applyTransform();
+        if (typeof updateZoomUI === 'function') updateZoomUI(100);
+        
+        // Scroll ke tengah main tree
+        const main = document.getElementById("tree-instance-main");
+        if (main) {
+          wrapper.scrollLeft = main.offsetLeft - (wrapper.clientWidth / 2) + (main.offsetWidth / 2);
+          wrapper.scrollTop = main.offsetTop - (wrapper.clientHeight / 2) + (main.offsetHeight / 2);
+        }
+        
+        if (typeof saveViewState === 'function') saveViewState();
         isFirstLoad = false;
       } else {
         wrapper.scrollLeft = savedLeft;
@@ -517,7 +531,6 @@ async function executeConnect(targetPath, targetTreeId) {
   if (connectMode === 'child') {
     const nodeToMove = JSON.parse(JSON.stringify(sourceNode));
     
-    // Jika yang dipindah adalah ROOT
     if (!connectSourcePath || connectSourcePath.length === 0) {
       if (connectSourceTreeId !== 'main') {
         const idx = extraTrees.findIndex(t => t.id === connectSourceTreeId);
@@ -788,4 +801,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + cutting-root-fix*/
+/*Stable + center-awal-fix*/
