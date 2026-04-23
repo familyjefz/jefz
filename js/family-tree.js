@@ -237,10 +237,11 @@ function renderTree() {
     
     if (wrapper) {
       if (isFirstLoad) {
-        if (typeof loadViewState === "function") {
-          loadViewState();
-        } else {
-          centerOnMainTree();
+        const hasSavedState = (typeof loadViewState === "function") ? loadViewState() : false;
+        if (!hasSavedState) {
+          setTimeout(() => {
+            centerOnMainTree();
+          }, 100);
         }
         isFirstLoad = false;
       } else {
@@ -790,4 +791,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + final-loadviewstate*/
+/*Stable + awal-buka-reset*/
