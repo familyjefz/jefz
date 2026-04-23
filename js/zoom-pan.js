@@ -93,11 +93,21 @@ function updateZoomFromSlider(e) {
   setZoom(parseInt(e.target.value));
 }
 
-// ========== RESET = UNSAVED ==========
 function zoomReset() {
+  scale = 1;
+  offsetX = 0;
+  offsetY = 0;
+  currentZoom = 1;
+
+  applyTransform();
+  updateZoomUI(100);
+  const slider = document.getElementById("zoom-slider");
+  if (slider) slider.value = 100;
   centerOnMainTree();
+  saveViewState();
 }
 
+// ========== CENTER AKURAT KE ROOT NODE ==========
 function centerOnMainTree() {
   scale = 1;
   offsetX = 0;
@@ -106,19 +116,25 @@ function centerOnMainTree() {
   applyTransform();
   updateZoomUI(100);
   
-  const slider = document.getElementById("zoom-slider");
-  if (slider) slider.value = 100;
-  
   const wrapper = document.getElementById('tree-wrapper');
-  if (!wrapper) return;
+  const rootNode = document.querySelector('#tree-instance-main .node-box');
   
-  wrapper.scrollLeft = 9000;
-  wrapper.scrollTop = 6850;
+  if (!wrapper || !rootNode) return;
+  
+  // Posisi root node relatif terhadap viewport
+  const rootRect = rootNode.getBoundingClientRect();
+  const wrapperRect = wrapper.getBoundingClientRect();
+  
+  // Hitung scroll yang diperlukan agar root node center di wrapper
+  const targetScrollLeft = wrapper.scrollLeft + (rootRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (rootRect.width / 2);
+  const targetScrollTop = wrapper.scrollTop + (rootRect.top - wrapperRect.top) - (wrapper.clientHeight / 2) + (rootRect.height / 2);
+  
+  wrapper.scrollLeft = Math.max(0, targetScrollLeft);
+  wrapper.scrollTop = Math.max(0, targetScrollTop);
   
   saveViewState();
 }
 
-// ========== SAVE & LOAD ==========
 function saveViewState() {
   try {
     const w = document.getElementById("tree-wrapper");
@@ -138,7 +154,6 @@ function loadViewState() {
     const raw = localStorage.getItem(VIEW_KEY);
     const w = document.getElementById("tree-wrapper");
     if (!raw) {
-      // Tidak ada saved state
       return false;
     }
     const data = JSON.parse(raw);
@@ -152,13 +167,12 @@ function loadViewState() {
       w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 0;
       w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 0;
     }
-    return true; // Berhasil load saved state
+    return true;
   } catch (e) {
     return false;
   }
 }
 
-// ========== HELPERS ==========
 function isAlwaysInteractive(target) {
   if (!target) return false;
   return !!(target.closest("textarea") ||
@@ -355,4 +369,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + reset-unsaved-sama + saved*/
+/*Stable + center-boundingrect-fix*/
