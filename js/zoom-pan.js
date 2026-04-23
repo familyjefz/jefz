@@ -107,9 +107,8 @@ function zoomReset() {
   saveViewState();
 }
 
-// ========== CENTER KE ROOT NODE MAIN TREE DENGAN SCROLLINTOVIEW ==========
+// ========== CENTER AKURAT KE ROOT NODE ==========
 function centerOnMainTree() {
-  // Reset zoom ke 100%
   scale = 1;
   offsetX = 0;
   offsetY = 0;
@@ -117,12 +116,19 @@ function centerOnMainTree() {
   applyTransform();
   updateZoomUI(100);
   
-  // Cari root node main tree
+  const wrapper = document.getElementById('tree-wrapper');
   const rootNode = document.querySelector('#tree-instance-main .node-box');
-  if (rootNode) {
-    rootNode.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
-  } else {
-    // Fallback ke Aqua
+  
+  if (wrapper && rootNode) {
+    const nodeRect = rootNode.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    
+    const targetScrollLeft = wrapper.scrollLeft + (nodeRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (nodeRect.width / 2);
+    const targetScrollTop = wrapper.scrollTop + (nodeRect.top - wrapperRect.top) - (wrapper.clientHeight / 2) + (nodeRect.height / 2);
+    
+    wrapper.scrollLeft = Math.max(0, targetScrollLeft);
+    wrapper.scrollTop = Math.max(0, targetScrollTop);
+  } else if (wrapper) {
     const main = document.getElementById('tree-instance-main');
     if (main) {
       main.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
@@ -150,8 +156,7 @@ function loadViewState() {
     const raw = localStorage.getItem(VIEW_KEY);
     const w = document.getElementById("tree-wrapper");
     if (!raw) {
-      centerOnMainTree();
-      return;
+      return false;
     }
     const data = JSON.parse(raw);
     scale = data.scale || 1;
@@ -164,8 +169,9 @@ function loadViewState() {
       w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 800;
       w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 400;
     }
+    return true;
   } catch (e) {
-    centerOnMainTree();
+    return false;
   }
 }
 
@@ -365,4 +371,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + scrollIntoView-center*/
+/*Stable + center-akurat + return-boolean*/
