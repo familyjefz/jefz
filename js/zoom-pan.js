@@ -119,7 +119,7 @@ function centerOnMainTree() {
   const wrapper = document.getElementById('tree-wrapper');
   if (!wrapper) return;
   
-  wrapper.scrollLeft = 9050;
+  wrapper.scrollLeft = 9000;
   wrapper.scrollTop = 6850;
   
   saveViewState();
@@ -359,4 +359,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + hardcore-center-9050-6850*/
+/*Stable + hardcore-9000-6850*/
