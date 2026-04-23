@@ -36,7 +36,6 @@ function isInfoModalOpen() {
   const disp = m.style.display;
   return disp === "flex" || disp === "block";
 }
-
 function applyInfoZoom() {
   const body = document.getElementById("info-body");
   if (body) body.style.setProperty("--info-zoom", String(infoZoom));
