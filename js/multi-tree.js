@@ -121,13 +121,9 @@ async function submitAddTree() {
   
   const wrapper = document.getElementById("tree-wrapper");
   
-  // Viewport center
+  // Viewport center = offset Aqua (root node muncul di pojok kiri-atas Aqua)
   const targetX = wrapper.scrollLeft + wrapper.clientWidth / 2;
   const targetY = wrapper.scrollTop + wrapper.clientHeight / 2;
-  
-  // Ukuran root node (estimasi)
-  const NODE_WIDTH = 70;
-  const NODE_HEIGHT = 40;
   
   extraTrees.push({
     id,
@@ -136,8 +132,8 @@ async function submitAddTree() {
   });
   
   treeOffsets[id] = {
-    x: targetX - NODE_WIDTH / 2,
-    y: targetY - NODE_HEIGHT / 2
+    x: targetX,
+    y: targetY
   };
   
   visibleTrees = "all";
