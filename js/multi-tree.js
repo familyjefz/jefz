@@ -104,11 +104,6 @@ function openAddTreeModal() {
   m.style.display = "flex";
   setTimeout(() => document.getElementById("addtree-name-input").focus(), 10);
 }
-
-function closeAddTreeModal() {
-  document.getElementById("addtree-modal").style.display = "none";
-}
-
 async function submitAddTree() {
   const input = document.getElementById("addtree-name-input");
   const val = (input.value || "").trim();
@@ -119,14 +114,15 @@ async function submitAddTree() {
   saveToUndo();
   const id = newId("t");
   
-  // Ukuran root node (estimasi akurat)
-  const NODE_WIDTH = 70;
-  const NODE_HEIGHT = 40;
+  const wrapper = document.getElementById("tree-wrapper");
   
   // Viewport center
-  const wrapper = document.getElementById("tree-wrapper");
-  const viewportCenterX = wrapper.scrollLeft + wrapper.clientWidth / 2;
-  const viewportCenterY = wrapper.scrollTop + wrapper.clientHeight / 2;
+  const targetX = wrapper.scrollLeft + wrapper.clientWidth / 2;
+  const targetY = wrapper.scrollTop + wrapper.clientHeight / 2;
+  
+  // Ukuran root node (estimasi)
+  const NODE_WIDTH = 70;
+  const NODE_HEIGHT = 40;
   
   extraTrees.push({
     id,
@@ -134,10 +130,10 @@ async function submitAddTree() {
     data: { name: val, children: [] }
   });
   
-  // Offset Aqua agar root node persis di tengah viewport
+  // Offset Aqua: target center - setengah node
   treeOffsets[id] = {
-    x: viewportCenterX - NODE_WIDTH / 2,
-    y: viewportCenterY - NODE_HEIGHT / 2
+    x: targetX - NODE_WIDTH / 2,
+    y: targetY - NODE_HEIGHT / 2
   };
   
   visibleTrees = "all";
@@ -147,7 +143,6 @@ async function submitAddTree() {
   renderTree();
   showCustomPopup("Tree baru berhasil dibuat!", "Sukses");
 }
-
 function focusOnNodeKey(nodeKey) {
   const wrapper = document.getElementById("tree-wrapper");
   const el = document.querySelector(`.node-box[data-node-key="${cssEscapeMT(nodeKey)}"]`);
