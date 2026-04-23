@@ -107,7 +107,7 @@ function zoomReset() {
   saveViewState();
 }
 
-// ========== CENTER AKURAT KE ROOT NODE ==========
+// ========== CENTER HARDCORE ==========
 function centerOnMainTree() {
   scale = 1;
   offsetX = 0;
@@ -117,20 +117,10 @@ function centerOnMainTree() {
   updateZoomUI(100);
   
   const wrapper = document.getElementById('tree-wrapper');
-  const rootNode = document.querySelector('#tree-instance-main .node-box');
+  if (!wrapper) return;
   
-  if (!wrapper || !rootNode) return;
-  
-  // Posisi root node relatif terhadap viewport
-  const rootRect = rootNode.getBoundingClientRect();
-  const wrapperRect = wrapper.getBoundingClientRect();
-  
-  // Hitung scroll yang diperlukan agar root node center di wrapper
-  const targetScrollLeft = wrapper.scrollLeft + (rootRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (rootRect.width / 2);
-  const targetScrollTop = wrapper.scrollTop + (rootRect.top - wrapperRect.top) - (wrapper.clientHeight / 2) + (rootRect.height / 2);
-  
-  wrapper.scrollLeft = Math.max(0, targetScrollLeft);
-  wrapper.scrollTop = Math.max(0, targetScrollTop);
+  wrapper.scrollLeft = 9050;
+  wrapper.scrollTop = 6850;
   
   saveViewState();
 }
@@ -369,4 +359,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + center-boundingrect-fix*/
+/*Stable + hardcore-center-9050-6850*/
