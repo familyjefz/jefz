@@ -237,22 +237,12 @@ function renderTree() {
     
     if (wrapper) {
       if (isFirstLoad) {
-        // Reset zoom ke 100%
-        scale = 1;
-        offsetX = 0;
-        offsetY = 0;
-        currentZoom = 1;
-        if (typeof applyTransform === 'function') applyTransform();
-        if (typeof updateZoomUI === 'function') updateZoomUI(100);
-        
-        // Scroll ke tengah main tree
-        const main = document.getElementById("tree-instance-main");
-        if (main) {
-          wrapper.scrollLeft = main.offsetLeft - (wrapper.clientWidth / 2) + (main.offsetWidth / 2);
-          wrapper.scrollTop = main.offsetTop - (wrapper.clientHeight / 2) + (main.offsetHeight / 2);
+        // Kembalikan saved state
+        if (typeof loadViewState === "function") {
+          loadViewState();
+        } else {
+          centerOnMainTree();
         }
-        
-        if (typeof saveViewState === 'function') saveViewState();
         isFirstLoad = false;
       } else {
         wrapper.scrollLeft = savedLeft;
@@ -801,4 +791,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + center-awal-fix*/
+/*Stable + loadviewstate-return*/
