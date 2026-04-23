@@ -237,7 +237,6 @@ function renderTree() {
     
     if (wrapper) {
       if (isFirstLoad) {
-        // Kembalikan saved state
         if (typeof loadViewState === "function") {
           loadViewState();
         } else {
@@ -791,4 +790,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + loadviewstate-return*/
+/*Stable + final-loadviewstate*/
