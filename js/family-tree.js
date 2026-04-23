@@ -177,22 +177,23 @@ function renderTree() {
     }
 
     try {
-  new Treant({
-    chart: {
-      container: `#tree-instance-${t.id}`,
-      rootOrientation: "NORTH",
-      connectors: { type: "step" },
-      animateOnInit: false,
-      levelSeparation: 50,
-      siblingSeparation: 30,
-      subTeeSeparation: 30,
-      padding: 50
-    },
-    nodeStructure: convert(t.data, [], 1, t.id)
+      new Treant({
+        chart: {
+          container: `#tree-instance-${t.id}`,
+          rootOrientation: "NORTH",
+          connectors: { type: "step" },
+          animateOnInit: false,
+          levelSeparation: 50,
+          siblingSeparation: 30,
+          subTeeSeparation: 30,
+          padding: 50
+        },
+        nodeStructure: convert(t.data, [], 1, t.id)
+      });
+    } catch (err) {
+      console.error("Treant error tree", t.id, err);
+    }
   });
-} catch (err) {
-  console.error("Treant error tree", t.id, err);
-}
 
   setTimeout(() => {
     trees.forEach(t => {
@@ -790,4 +791,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + no-rerender*/
+/*Stable + original-spacing*/
