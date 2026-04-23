@@ -119,7 +119,11 @@ async function submitAddTree() {
   saveToUndo();
   const id = newId("t");
   
-  // Hitung posisi tengah viewport saat ini (seperti disconnectNode)
+  // Ukuran root node baru (estimasi)
+  const NODE_WIDTH = 100;
+  const NODE_HEIGHT = 60;
+  
+  // Viewport center
   const wrapper = document.getElementById("tree-wrapper");
   const viewportCenterX = wrapper.scrollLeft + wrapper.clientWidth / 2;
   const viewportCenterY = wrapper.scrollTop + wrapper.clientHeight / 2;
@@ -130,10 +134,10 @@ async function submitAddTree() {
     data: { name: val, children: [] }
   });
   
-  // Tree baru muncul di tengah viewport
+  // Offset Aqua agar root node center di viewport
   treeOffsets[id] = {
-    x: viewportCenterX,
-    y: viewportCenterY
+    x: viewportCenterX - NODE_WIDTH / 2,
+    y: viewportCenterY - NODE_HEIGHT / 2
   };
   
   visibleTrees = "all";
