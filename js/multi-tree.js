@@ -11,7 +11,6 @@ let visibleTrees = "all";
 const DEFAULT_MAIN_OFFSET = { x: 2300, y: 50 };
 const TREE_VERTICAL_GAP   = 600;
 
-// Escape HTML lokal
 function escapeHtmlMT(str) {
   if (!str) return "";
   return str.replace(/[&<>]/g, function(m) {
@@ -97,7 +96,7 @@ async function persistMultiState() {
   }
 }
 
-// ========== ADD TREE ==========
+// ========== ADD TREE - MUNCUL DI TENGAH VIEWPORT ==========
 function openAddTreeModal() {
   if (!isAdmin) return;
   const m = document.getElementById("addtree-modal");
@@ -119,15 +118,24 @@ async function submitAddTree() {
   }
   saveToUndo();
   const id = newId("t");
+  
+  // Hitung posisi tengah viewport saat ini
+  const wrapper = document.getElementById("tree-wrapper");
+  const viewportCenterX = (wrapper.scrollLeft + wrapper.clientWidth / 2);
+  const viewportCenterY = (wrapper.scrollTop + wrapper.clientHeight / 2);
+  
   extraTrees.push({
     id,
     name: val,
     data: { name: val, children: [] }
   });
+  
+  // Tree baru muncul di tengah viewport
   treeOffsets[id] = {
-    x: DEFAULT_MAIN_OFFSET.x,
-    y: DEFAULT_MAIN_OFFSET.y + TREE_VERTICAL_GAP * extraTrees.length
+    x: viewportCenterX - 100,
+    y: viewportCenterY - 50
   };
+  
   visibleTrees = "all";
   closeAddTreeModal();
 
@@ -161,7 +169,6 @@ function openFilterModal() {
   const list = document.getElementById("filter-tree-list");
   list.innerHTML = "";
   
-  // Gunakan window.getAllTrees jika ada, atau fallback
   const trees = (typeof window.getAllTrees === 'function') ? window.getAllTrees() : [];
   
   trees.forEach((t, index) => {
@@ -583,4 +590,4 @@ function updateAdminButtons() {
 
 window.initMultiTree = initMultiTree;
 window.updateAdminButtons = updateAdminButtons;
-/*New: multi-tree + filter-nomor-otomatis + escapeHtml-lokal*/
+/*New: multi-tree + viewport-center-addtree*/
