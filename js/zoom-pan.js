@@ -107,21 +107,28 @@ function zoomReset() {
   saveViewState();
 }
 
+// ========== CENTER KE MAIN TREE DENGAN ZOOM 100% ==========
 function centerOnMainTree() {
   const wrapper = document.getElementById("tree-wrapper");
-  if (!wrapper) return;
   const main = document.getElementById("tree-instance-main");
-  if (!main) {
-    wrapper.scrollLeft = Math.max(0, 2500 - wrapper.clientWidth / 2);
-    wrapper.scrollTop  = 0;
-    return;
-  }
-  const rect = main.getBoundingClientRect();
-  const wRect = wrapper.getBoundingClientRect();
-  const centerX = (rect.left + rect.width / 2) - wRect.left + wrapper.scrollLeft;
-  const topY    = rect.top - wRect.top + wrapper.scrollTop;
-  wrapper.scrollLeft = Math.max(0, centerX - wrapper.clientWidth / 2);
-  wrapper.scrollTop  = Math.max(0, topY - 30);
+  if (!wrapper || !main) return;
+  
+  // Reset zoom ke 100%
+  scale = 1;
+  offsetX = 0;
+  offsetY = 0;
+  currentZoom = 1;
+  applyTransform();
+  updateZoomUI(100);
+  
+  // Scroll ke tengah main tree
+  const targetScrollX = main.offsetLeft - (wrapper.clientWidth / 2) + (main.offsetWidth / 2);
+  const targetScrollY = main.offsetTop - (wrapper.clientHeight / 2) + (main.offsetHeight / 2);
+  
+  wrapper.scrollLeft = Math.max(0, targetScrollX);
+  wrapper.scrollTop = Math.max(0, targetScrollY);
+  
+  saveViewState();
 }
 
 function saveViewState() {
@@ -187,9 +194,7 @@ function suppressNextClick() {
   }, 400);
 }
 
-// ========== MOUSE DRAG (REPOSISI MODE DIIZINKAN) ==========
 function startDrag(e) {
-  // HAPUS: if (repositionMode) return;
   const t = e.target;
   if (isAlwaysInteractive(t)) return;
 
@@ -207,7 +212,6 @@ function startDrag(e) {
 }
 
 function moveDrag(e) {
-  // HAPUS: if (repositionMode) return;
   if (!pendingDrag && !isDragging) return;
 
   const dx = e.clientX - startX;
@@ -224,7 +228,6 @@ function moveDrag(e) {
 }
 
 function endDrag(e) {
-  // HAPUS: if (repositionMode) return;
   if (isDragging && e) {
     const dx = (e.clientX ?? startX) - startX;
     const dy = (e.clientY ?? startY) - startY;
@@ -237,7 +240,6 @@ function endDrag(e) {
   pendingDrag = false;
 }
 
-// ========== PINCH ZOOM ==========
 function getDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
@@ -256,7 +258,6 @@ function touchStart(e) {
       e.preventDefault();
       return;
     }
-    // HAPUS: if (repositionMode) return;
     isPinching = true;
     isDragging = false;
     pendingDrag = false;
@@ -268,7 +269,6 @@ function touchStart(e) {
 
   if (e.touches.length === 1) {
     if (isPinching || isInfoPinching || Date.now() < pinchCooldown) return;
-    // HAPUS: if (repositionMode) return;
 
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -314,7 +314,6 @@ function touchMove(e) {
   }
 
   if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching && !isInfoPinching) {
-    // HAPUS: if (repositionMode) return;
     const t = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
@@ -366,4 +365,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + reposisi-bisa-digeser*/
+/*Stable + center-main-zoom100*/
