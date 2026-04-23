@@ -109,6 +109,7 @@ function zoomReset() {
 
 // ========== CENTER AKURAT KE ROOT NODE ==========
 function centerOnMainTree() {
+  // Reset zoom ke 100%
   scale = 1;
   offsetX = 0;
   offsetY = 0;
@@ -120,9 +121,11 @@ function centerOnMainTree() {
   const rootNode = document.querySelector('#tree-instance-main .node-box');
   
   if (wrapper && rootNode) {
+    // Dapatkan posisi root node relatif terhadap viewport
     const nodeRect = rootNode.getBoundingClientRect();
     const wrapperRect = wrapper.getBoundingClientRect();
     
+    // Hitung target scroll agar node persis di tengah wrapper
     const targetScrollLeft = wrapper.scrollLeft + (nodeRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (nodeRect.width / 2);
     const targetScrollTop = wrapper.scrollTop + (nodeRect.top - wrapperRect.top) - (wrapper.clientHeight / 2) + (nodeRect.height / 2);
     
@@ -156,6 +159,7 @@ function loadViewState() {
     const raw = localStorage.getItem(VIEW_KEY);
     const w = document.getElementById("tree-wrapper");
     if (!raw) {
+      // Tidak ada saved state, return false agar caller tahu
       return false;
     }
     const data = JSON.parse(raw);
@@ -166,8 +170,8 @@ function loadViewState() {
     applyTransform();
     updateZoomUI(Math.round(scale * 100));
     if (w) {
-      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 800;
-      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 400;
+      w.scrollLeft = (typeof data.scrollLeft === "number") ? data.scrollLeft : 0;
+      w.scrollTop  = (typeof data.scrollTop  === "number") ? data.scrollTop  : 0;
     }
     return true;
   } catch (e) {
@@ -371,4 +375,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + center-akurat + return-boolean*/
+/*Stable + center-akurat + loadviewstate-return*/
