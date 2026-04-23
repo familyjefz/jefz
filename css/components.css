@@ -120,7 +120,7 @@
 button:not(.tree-wrapper button) { cursor: pointer; }
 .pin-input, .node-input { cursor: text; }
 
-/* ========== MODAL ========== */
+/* ========== MODAL - LAYER 7 ========== */
 .modal {
   display: none; position: fixed; z-index: 1000; left: 0; top: 0;
   width: 100%; height: 100%;
@@ -175,7 +175,7 @@ button:not(.tree-wrapper button) { cursor: pointer; }
 /* ========== INFO BODY ZOOM ========== */
 #info-body { zoom: var(--info-zoom, 1); }
 
-/* ========== CUSTOM POPUP ========== */
+/* ========== CUSTOM POPUP - LAYER 8 ========== */
 .custom-popup {
   display: none; position: fixed; z-index: 1001; left: 0; top: 0;
   width: 100%; height: 100%; background: rgba(0,0,0,0.014);
@@ -212,9 +212,29 @@ button:not(.tree-wrapper button) { cursor: pointer; }
 .node-box.connect-source { outline: 2px dashed #8cabe5; outline-offset: 2px; }
 body.connect-mode .node-box { cursor: pointer; }
 
-/* ========== TREE INSTANCE ========== */
+/* ========== TREE INSTANCE (AQUA) - TRANSPARAN & TIDAK MENGHALANGI ========== */
 .tree-instance {
-  position: absolute; top: 0; left: 0; z-index: 1;
+  position: absolute;
+  z-index: 1;
+  background: transparent !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+}
+
+/* Node, line, dan elemen interaktif di dalam Aqua tetap bisa diklik */
+.tree-instance .node-box,
+.tree-instance .node-box *,
+.tree-instance .node-edge-left,
+.tree-instance .Treant line,
+.tree-instance .Treant path,
+.tree-instance .Treant polyline {
+  pointer-events: auto !important;
+}
+
+/* ========== TREANT WRAPPER ========== */
+.Treant {
+  width: 100%;
+  height: 100%;
 }
 
 /* ========== MANUAL LINKS SVG ========== */
