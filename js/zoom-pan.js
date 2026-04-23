@@ -97,7 +97,7 @@ function zoomReset() {
   centerOnMainTree();
 }
 
-// ========== CENTER KE ROOT NODE ==========
+// ========== CENTER HARDCORE ==========
 function centerOnMainTree() {
   scale = 1;
   offsetX = 0;
@@ -109,10 +109,11 @@ function centerOnMainTree() {
   const slider = document.getElementById("zoom-slider");
   if (slider) slider.value = 100;
   
-  const rootNode = document.querySelector('#tree-instance-main .node-box');
-  if (rootNode) {
-    rootNode.scrollIntoView({ block: 'center', inline: 'center', behavior: 'auto' });
-  }
+  const wrapper = document.getElementById('tree-wrapper');
+  if (!wrapper) return;
+  
+  wrapper.scrollLeft = 9000;
+  wrapper.scrollTop = 6850;
   
   saveViewState();
 }
@@ -351,4 +352,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + scrollIntoView-100*/
+/*Stable + hardcore-9000-6850*/
