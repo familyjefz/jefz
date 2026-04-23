@@ -104,6 +104,11 @@ function openAddTreeModal() {
   m.style.display = "flex";
   setTimeout(() => document.getElementById("addtree-name-input").focus(), 10);
 }
+
+function closeAddTreeModal() {
+  document.getElementById("addtree-modal").style.display = "none";
+}
+
 async function submitAddTree() {
   const input = document.getElementById("addtree-name-input");
   const val = (input.value || "").trim();
@@ -130,7 +135,6 @@ async function submitAddTree() {
     data: { name: val, children: [] }
   });
   
-  // Offset Aqua: target center - setengah node
   treeOffsets[id] = {
     x: targetX - NODE_WIDTH / 2,
     y: targetY - NODE_HEIGHT / 2
@@ -143,6 +147,7 @@ async function submitAddTree() {
   renderTree();
   showCustomPopup("Tree baru berhasil dibuat!", "Sukses");
 }
+
 function focusOnNodeKey(nodeKey) {
   const wrapper = document.getElementById("tree-wrapper");
   const el = document.querySelector(`.node-box[data-node-key="${cssEscapeMT(nodeKey)}"]`);
@@ -587,4 +592,4 @@ function updateAdminButtons() {
 
 window.initMultiTree = initMultiTree;
 window.updateAdminButtons = updateAdminButtons;
-/*New: multi-tree + viewport-center-addtree-final*/
+/*New: multi-tree + viewport-center-final*/
