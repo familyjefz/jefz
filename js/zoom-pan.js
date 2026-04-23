@@ -117,27 +117,21 @@ function centerOnMainTree() {
   updateZoomUI(100);
   
   const wrapper = document.getElementById('tree-wrapper');
-  const main = document.getElementById('tree-instance-main');
+  const rootNode = document.querySelector('#tree-instance-main .node-box');
   
-  if (!wrapper || !main) return;
+  if (!wrapper || !rootNode) return;
   
-  const rootNode = main.querySelector('.node-box');
+  // Posisi root node relatif terhadap viewport
+  const rootRect = rootNode.getBoundingClientRect();
+  const wrapperRect = wrapper.getBoundingClientRect();
   
-  if (rootNode) {
-    // Posisi absolut root node di dalam #tree
-    const nodeLeft = parseFloat(rootNode.style.left) || 0;
-    const nodeTop = parseFloat(rootNode.style.top) || 0;
-    const absoluteX = main.offsetLeft + nodeLeft;
-    const absoluteY = main.offsetTop + nodeTop;
-    
-    // Scroll agar root node center di viewport
-    wrapper.scrollLeft = Math.max(0, absoluteX - wrapper.clientWidth / 2 + rootNode.offsetWidth / 2);
-    wrapper.scrollTop = Math.max(0, absoluteY - wrapper.clientHeight / 2 + rootNode.offsetHeight / 2);
-  } else {
-    // Fallback: center ke Aqua
-    wrapper.scrollLeft = Math.max(0, main.offsetLeft - wrapper.clientWidth / 2 + main.offsetWidth / 2);
-    wrapper.scrollTop = Math.max(0, main.offsetTop - wrapper.clientHeight / 2 + main.offsetHeight / 2);
-  }
+  // Hitung scroll yang diperlukan agar root node center di wrapper
+  const targetScrollLeft = wrapper.scrollLeft + (rootRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (rootRect.width / 2);
+  const targetScrollTop = wrapper.scrollTop + (rootRect.top - wrapperRect.top) - (wrapper.clientHeight / 2) + (rootRect.height / 2);
+  
+  wrapper.scrollLeft = Math.max(0, targetScrollLeft);
+  wrapper.scrollTop = Math.max(0, targetScrollTop);
+  
   saveViewState();
 }
 
@@ -375,4 +369,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-/*Stable + center-absolut-final*/
+/*Stable + center-boundingrect-fix*/
