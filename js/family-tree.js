@@ -337,17 +337,7 @@ function isDescendant(ancestor, descendant) {
 }
 
 function removeNodeFromTree(tree, path) {
-  if (!path || path.length === 0) {
-    if (tree.children && tree.children.length > 0) {
-      const firstChild = tree.children[0];
-      tree.name = firstChild.name;
-      tree.children = firstChild.children || [];
-    } else {
-      tree.name = 'Root Kosong';
-      tree.children = [];
-    }
-    return;
-  }
+  if (!path || path.length === 0) return;
   
   const parentPath = path.slice(0, -1);
   const nodeIndex = path[path.length - 1];
@@ -361,7 +351,7 @@ function removeNodeFromTree(tree, path) {
 function deleteTreeIfEmpty(treeId) {
   if (treeId === 'main') return;
   const tree = getTreeDataById(treeId);
-  if (!tree || !tree.name || tree.name === 'Root Kosong' || (tree.children && tree.children.length === 0 && tree.name === 'Root Kosong')) {
+  if (!tree || !tree.name || tree.name === 'Root Kosong' || (tree.children && tree.children.length === 0)) {
     const idx = extraTrees.findIndex(t => t.id === treeId);
     if (idx >= 0) {
       extraTrees.splice(idx, 1);
@@ -526,7 +516,29 @@ async function executeConnect(targetPath, targetTreeId) {
   
   if (connectMode === 'child') {
     const nodeToMove = JSON.parse(JSON.stringify(sourceNode));
-    removeNodeFromTree(sourceTree, connectSourcePath);
+    
+    // Jika yang dipindah adalah ROOT
+    if (!connectSourcePath || connectSourcePath.length === 0) {
+      if (connectSourceTreeId !== 'main') {
+        const idx = extraTrees.findIndex(t => t.id === connectSourceTreeId);
+        if (idx >= 0) {
+          extraTrees.splice(idx, 1);
+          delete treeOffsets[connectSourceTreeId];
+        }
+      } else {
+        if (sourceTree.children && sourceTree.children.length > 0) {
+          const firstChild = sourceTree.children[0];
+          sourceTree.name = firstChild.name;
+          sourceTree.children = firstChild.children || [];
+        } else {
+          sourceTree.name = 'Keluarga Utama';
+          sourceTree.children = [];
+        }
+      }
+    } else {
+      removeNodeFromTree(sourceTree, connectSourcePath);
+    }
+    
     deleteTreeIfEmpty(connectSourceTreeId);
     
     targetNode = getNodeByPath(targetTree, targetPath);
@@ -535,7 +547,28 @@ async function executeConnect(targetPath, targetTreeId) {
     
   } else if (connectMode === 'parent') {
     const nodeToMove = JSON.parse(JSON.stringify(targetNode));
-    removeNodeFromTree(targetTree, targetPath);
+    
+    if (!targetPath || targetPath.length === 0) {
+      if (targetTreeId !== 'main') {
+        const idx = extraTrees.findIndex(t => t.id === targetTreeId);
+        if (idx >= 0) {
+          extraTrees.splice(idx, 1);
+          delete treeOffsets[targetTreeId];
+        }
+      } else {
+        if (targetTree.children && targetTree.children.length > 0) {
+          const firstChild = targetTree.children[0];
+          targetTree.name = firstChild.name;
+          targetTree.children = firstChild.children || [];
+        } else {
+          targetTree.name = 'Keluarga Utama';
+          targetTree.children = [];
+        }
+      }
+    } else {
+      removeNodeFromTree(targetTree, targetPath);
+    }
+    
     deleteTreeIfEmpty(targetTreeId);
     
     sourceNode = getNodeByPath(sourceTree, connectSourcePath);
@@ -755,4 +788,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
-/*Stable + final-cut + putus-tanpa-pindah*/
+/*Stable + cutting-root-fix*/
