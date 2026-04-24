@@ -347,5 +347,115 @@ body.hubungkan-mode .node-box {
 body.hubungkan-mode .node-box:hover {
   outline: 2px solid #00a8f7;
 }
+/* ========== CONNECT MODE BANNER ========== */
+.connect-mode-banner {
+  display: none;
+  position: fixed;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #8cabe5;
+  color: #000;
+  padding: 8px 14px;
+  border-radius: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  z-index: 900;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: bold;
+}
+.connect-mode-banner button {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+body.connect-mode-active .node-box {
+  cursor: pointer !important;
+  outline: 1px dashed #00a8f7;
+}
+body.connect-mode-active .node-box:hover {
+  outline: 2px solid #00a8f7;
+}
+.node-box.connect-highlight {
+  outline: 2px solid #ff9800 !important;
+  background: #fff3e0 !important;
+}
+
+/* Preview path */
+.manual-link-preview {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.manual-link-preview:hover {
+  stroke-width: 3 !important;
+}
+
+/* Popup edit garis */
+.link-edit-popup {
+  display: none;
+  position: fixed;
+  z-index: 1002;
+  background: rgba(30,30,30,0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  min-width: 140px;
+}
+.link-edit-popup button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  margin: 2px 0;
+  color: #fff;
+  text-align: left;
+}
+.link-edit-popup .lep-color-row {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+.link-edit-popup .lep-color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid #fff;
+}
+.link-edit-popup .lep-width-row {
+  display: flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+.link-edit-popup .lep-width-btn {
+  flex: 1;
+  text-align: center;
+  background: #555;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  color: #fff;
+}
+
+/* Tombol Connect di header */
+.connect-mode-btn {
+  background: #000000 !important;
+  color: white !important;
+}
+.connect-mode-btn:hover {
+  background: #00a8f7 !important;
+}
+.connect-mode-btn.active {
+  background: #00a8f7 !important;
+}
 
 /*Stable*/
