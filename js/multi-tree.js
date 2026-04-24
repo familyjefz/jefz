@@ -22,7 +22,7 @@ function escapeHtmlMT(str) {
   });
 }
 
-function newId(prefix) {
+function newIdMT(prefix) {
   return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7);
 }
 
@@ -118,7 +118,7 @@ async function submitAddTree() {
     return;
   }
   saveToUndo();
-  const id = newId("t");
+  const id = newIdMT("t");
   extraTrees.push({
     id,
     name: val,
@@ -161,7 +161,6 @@ function openFilterModal() {
   const list = document.getElementById("filter-tree-list");
   list.innerHTML = "";
   
-  // Gunakan window.getAllTrees jika ada, atau fallback
   const trees = (typeof window.getAllTrees === 'function') ? window.getAllTrees() : [];
   
   trees.forEach((t, index) => {
@@ -228,112 +227,6 @@ async function applyFilter() {
 }
 
 // ========== MANUAL LINKS ==========
-const DBLTAP_MS = 350;
-let lastEdgeTap = { key: null, time: 0 };
-let connectFromKey = null;
-
-function showConnectBanner() {
-  const b = document.getElementById("connect-banner");
-  if (b) b.style.display = "flex";
-}
-function hideConnectBanner() {
-  const b = document.getElementById("connect-banner");
-  if (b) b.style.display = "none";
-}
-
-function highlightConnectSource(nodeKey, on) {
-  const el = document.querySelector(`.node-box[data-node-key="${cssEscapeMT(nodeKey)}"]`);
-  if (!el) return;
-  if (on) el.classList.add("connect-source");
-  else el.classList.remove("connect-source");
-}
-
-function enterConnectMode(fromKey) {
-  if (connectFromKey) exitConnectMode();
-  connectFromKey = fromKey;
-  document.body.classList.add("connect-mode");
-  highlightConnectSource(fromKey, true);
-  showConnectBanner();
-}
-
-function exitConnectMode() {
-  if (connectFromKey) highlightConnectSource(connectFromKey, false);
-  connectFromKey = null;
-  document.body.classList.remove("connect-mode");
-  hideConnectBanner();
-}
-
-function nodeKeyExists(nodeKey) {
-  return !!document.querySelector(`.node-box[data-node-key="${cssEscapeMT(nodeKey)}"]`);
-}
-
-async function finalizeManualLink(fromKey, toKey) {
-  if (fromKey === toKey) { exitConnectMode(); return; }
-  const exists = manualLinks.some(l =>
-    (l.from === fromKey && l.to === toKey) ||
-    (l.from === toKey && l.to === fromKey)
-  );
-  if (exists) {
-    showCustomPopup("Tautan sudah ada antara dua node ini.", "Info");
-    exitConnectMode();
-    return;
-  }
-  saveToUndo();
-  manualLinks.push({ id: newId("l"), from: fromKey, to: toKey });
-  exitConnectMode();
-  await persistMultiState();
-  drawManualLinks();
-  showCustomPopup("Tautan manual dibuat!", "Sukses");
-}
-
-window.onEdgeClickForConnect = function(e) {
-  if (!isAdmin) return;
-  const edge = e.target.closest(".node-edge-left");
-  if (!edge) return;
-  const key = edge.getAttribute("data-edge-key");
-  if (!key) return;
-
-  if (connectFromKey) {
-    e.preventDefault(); e.stopPropagation();
-    if (nodeKeyExists(key) && key !== connectFromKey) {
-      finalizeManualLink(connectFromKey, key);
-    } else {
-      exitConnectMode();
-    }
-    return;
-  }
-
-  const now = Date.now();
-  if (lastEdgeTap.key === key && (now - lastEdgeTap.time) < DBLTAP_MS) {
-    e.preventDefault(); e.stopPropagation();
-    lastEdgeTap = { key: null, time: 0 };
-    enterConnectMode(key);
-  } else {
-    lastEdgeTap = { key, time: now };
-  }
-};
-
-function onNodeClickForConnectTarget(e) {
-  if (!connectFromKey) return;
-  if (e.target.closest("#connect-banner") ||
-      e.target.closest(".modal") ||
-      e.target.closest(".custom-popup")) return;
-
-  const box = e.target.closest(".node-box");
-  if (box) {
-    const targetKey = box.getAttribute("data-node-key");
-    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-    if (targetKey && targetKey !== connectFromKey) {
-      finalizeManualLink(connectFromKey, targetKey);
-    } else {
-      exitConnectMode();
-    }
-    return;
-  }
-  e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-  exitConnectMode();
-}
-
 function offsetUpTo(el, ancestor) {
   let x = 0, y = 0;
   let cur = el;
@@ -385,24 +278,35 @@ function drawManualLinks() {
     const x2 = toOff.x   + c2.x;
     const y2 = toOff.y   + c2.y;
 
-    const line = document.createElementNS(svgNS, "line");
-    line.setAttribute("x1", x1);
-    line.setAttribute("y1", y1);
-    line.setAttribute("x2", x2);
-    line.setAttribute("y2", y2);
-    line.setAttribute("stroke", HEADER_BG_COLOR);
-    line.setAttribute("stroke-width", "2.5");
-    line.setAttribute("stroke-linecap", "round");
-    line.setAttribute("data-link-id", link.id);
-    if (isAdmin) {
-      line.style.cursor = "pointer";
-      line.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        deleteManualLink(link.id);
-      });
+    const color = link.color || HEADER_BG_COLOR;
+    const width = link.width || 2.5;
+
+    let shapeEl;
+    if (link.waypoints && link.waypoints.length >= 2) {
+      // Pakai waypoints (polyline)
+      shapeEl = document.createElementNS(svgNS, "polyline");
+      const pts = link.waypoints.map(p => `${p.x},${p.y}`).join(" ");
+      shapeEl.setAttribute("points", pts);
+    } else {
+      // Garis lurus
+      shapeEl = document.createElementNS(svgNS, "line");
+      shapeEl.setAttribute("x1", x1);
+      shapeEl.setAttribute("y1", y1);
+      shapeEl.setAttribute("x2", x2);
+      shapeEl.setAttribute("y2", y2);
     }
-    svg.appendChild(line);
+
+    shapeEl.setAttribute("stroke", color);
+    shapeEl.setAttribute("stroke-width", String(width));
+    shapeEl.setAttribute("stroke-linecap", "round");
+    shapeEl.setAttribute("stroke-linejoin", "round");
+    shapeEl.setAttribute("fill", "none");
+    shapeEl.setAttribute("data-link-id", link.id);
+
+    if (isAdmin) {
+      shapeEl.style.cursor = "pointer";
+    }
+    svg.appendChild(shapeEl);
   });
 }
 
@@ -546,18 +450,6 @@ function initMultiTree() {
   document.getElementById("reposition-btn")?.addEventListener("click", toggleRepositionMode);
   document.getElementById("reposition-done-btn")?.addEventListener("click", confirmExitReposition);
 
-  document.addEventListener("click", onEdgeClickForConnect, true);
-  document.addEventListener("click", onNodeClickForConnectTarget, true);
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      if (connectFromKey) exitConnectMode();
-    }
-  });
-  document.getElementById("connect-cancel-btn")?.addEventListener("click", (e) => {
-    e.preventDefault(); e.stopPropagation();
-    exitConnectMode();
-  });
-
   document.addEventListener("mousedown", onRepoStart, true);
   document.addEventListener("mousemove", onRepoMove, true);
   document.addEventListener("mouseup", onRepoEnd, true);
@@ -577,10 +469,12 @@ function initMultiTree() {
 function updateAdminButtons() {
   const addBtn = document.getElementById("addtree-btn");
   const repoBtn = document.getElementById("reposition-btn");
+  const connectBtn = document.getElementById("connect-mode-btn");
   if (addBtn)  addBtn.style.display  = isAdmin ? "inline-block" : "none";
   if (repoBtn) repoBtn.style.display = isAdmin ? "inline-block" : "none";
+  if (connectBtn) connectBtn.style.display = isAdmin ? "inline-block" : "none";
 }
 
 window.initMultiTree = initMultiTree;
 window.updateAdminButtons = updateAdminButtons;
-/*New: multi-tree + filter-nomor-otomatis + escapeHtml-lokal*/
+/*New: multi-tree + drawManualLinks-waypoints*/
