@@ -184,7 +184,7 @@ function renderTree() {
           connectors: { type: "bCurve" },
           animateOnInit: false,
           levelSeparation: 50,
-          siblingSeparation: 30,
+          siblingSeparation: 15,
           subTeeSeparation: 30,
           padding: 50
         },
