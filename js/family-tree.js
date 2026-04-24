@@ -181,7 +181,7 @@ function renderTree() {
         chart: {
           container: `#tree-instance-${t.id}`,
           rootOrientation: "NORTH",
-          connectors: { type: "curve" },
+          connectors: { type: "bCurve" },
           animateOnInit: false,
           levelSeparation: 50,
           siblingSeparation: 30,
