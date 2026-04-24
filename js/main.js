@@ -1,6 +1,6 @@
 // ========== EVENT LISTENERS & INIT ==========
 document.addEventListener("click", (e) => {
-  if (typeof connectFromKey !== "undefined" && connectFromKey) return;
+  if (typeof connectModeActive !== "undefined" && connectModeActive) return;
   if (typeof repositionMode !== "undefined" && repositionMode) return;
   if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
     activePath = null;
@@ -51,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   if (typeof initMultiTree === "function") initMultiTree();
+  if (typeof initConnections === "function") initConnections();
 
   window.addEventListener("resize", () => {
     if (typeof drawManualLinks === "function") drawManualLinks();
@@ -71,4 +72,4 @@ updateUndoRedoButtons = function() {
 };
 
 loadTree();
-/*Stable + multi-tree*/
+/*Stable + connect-init*/
