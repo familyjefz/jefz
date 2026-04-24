@@ -18,6 +18,7 @@
       <button id="addtree-btn" class="addtree-btn" style="display:none;">🌳 Tree Baru</button>
       <button id="filter-btn" class="filter-btn">🔎 Filter</button>
       <button id="reposition-btn" class="reposition-btn" style="display:none;">📍 Reposisi</button>
+      <button id="connect-mode-btn" class="connect-mode-btn" style="display:none;">🔗 Connect</button>
       <button id="undo-btn" class="undo-btn" style="display:none;">↩️ Undo</button>
       <button id="redo-btn" class="redo-btn" style="display:none;">↪️ Redo</button>
       <button id="invert-btn" class="invert-btn">🎨 Invert</button>
@@ -37,10 +38,10 @@
     <span id="zoom-value" class="zoom-value">100%</span>
   </div>
 
-  <!-- Banner mode koneksi (manual line) -->
-  <div id="connect-banner" class="connect-banner">
-    <span>🔗 Pilih node tujuan untuk menghubungkan…</span>
-    <button id="connect-cancel-btn">Batal</button>
+  <!-- Banner mode connect (manual link) -->
+  <div id="connect-mode-banner" class="connect-mode-banner">
+    <span id="connect-mode-banner-text">🔗 Pilih node pertama...</span>
+    <button id="connect-mode-cancel-btn">Batal</button>
   </div>
 
   <!-- Banner mode hubungkan (orang tua/anak) -->
@@ -143,10 +144,11 @@
 <script src="js/zoom-pan.js"></script>
 <script src="js/ui-modal.js"></script>
 <script src="js/admin-undo.js"></script>
+<script src="js/connections.js"></script>
 <script src="js/family-tree.js"></script>
 <script src="js/family-info.js"></script>
 <script src="js/multi-tree.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
-<!--Stable + hubungkan-banner-->
+<!--Stable + connect-mode-banner-->
