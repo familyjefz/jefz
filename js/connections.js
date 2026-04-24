@@ -109,7 +109,7 @@ function generatePathOptions(fromPos, toPos) {
       { x: x1, y: y2 },
       { x: x2, y: y2 }
     ]
-  ]);
+  });
 
   return paths;
 }
