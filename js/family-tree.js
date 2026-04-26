@@ -226,6 +226,15 @@ function renderTree() {
       treantDiv.style.height = newHeight + 'px';
     });
     
+    if (typeof isAdmin !== 'undefined' && isAdmin && typeof onEdgeClickForConnect === 'function') {
+      document.querySelectorAll('.node-edge-left').forEach(edge => {
+        edge.removeEventListener('dblclick', onEdgeClickForConnect);
+        edge.addEventListener('dblclick', onEdgeClickForConnect);
+      });
+    }
+    
+    attachConnectTargetListener();
+    
     if (wrapper) {
       if (isFirstLoad) {
         if (typeof loadViewState === "function") loadViewState();
