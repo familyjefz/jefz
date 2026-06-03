@@ -57,37 +57,23 @@ input  { font-family: var(--font-body); }
 }
 .overlay.active { display: flex; }
 
-/* ── Login Box ── */
-.login-box {
+/* ── Login Button (header) ── */
+.btn-login {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 40px 36px;
-  text-align: center;
-  box-shadow: var(--shadow-lg);
-  max-width: 340px; width: 90%;
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+  transition: background var(--transition), border-color var(--transition);
 }
-.login-logo { font-size: 40px; margin-bottom: 12px; }
-.login-title {
-  font-family: var(--font-display);
-  font-size: 24px; font-weight: 700;
-  color: var(--text); margin-bottom: 6px;
-}
-.login-sub { color: var(--text-muted); font-size: 13px; margin-bottom: 28px; }
+.btn-login:hover { background: var(--bg); border-color: var(--accent); }
 
-.pin-inputs {
-  display: flex; gap: 10px; justify-content: center; margin-bottom: 16px;
-}
-.pin-input {
-  width: 52px; height: 56px;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-sm);
-  text-align: center; font-size: 22px;
-  background: var(--bg); color: var(--text);
-  transition: border-color var(--transition);
-  outline: none;
-}
-.pin-input:focus { border-color: var(--accent); }
+/* ── Login Sub text ── */
+.login-sub { color: var(--text-muted); font-size: 13px; margin-bottom: 12px; }
+
+/* ── PIN Error ── */
 
 .pin-error {
   color: var(--danger); font-size: 12px;
