@@ -104,11 +104,12 @@ input  { font-family: var(--font-body); }
   display: flex; align-items: center;
   padding: 0 16px; gap: 12px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  width: 100%;
 }
 
 .header-left {
-  display: flex; align-items: center; gap: 8px;
-  flex-shrink: 0;
+  display: flex; align-items: center;
+  flex-shrink: 0; min-width: 0;
 }
 .header-logo { font-size: 20px; }
 .header-title {
@@ -117,7 +118,12 @@ input  { font-family: var(--font-body); }
   color: var(--text); white-space: nowrap;
 }
 
-.header-center { flex: 1; display: flex; justify-content: center; }
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
 
 .header-right {
   display: flex; align-items: center; gap: 6px;
@@ -131,12 +137,20 @@ input  { font-family: var(--font-body); }
   #btn-lang      { display: none; }
   #btn-invert    { display: none; }
   #btn-families  { display: none; }
-  .header-title  { display: none; }
   .desktop-only  { display: none !important; }
+
+  .header-title {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
 
   .btn-login {
     padding: 6px 10px;
     font-size: 12px;
+    white-space: nowrap;
   }
 }
 
