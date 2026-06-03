@@ -21,6 +21,25 @@
 <body>
 
   <!-- ══════════════════════════════════════════
+       MOBILE: DROPDOWN MENU
+  ══════════════════════════════════════════ -->
+  <div id="mobile-menu-dropdown" class="hidden">
+    <button class="mobile-menu-item" id="mm-search">⌕ Cari</button>
+    <button class="mobile-menu-item" id="mm-lang">🌐 Bahasa</button>
+    <button class="mobile-menu-item" id="mm-invert">◑ Invert</button>
+    <button class="mobile-menu-item" id="mm-families">⚙ Filter Keluarga</button>
+    <div class="mobile-menu-item" style="color:var(--text-muted);font-size:11px;">
+      👁 <span id="mm-viewers">0</span> &nbsp;|&nbsp; 📊 <span id="mm-views">0</span>
+    </div>
+  </div>
+
+  <!-- Mobile Search Overlay -->
+  <div id="mobile-search-overlay" class="hidden">
+    <input type="text" id="mobile-search-input" placeholder="Cari nama..." />
+    <div id="mobile-search-results" class="search-dropdown hidden"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        OVERLAY: LOADING
   ══════════════════════════════════════════ -->
   <div id="loading-overlay" class="overlay">
@@ -71,6 +90,10 @@
       <!-- Undo/Redo (admin only) -->
       <button id="btn-undo" class="btn-icon admin-only hidden" title="Undo">↩</button>
       <button id="btn-redo" class="btn-icon admin-only hidden" title="Redo">↪</button>
+
+      <!-- Mobile: search + menu -->
+      <button id="btn-mobile-search" class="btn-icon mobile-only" title="Cari">⌕</button>
+      <button id="btn-mobile-menu" class="btn-icon mobile-only" title="Menu">⋯</button>
 
       <!-- Login button (public) / Admin badge (admin) -->
       <button id="btn-login" class="btn-login" data-i18n="login.btn">🔑 Login</button>
