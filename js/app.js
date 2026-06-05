@@ -4,7 +4,7 @@
 
 import { state, initState, startSession, endSession, pingSession, pollSessions, pollDataSync, undo, redo, setLang } from './state.js';
 import { initCanvas, render, focusNode, fitAll, zoomIn, zoomOut } from './canvas.js';
-import { initActions, initSearch, openPanel, closePanel, renderFamilyPanel, toast } from './actions.js';
+import { initActions, initSearch, openPanel, closePanel, renderFamilyPanel, toast, showAddPersonForm, updateEmptyHint } from './actions.js';
 import { t, applyLang } from './i18n.js';
 
 // ══════════════════════════════════════════
@@ -44,8 +44,9 @@ async function main() {
     // Auto-focus
     autoFocus();
 
-    // Update stats di header
+    // Update stats & empty hint
     updateStats();
+    updateEmptyHint();
 
     // Mulai polling
     startPolling();
@@ -79,6 +80,10 @@ function autoFocus() {
 // ══════════════════════════════════════════
 
 function bindHeader() {
+  // Tambah orang baru
+  document.getElementById('btn-add-person')?.addEventListener('click', showAddPersonForm);
+  document.getElementById('btn-add-first')?.addEventListener('click', showAddPersonForm);
+
   // Login button
   document.getElementById('btn-login')?.addEventListener('click', () => {
     openPanel('login-modal');
@@ -196,6 +201,7 @@ async function handleLogin() {
 
     // Tampilkan elemen admin
     setAdminUI(true);
+    updateEmptyHint();
     toast('✓ ' + t('role.admin'));
   } else {
     error.classList.add('show');
@@ -209,6 +215,7 @@ async function handleLogout() {
   await endSession();
   await startSession('viewer');
   setAdminUI(false);
+  updateEmptyHint();
   toast(t('logout'));
 }
 
