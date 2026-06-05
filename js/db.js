@@ -1,6 +1,5 @@
 // ══════════════════════════════════════════
 // db.js — Koneksi & Query ke Turso
-// Menggunakan @libsql/client (CORS-safe)
 // ══════════════════════════════════════════
 
 import { createClient } from 'https://esm.sh/@libsql/client@0.14.0/web';
@@ -10,17 +9,17 @@ const _db = createClient({
   authToken: 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODA1MjcyNTgsImlkIjoiMDE5ZThmYWYtZjUwMS03NzZiLTgzM2EtZGM5MzdhZTA5OTY2IiwicmlkIjoiN2EyOTNiMjktNzczMy00ZmI5LWI0ZjgtNjExNWVjZjIyMDg5In0.6HXh7QpNruz6piuK8V-6kxTyRsxf8qaZHHNEIZKRAK8drOp5aojA46DikSRziMnAXsuhPZVqNxYj20LCLqCrDQ',
 });
 
-// ── Core: jalankan satu SQL ──────────────────────────────
+// Semua string SQL pakai single-quote untuk nilai literal
+// Semua nilai dinamis pakai parameter ?
+
 async function dbRun(sql, args = []) {
   return await _db.execute({ sql, args });
 }
 
-// ── Core: jalankan banyak SQL sekaligus ─────────────────
 async function dbBatch(stmts) {
   return await _db.batch(stmts);
 }
 
-// ── Helper: parse rows ───────────────────────────────────
 function parseRows(result) {
   if (!result?.rows) return [];
   return result.rows.map(row => {
@@ -36,12 +35,12 @@ function parseRows(result) {
 
 export async function dbGetSettings() {
   const r = await dbRun('SELECT key, value FROM settings');
-  return Object.fromEntries(parseRows(r).map(r => [r.key, r.value]));
+  return Object.fromEntries(parseRows(r).map(x => [x.key, x.value]));
 }
 
 export async function dbSetSetting(key, value) {
   await dbRun(
-    'INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, datetime("now"))',
+    "INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))",
     [key, value]
   );
 }
@@ -56,7 +55,7 @@ export async function dbGetPersons() {
 
 export async function dbAddPerson({ id, name, gender, birth_place, notes, family_id }) {
   await dbRun(
-    'INSERT INTO persons (id, name, gender, birth_place, notes, family_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))',
+    "INSERT INTO persons (id, name, gender, birth_place, notes, family_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
     [id, name, gender ?? 'unknown', birth_place ?? null, notes ?? null, family_id ?? null]
   );
 }
@@ -65,20 +64,20 @@ export async function dbUpdatePerson(id, fields) {
   const allowed = ['name', 'gender', 'birth_place', 'notes', 'family_id'];
   const updates = Object.entries(fields).filter(([k]) => allowed.includes(k));
   if (!updates.length) return;
-  const setClauses = updates.map(([k]) => `${k} = ?`).join(', ');
-  const values     = updates.map(([, v]) => v);
+  const set    = updates.map(([k]) => k + ' = ?').join(', ');
+  const values = updates.map(([, v]) => v);
   await dbRun(
-    `UPDATE persons SET ${setClauses}, updated_at = datetime("now") WHERE id = ?`,
+    `UPDATE persons SET ${set}, updated_at = datetime('now') WHERE id = ?`,
     [...values, id]
   );
 }
 
 export async function dbDeletePerson(id) {
   await dbBatch([
-    { sql: 'DELETE FROM node_locks    WHERE node_id   = ?',                    args: [id] },
-    { sql: 'DELETE FROM relationships WHERE person_id = ? OR related_id = ?',  args: [id, id] },
-    { sql: 'DELETE FROM pair_nodes    WHERE husband_id = ? OR wife_id = ?',    args: [id, id] },
-    { sql: 'DELETE FROM persons       WHERE id = ?',                           args: [id] },
+    { sql: 'DELETE FROM node_locks    WHERE node_id = ?',                   args: [id] },
+    { sql: 'DELETE FROM relationships WHERE person_id = ? OR related_id = ?', args: [id, id] },
+    { sql: 'DELETE FROM pair_nodes    WHERE husband_id = ? OR wife_id = ?', args: [id, id] },
+    { sql: 'DELETE FROM persons       WHERE id = ?',                        args: [id] },
   ]);
 }
 
@@ -92,7 +91,7 @@ export async function dbGetRelationships() {
 
 export async function dbAddRelationship({ id, person_id, related_id, type }) {
   await dbRun(
-    'INSERT OR IGNORE INTO relationships (id, person_id, related_id, type, created_at) VALUES (?, ?, ?, ?, datetime("now"))',
+    "INSERT OR IGNORE INTO relationships (id, person_id, related_id, type, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
     [id, person_id, related_id, type]
   );
 }
@@ -111,7 +110,7 @@ export async function dbGetFamilies() {
 
 export async function dbAddFamily({ id, name, color }) {
   await dbRun(
-    'INSERT INTO families (id, name, color, is_visible, created_at) VALUES (?, ?, ?, 1, datetime("now"))',
+    "INSERT INTO families (id, name, color, is_visible, created_at) VALUES (?, ?, ?, 1, datetime('now'))",
     [id, name, color]
   );
 }
@@ -120,9 +119,9 @@ export async function dbUpdateFamily(id, fields) {
   const allowed = ['name', 'color', 'is_visible'];
   const updates = Object.entries(fields).filter(([k]) => allowed.includes(k));
   if (!updates.length) return;
-  const setClauses = updates.map(([k]) => `${k} = ?`).join(', ');
-  const values     = updates.map(([, v]) => v);
-  await dbRun(`UPDATE families SET ${setClauses} WHERE id = ?`, [...values, id]);
+  const set    = updates.map(([k]) => k + ' = ?').join(', ');
+  const values = updates.map(([, v]) => v);
+  await dbRun(`UPDATE families SET ${set} WHERE id = ?`, [...values, id]);
 }
 
 export async function dbDeleteFamily(id) {
@@ -142,7 +141,7 @@ export async function dbGetPairNodes() {
 
 export async function dbAddPairNode({ id, husband_id, wife_id, order_num, border_color_left, border_color_right, line_style }) {
   await dbRun(
-    'INSERT INTO pair_nodes (id, husband_id, wife_id, order_num, border_color_left, border_color_right, line_style, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime("now"))',
+    "INSERT INTO pair_nodes (id, husband_id, wife_id, order_num, border_color_left, border_color_right, line_style, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))",
     [id, husband_id ?? null, wife_id ?? null, order_num ?? 1, border_color_left ?? null, border_color_right ?? null, line_style ?? 'solid']
   );
 }
@@ -151,9 +150,9 @@ export async function dbUpdatePairNode(id, fields) {
   const allowed = ['husband_id', 'wife_id', 'order_num', 'border_color_left', 'border_color_right', 'line_style'];
   const updates = Object.entries(fields).filter(([k]) => allowed.includes(k));
   if (!updates.length) return;
-  const setClauses = updates.map(([k]) => `${k} = ?`).join(', ');
-  const values     = updates.map(([, v]) => v);
-  await dbRun(`UPDATE pair_nodes SET ${setClauses} WHERE id = ?`, [...values, id]);
+  const set    = updates.map(([k]) => k + ' = ?').join(', ');
+  const values = updates.map(([, v]) => v);
+  await dbRun(`UPDATE pair_nodes SET ${set} WHERE id = ?`, [...values, id]);
 }
 
 export async function dbDeletePairNode(id) {
@@ -161,7 +160,7 @@ export async function dbDeletePairNode(id) {
 }
 
 // ══════════════════════════════════════════
-// HISTORY (Undo/Redo)
+// HISTORY
 // ══════════════════════════════════════════
 
 export async function dbGetHistory() {
@@ -172,11 +171,10 @@ export async function dbPushHistory({ id, action_type, target_id, before_data, a
   await dbBatch([
     { sql: 'DELETE FROM history WHERE step_index >= ?', args: [step_index] },
     {
-      sql: 'INSERT INTO history (id, action_type, target_id, before_data, after_data, step_index, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime("now"))',
+      sql: "INSERT INTO history (id, action_type, target_id, before_data, after_data, step_index, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
       args: [id, action_type, target_id, JSON.stringify(before_data), JSON.stringify(after_data), step_index]
     },
   ]);
-  // Trim ke 50 terakhir
   await dbRun(
     'DELETE FROM history WHERE step_index NOT IN (SELECT step_index FROM history ORDER BY step_index DESC LIMIT 50)'
   );
@@ -192,28 +190,28 @@ export async function dbClearHistoryAfter(step_index) {
 
 export async function dbGetSessions() {
   return parseRows(await dbRun(
-    `SELECT * FROM active_sessions WHERE last_seen >= datetime('now', '-60 seconds')`
+    "SELECT * FROM active_sessions WHERE last_seen >= datetime('now', '-60 seconds')"
   ));
 }
 
 export async function dbUpsertSession({ id, role, focus_node_id }) {
   await dbRun(
-    'INSERT OR REPLACE INTO active_sessions (id, role, last_seen, focus_node_id) VALUES (?, ?, datetime("now"), ?)',
+    "INSERT OR REPLACE INTO active_sessions (id, role, last_seen, focus_node_id) VALUES (?, ?, datetime('now'), ?)",
     [id, role, focus_node_id ?? null]
   );
 }
 
 export async function dbUpdateSessionLastSeen(id, focus_node_id) {
   await dbRun(
-    'UPDATE active_sessions SET last_seen = datetime("now"), focus_node_id = ? WHERE id = ?',
+    "UPDATE active_sessions SET last_seen = datetime('now'), focus_node_id = ? WHERE id = ?",
     [focus_node_id ?? null, id]
   );
 }
 
 export async function dbDeleteSession(id) {
   await dbBatch([
-    { sql: 'DELETE FROM node_locks     WHERE locked_by = ?', args: [id] },
-    { sql: 'DELETE FROM active_sessions WHERE id = ?',       args: [id] },
+    { sql: 'DELETE FROM node_locks      WHERE locked_by = ?', args: [id] },
+    { sql: 'DELETE FROM active_sessions WHERE id = ?',        args: [id] },
   ]);
 }
 
@@ -222,13 +220,14 @@ export async function dbDeleteSession(id) {
 // ══════════════════════════════════════════
 
 export async function dbGetStats() {
-  const r = parseRows(await dbRun('SELECT total_views FROM page_stats WHERE id = "main"'));
+  const r = parseRows(await dbRun('SELECT total_views FROM page_stats WHERE id = ?', ['main']));
   return r[0]?.total_views ?? 0;
 }
 
 export async function dbIncrementViews() {
   await dbRun(
-    'UPDATE page_stats SET total_views = total_views + 1, updated_at = datetime("now") WHERE id = "main"'
+    "UPDATE page_stats SET total_views = total_views + 1, updated_at = datetime('now') WHERE id = ?",
+    ['main']
   );
 }
 
@@ -242,7 +241,7 @@ export async function dbGetLocks() {
 
 export async function dbLockNode(node_id, session_id) {
   await dbRun(
-    'INSERT OR REPLACE INTO node_locks (node_id, locked_by, locked_at) VALUES (?, ?, datetime("now"))',
+    "INSERT OR REPLACE INTO node_locks (node_id, locked_by, locked_at) VALUES (?, ?, datetime('now'))",
     [node_id, session_id]
   );
 }
@@ -256,7 +255,7 @@ export async function dbUnlockAllBySession(session_id) {
 }
 
 // ══════════════════════════════════════════
-// LOAD ALL (initial load)
+// LOAD ALL
 // ══════════════════════════════════════════
 
 export async function dbLoadAll() {
@@ -266,14 +265,14 @@ export async function dbLoadAll() {
     dbRun('SELECT * FROM families'),
     dbRun('SELECT * FROM pair_nodes'),
     dbRun('SELECT key, value FROM settings'),
-    dbRun('SELECT total_views FROM page_stats WHERE id = "main"'),
+    dbRun('SELECT total_views FROM page_stats WHERE id = ?', ['main']),
   ]);
   return {
     persons:       parseRows(persons),
     relationships: parseRows(relationships),
     families:      parseRows(families),
     pairNodes:     parseRows(pairNodes),
-    settings:      Object.fromEntries(parseRows(settings).map(r => [r.key, r.value])),
+    settings:      Object.fromEntries(parseRows(settings).map(x => [x.key, x.value])),
     totalViews:    parseRows(stats)[0]?.total_views ?? 0,
   };
 }
