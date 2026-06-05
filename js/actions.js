@@ -13,7 +13,7 @@ import {
 } from './state.js';
 import { render, focusNode, searchNodes } from './canvas.js';
 import { generateId } from './db.js';
-import { t } from './app.js';
+import { t } from './i18n.js';
 
 // ══════════════════════════════════════════
 // STATE AKSI SEMENTARA
