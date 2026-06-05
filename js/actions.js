@@ -58,8 +58,8 @@ export function initActions() {
     pendingConfirm = null;
   });
 
-  // Semua tombol close panel
-  document.querySelectorAll('.panel-close').forEach(btn => {
+  // Semua tombol close panel — kecuali yang di dalam form-modal (dihandle di showFormModal)
+  document.querySelectorAll('.panel-close:not(#form-modal .panel-close)').forEach(btn => {
     btn.addEventListener('click', () => {
       const panelId = btn.dataset.panel;
       closePanel(panelId);
@@ -584,7 +584,7 @@ export function showFormModal(title, fields, onSave) {
   const body = document.getElementById('modal-body');
   body.innerHTML = fields.map(f => buildField(f)).join('');
 
-  // Ganti listener save tiap kali modal dibuka — hindari stale callback
+  // Clone tombol save & cancel — hapus listener lama
   const saveBtn   = document.getElementById('modal-save');
   const cancelBtn = document.getElementById('modal-cancel');
   const newSave   = saveBtn.cloneNode(true);
@@ -593,6 +593,14 @@ export function showFormModal(title, fields, onSave) {
   cancelBtn.replaceWith(newCancel);
   newSave.addEventListener('click',   handleModalSave);
   newCancel.addEventListener('click', closeModal);
+
+  // Clone juga tombol X (panel-close) di dalam form-modal
+  const xBtn    = document.querySelector('#form-modal .panel-close');
+  if (xBtn) {
+    const newX  = xBtn.cloneNode(true);
+    xBtn.replaceWith(newX);
+    newX.addEventListener('click', closeModal);
+  }
 
   openPanel('form-modal');
 }
@@ -621,33 +629,35 @@ function buildField(f) {
 }
 
 async function handleModalSave() {
-  console.log('handleModalSave called, _modalCallback =', _modalCallback, typeof _modalCallback);
-  if (!_modalCallback) { console.error('_modalCallback is null/undefined!'); return; }
+  const cb = _modalCallback;
+  _modalCallback = null;
+  if (!cb || typeof cb !== 'function') {
+    console.error('No callback:', cb);
+    closePanel('form-modal');
+    return;
+  }
 
   const body   = document.getElementById('modal-body');
   const inputs = body.querySelectorAll('[id^="field-"]');
   const data   = {};
-
   inputs.forEach(el => {
-    const key  = el.id.replace('field-', '');
-    data[key]  = el.value;
+    data[el.id.replace('field-', '')] = el.value;
   });
 
-  closeModal();
+  closePanel('form-modal');
 
   try {
-    await _modalCallback(data);
+    await cb(data);
     render();
   } catch (e) {
+    console.error(e);
     toast(e.message || t('toast.error'), 'error');
   }
-
-  _modalCallback = null;
 }
 
 function closeModal() {
-  closePanel('form-modal');
   _modalCallback = null;
+  closePanel('form-modal');
 }
 
 // ══════════════════════════════════════════
