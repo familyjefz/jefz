@@ -47,10 +47,6 @@ export function initActions() {
     btn.addEventListener('click', () => handleEditLine(btn.dataset.line));
   });
 
-  // Modal save/cancel
-  document.getElementById('modal-save').addEventListener('click', handleModalSave);
-  document.getElementById('modal-cancel').addEventListener('click', closeModal);
-
   // Warn modal
   document.getElementById('warn-confirm').addEventListener('click', () => {
     closePanel('warn-modal');
@@ -587,6 +583,16 @@ export function showFormModal(title, fields, onSave) {
 
   const body = document.getElementById('modal-body');
   body.innerHTML = fields.map(f => buildField(f)).join('');
+
+  // Ganti listener save tiap kali modal dibuka — hindari stale callback
+  const saveBtn   = document.getElementById('modal-save');
+  const cancelBtn = document.getElementById('modal-cancel');
+  const newSave   = saveBtn.cloneNode(true);
+  const newCancel = cancelBtn.cloneNode(true);
+  saveBtn.replaceWith(newSave);
+  cancelBtn.replaceWith(newCancel);
+  newSave.addEventListener('click',   handleModalSave);
+  newCancel.addEventListener('click', closeModal);
 
   openPanel('form-modal');
 }
