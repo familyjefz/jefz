@@ -66,7 +66,7 @@ function applyMultiStateObject(obj) {
 async function loadMultiState() {
   let loaded = false;
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=${MULTI_TREE_ID}`);
+    const data_raw = await apiGetTree(MULTI_TREE_ID);
     if (res.ok) {
       const data = await res.json();
       if (data && (data.extras || data.links || data.offsets || data.visible)) {
@@ -87,13 +87,9 @@ async function persistMultiState() {
   const obj = multiStateObject();
   try { localStorage.setItem(MULTI_LS_KEY, JSON.stringify(obj)); } catch (e) {}
   try {
-    await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "replace", id: MULTI_TREE_ID, data: obj })
-    });
+    await apiSaveTree(MULTI_TREE_ID, obj);
   } catch (e) {
-    console.warn("Gagal save multi-state ke Supabase:", e);
+    console.warn("Gagal save multi-state ke Turso:", e);
   }
 }
 
