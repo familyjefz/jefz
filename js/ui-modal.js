@@ -125,14 +125,13 @@ async function checkPin() {
   if (pinErrEl) pinErrEl.innerText = "";
 
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/check-pin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pin: pin })
-    });
-    console.log("[login] response status:", res.status);
-    const result = await res.json();
-    console.log("[login] response body:", result);
+    // Check PIN via Turso
+    const pinResult = await tursoFetch(
+      "SELECT 1 FROM admin_pins WHERE pin = ? LIMIT 1",
+      [{ type: "text", value: pin }]
+    );
+    const result = { success: (pinResult?.rows?.length ?? 0) > 0 };
+    console.log("[login] turso check:", result);
 
     if (result && result.success) {
       isAdmin = true;
