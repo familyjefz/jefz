@@ -141,17 +141,10 @@ async function hapusNodeOnly(path, treeId = "main") {
           if (!currentTreeData.children) currentTreeData.children = [];
           currentTreeData.children.push(...sisaAnak);
         }
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "replace", data: currentTreeData })
-        });
-        const result = await res.json();
-        if (result.success) {
-          activePath = null; activeMode = null;
-          await loadTree();
-          showCustomPopup("Root berhasil dihapus.", "Sukses");
-        }
+        await apiSaveTree(1, currentTreeData);
+        activePath = null; activeMode = null;
+        await loadTree();
+        showCustomPopup("Root berhasil dihapus.", "Sukses");
         return;
       }
 
@@ -169,17 +162,10 @@ async function hapusNodeOnly(path, treeId = "main") {
         }
       }
 
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "replace", data: currentTreeData })
-      });
-      const result = await res.json();
-      if (result.success) {
-        activePath = null; activeMode = null;
-        await loadTree();
-        showCustomPopup("Node berhasil dihapus.", "Sukses");
-      }
+      await apiSaveTree(1, currentTreeData);
+      activePath = null; activeMode = null;
+      await loadTree();
+      showCustomPopup("Node berhasil dihapus.", "Sukses");
     } catch (err) {
       showCustomPopup("Error: " + err.message, "Error");
     }
@@ -230,28 +216,17 @@ async function hapusWithChildren(path, treeId = "main") {
       if (!path || path.length === 0) {
         showCustomPopup("Yakin hapus seluruh silsilah?", "Konfirmasi", async () => {
           currentTreeData = { name: ">Root |", children: [] };
-          await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "replace", data: currentTreeData })
-          });
+          await apiSaveTree(1, currentTreeData);
           activePath = null; activeMode = null;
           await loadTree();
           showCustomPopup("Seluruh silsilah berhasil dihapus.", "Sukses");
         }, true);
         return;
       }
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", path })
-      });
-      const result = await res.json();
-      if (result.success) {
-        activePath = null; activeMode = null;
-        await loadTree();
-        showCustomPopup("Node dan keturunannya berhasil dihapus.", "Sukses");
-      }
+      await apiUpdateTree({ action: "delete", id: 1, path });
+      activePath = null; activeMode = null;
+      await loadTree();
+      showCustomPopup("Node dan keturunannya berhasil dihapus.", "Sukses");
     } catch (err) {
       showCustomPopup("Error: " + err.message, "Error");
     }
@@ -295,11 +270,7 @@ async function hapusWithChildren(path, treeId = "main") {
 async function saveToSupabase() {
   if (!currentTreeData) return;
   try {
-    await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "replace", data: currentTreeData })
-    });
+    await apiSaveTree(1, currentTreeData);
   } catch (err) {
     console.error("Gagal save:", err);
   }
