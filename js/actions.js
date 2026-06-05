@@ -671,6 +671,47 @@ export function showWarnModal(message, onConfirm) {
 }
 
 // ══════════════════════════════════════════
+// TAMBAH ORANG BARU (standalone, tanpa parent)
+// ══════════════════════════════════════════
+
+export function showAddPersonForm() {
+  const familyOptions = Object.values(state.families).map(f => ({ value: f.id, label: f.name }));
+  familyOptions.unshift({ value: '', label: '— Tanpa Keluarga —' });
+
+  showFormModal(t('opt.add') + ' Orang', [
+    { key: 'name',        label: t('form.name'),   type: 'text' },
+    { key: 'gender',      label: t('form.gender'), type: 'select',
+      options: [
+        { value: 'M',       label: '♂ Laki-laki' },
+        { value: 'F',       label: '♀ Perempuan' },
+        { value: 'unknown', label: '—' },
+      ]
+    },
+    { key: 'birth_place', label: t('form.place'),  type: 'text' },
+    { key: 'family_id',   label: t('form.family'), type: 'select', options: familyOptions },
+    { key: 'notes',       label: t('form.notes'),  type: 'textarea' },
+  ], async data => {
+    if (!data.name?.trim()) { toast('Nama tidak boleh kosong', 'error'); return; }
+    await actionAddPerson({
+      name:        data.name.trim(),
+      gender:      data.gender || 'unknown',
+      birth_place: data.birth_place || null,
+      family_id:   data.family_id   || null,
+      notes:       data.notes       || null,
+    });
+    toast(t('toast.added'));
+    updateEmptyHint();
+  });
+}
+
+export function updateEmptyHint() {
+  const hint      = document.getElementById('empty-canvas-hint');
+  const hasData   = Object.keys(state.persons).length > 0;
+  if (!hint) return;
+  hint.classList.toggle('hidden', !state.isAdmin || hasData);
+}
+
+// ══════════════════════════════════════════
 // SEARCH
 // ══════════════════════════════════════════
 
