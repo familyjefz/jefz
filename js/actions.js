@@ -621,7 +621,8 @@ function buildField(f) {
 }
 
 async function handleModalSave() {
-  if (!_modalCallback) return;
+  console.log('handleModalSave called, _modalCallback =', _modalCallback, typeof _modalCallback);
+  if (!_modalCallback) { console.error('_modalCallback is null/undefined!'); return; }
 
   const body   = document.getElementById('modal-body');
   const inputs = body.querySelectorAll('[id^="field-"]');
