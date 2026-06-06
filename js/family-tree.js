@@ -281,55 +281,6 @@ function renderTree() {
   }, 50);
 }
 
-// ====== NODE OPTION POPUP (fixed position, tidak tertutupi) ======
-let _nodePopupEl = null;
-
-function closeNodePopup() {
-  if (_nodePopupEl) { _nodePopupEl.remove(); _nodePopupEl = null; }
-  document.removeEventListener("click", _nodePopupOutside, true);
-}
-
-function _nodePopupOutside(e) {
-  if (_nodePopupEl && !_nodePopupEl.contains(e.target)) closeNodePopup();
-}
-
-function showNodePopup(clientX, clientY, pathJson, tIdQ, borderColor, nodeKey) {
-  closeNodePopup();
-  const popup = document.createElement("div");
-  popup.className = "node-popup-fixed";
-  popup.innerHTML = `
-    <div class="node-menu">
-      <button onclick='closeNodePopup();setMode(${pathJson},"add",${tIdQ})'>➕ Tambah Anak</button>
-      <button onclick='closeNodePopup();setMode(${pathJson},"edit",${tIdQ})'>✏️ Ubah Nama</button>
-      <button onclick='closeNodePopup();showHapusPopup(${pathJson},${tIdQ})'>❌ Hapus</button>
-      <button onclick='closeNodePopup();setMode(${pathJson},"parent",${tIdQ})'>⬆️ Tambah Parent</button>
-      <button onclick='closeNodePopup();setMode(${pathJson},"order",${tIdQ})'>🔢 Ubah Urutan</button>
-      <button onclick='closeNodePopup();startConnect(${pathJson},${tIdQ})'>🔗 Hubungkan</button>
-      <button onclick='closeNodePopup();disconnectNode(${pathJson},${tIdQ})'>✂️ Putuskan</button>
-    </div>`;
-  popup.style.cssText = `
-    position:fixed; z-index:2000;
-    background:rgba(30,30,30,0.97);
-    backdrop-filter:blur(10px);
-    border-radius:8px;
-    padding:6px;
-    box-shadow:0 4px 20px rgba(0,0,0,0.5);
-    min-width:130px;
-  `;
-  // Smart positioning: avoid overflow
-  document.body.appendChild(popup);
-  _nodePopupEl = popup;
-  const pw = popup.offsetWidth || 140;
-  const ph = popup.offsetHeight || 180;
-  let left = clientX + 4;
-  let top  = clientY + 4;
-  if (left + pw > window.innerWidth  - 8) left = clientX - pw - 4;
-  if (top  + ph > window.innerHeight - 8) top  = clientY - ph - 4;
-  popup.style.left = left + "px";
-  popup.style.top  = top  + "px";
-  setTimeout(() => document.addEventListener("click", _nodePopupOutside, true), 10);
-}
-
 function buildNodeHTML(d, root, treeId) {
   const path = d.data._path || getNodePath(root, d);
   d.data._path = path;
@@ -361,16 +312,32 @@ function buildNodeHTML(d, root, treeId) {
           <button onclick='cancelInline()'>✖ Batal</button>
         </div>
       </div>`;
+  } else if (isActive && isAdmin) {
+    wrap.innerHTML = `
+      <div class="node-box active-node node-with-menu" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
+        ${edgeHtml}
+        <div class="node-name">${escapeHtml(d.data.name)}</div>
+        <div class="node-buttons">
+          <button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>
+        </div>
+        <div class="node-menu">
+          <button onclick='setMode(${pathJson},"add",${tIdQ})'>➕ Tambah Anak</button>
+          <button onclick='setMode(${pathJson},"edit",${tIdQ})'>✏️ Ubah Nama</button>
+          <button onclick='showHapusPopup(${pathJson},${tIdQ})'>❌ Hapus</button>
+          <button onclick='setMode(${pathJson},"parent",${tIdQ})'>⬆️ Tambah Parent</button>
+          <button onclick='setMode(${pathJson},"order",${tIdQ})'>🔢 Ubah Urutan</button>
+          <button onclick='startConnect(${pathJson},${tIdQ})'>🔗 Hubungkan</button>
+          <button onclick='disconnectNode(${pathJson},${tIdQ})'>✂️ Putuskan</button>
+        </div>
+      </div>`;
   } else {
     const displayName = escapeHtml(d.data.name);
     let buttons = `<button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>`;
     if (isAdmin) {
-      // Option button triggers floating popup
-      buttons = `<button class="btn-option" onclick='(function(e){e.stopPropagation();showNodePopup(e.clientX,e.clientY,${pathJson},${tIdQ},"${borderColor}","${nodeKey}")})(event)'>⚙️ Option</button>${buttons}`;
+      buttons = `<button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>⚙️ Option</button>${buttons}`;
     }
-    const activeClass = isActive ? " active-node" : "";
     wrap.innerHTML = `
-      <div class="node-box${activeClass}" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
+      <div class="node-box" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
         ${edgeHtml}
         <div class="node-name">${displayName}</div>
         <div class="node-buttons">${buttons}</div>
@@ -434,6 +401,7 @@ function renderD3Tree(container, rootData, treeId) {
   const svg = d3.select(container).append("svg")
     .attr("width",  svgW)
     .attr("height", svgH)
+    .attr("class", "tree-svg")
     .style("overflow", "visible");
 
   const g = svg.append("g");
