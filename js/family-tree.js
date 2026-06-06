@@ -334,7 +334,7 @@ function buildNodeHTML(d, root, treeId) {
     const displayName = escapeHtml(d.data.name);
     let buttons = `<button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>`;
     if (isAdmin) {
-      buttons = `<button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>⚙️ Option</button>${buttons}`;
+      buttons = `<button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>Option</button>${buttons}`;
     }
     wrap.innerHTML = `
       <div class="node-box" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
@@ -360,7 +360,7 @@ function renderD3Tree(container, rootData, treeId) {
     tmp.className = "node-box";
     tmp.style.cssText = "display:inline-block;white-space:pre;";
     tmp.innerHTML = `<div class="node-name">${escapeHtml(d.data.name)}</div>
-      <div class="node-buttons"><button class="btn-option">⚙️ Option</button><button class="btn-info">📄 Info</button></div>`;
+      <div class="node-buttons"><button class="btn-option">Option</button><button class="btn-info">📄 Info</button></div>`;
     measurer.appendChild(tmp);
     const w = Math.max(tmp.offsetWidth + 2, 70);
     nodeWidths.set(d, w);
