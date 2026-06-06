@@ -118,65 +118,57 @@ function nodeKeyToCenterPos(key) {
   const el = document.querySelector(`.node-box[data-node-key="${cssEscapeMT(key)}"]`);
   if (!el) return null;
 
-  const treeId = key.split("|")[0];
-  const treeEl = document.getElementById(`tree-instance-${treeId}`);
-  if (!treeEl) return null;
+  const treeContainer = document.getElementById("tree");
+  if (!treeContainer) return null;
 
-  const off = treeOffsets[treeId] || { x: 0, y: 0 };
-
-  // Dapatkan posisi relatif terhadap tree instance
-  const treeRect = treeEl.getBoundingClientRect();
+  const containerRect = treeContainer.getBoundingClientRect();
   const elRect = el.getBoundingClientRect();
 
-  const relX = elRect.left - treeRect.left + elRect.width / 2;
-  const relY = elRect.top - treeRect.top + elRect.height / 2;
+  // Posisi center node relatif ke #tree container
+  // Dibagi scale agar koordinat di ruang SVG (bukan viewport)
+  const zc = document.getElementById("tree-zoom-container");
+  const scaleVal = zc ? (parseFloat(zc.style.transform.match(/scale\(([^)]+)\)/)?.[1]) || 1) : 1;
 
-  return { x: off.x + relX, y: off.y + relY };
+  const x = (elRect.left - containerRect.left + elRect.width  / 2) / scaleVal;
+  const y = (elRect.top  - containerRect.top  + elRect.height / 2) / scaleVal;
+
+  return { x, y };
 }
 
 function drawPreviews(fromKey, toKey) {
   clearPathPreviews();
-
   const svg = document.getElementById("manual-links-svg");
   if (!svg) return;
-
   const fromPos = nodeKeyToCenterPos(fromKey);
-  const toPos = nodeKeyToCenterPos(toKey);
+  const toPos   = nodeKeyToCenterPos(toKey);
   if (!fromPos || !toPos) return;
 
   const svgNS = "http://www.w3.org/2000/svg";
-  const options = generatePathOptions(fromPos, toPos);
 
-  options.forEach((opt, i) => {
-    const color = CONNECT_COLORS[i % CONNECT_COLORS.length];
-    const polyline = document.createElementNS(svgNS, "polyline");
-    const pointsStr = opt.points.map(p => `${p.x},${p.y}`).join(" ");
-    polyline.setAttribute("points", pointsStr);
-    polyline.setAttribute("stroke", color);
-    polyline.setAttribute("stroke-width", "2.5");
-    polyline.setAttribute("stroke-dasharray", "8,4");
-    polyline.setAttribute("fill", "none");
-    polyline.setAttribute("stroke-linecap", "round");
-    polyline.setAttribute("stroke-linejoin", "round");
-    polyline.setAttribute("data-opt-id", opt.id);
-    polyline.setAttribute("data-from", fromKey);
-    polyline.setAttribute("data-to", toKey);
-    polyline.classList.add("manual-link-preview");
+  // Hanya 1 preview: garis lurus langsung
+  const line = document.createElementNS(svgNS, "line");
+  line.setAttribute("x1", fromPos.x);
+  line.setAttribute("y1", fromPos.y);
+  line.setAttribute("x2", toPos.x);
+  line.setAttribute("y2", toPos.y);
+  line.setAttribute("stroke", "#8cabe5");
+  line.setAttribute("stroke-width", "2");
+  line.setAttribute("stroke-dasharray", "8,4");
+  line.setAttribute("fill", "none");
+  line.setAttribute("stroke-linecap", "round");
+  line.classList.add("manual-link-preview");
+  line.style.cursor = "pointer";
 
-    polyline.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const points = opt.points.map(p => ({ x: p.x, y: p.y }));
-      finalizeConnectLink(fromKey, toKey, "#8cabe5", 2, points);
-    });
-
-    // Label tooltip
-    const title = document.createElementNS(svgNS, "title");
-    title.textContent = `Path ${opt.id}: ${opt.label}`;
-    polyline.appendChild(title);
-
-    svg.appendChild(polyline);
+  line.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    finalizeConnectLink(fromKey, toKey, "#8cabe5", 2, null);
   });
+
+  const title = document.createElementNS(svgNS, "title");
+  title.textContent = "Klik untuk konfirmasi tautan";
+  line.appendChild(title);
+  svg.appendChild(line);
 }
 
 // ========== KLIK NODE SAAT MODE CONNECT ==========
@@ -333,56 +325,14 @@ function closeLinkEditPopupOnOutside(e) {
 
 // ========== GANTI PATH LINK EXISTING ==========
 function changeLinkPath(link) {
-  // Masuk mode pilih path ulang untuk link ini
-  clearPathPreviews();
-
-  const fromPos = nodeKeyToCenterPos(link.from);
-  const toPos = nodeKeyToCenterPos(link.to);
-  if (!fromPos || !toPos) return;
-
-  const svg = document.getElementById("manual-links-svg");
-  if (!svg) return;
-
-  const svgNS = "http://www.w3.org/2000/svg";
-  const options = generatePathOptions(fromPos, toPos);
-
-  options.forEach((opt, i) => {
-    const color = CONNECT_COLORS[i % CONNECT_COLORS.length];
-    const polyline = document.createElementNS(svgNS, "polyline");
-    const pointsStr = opt.points.map(p => `${p.x},${p.y}`).join(" ");
-    polyline.setAttribute("points", pointsStr);
-    polyline.setAttribute("stroke", color);
-    polyline.setAttribute("stroke-width", "2.5");
-    polyline.setAttribute("stroke-dasharray", "8,4");
-    polyline.setAttribute("fill", "none");
-    polyline.setAttribute("stroke-linecap", "round");
-    polyline.setAttribute("stroke-linejoin", "round");
-    polyline.classList.add("manual-link-preview");
-
-    polyline.addEventListener("click", async (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      saveToUndo();
-      link.waypoints = opt.points.map(p => ({ x: p.x, y: p.y }));
-      clearPathPreviews();
-      await persistMultiState();
-      drawManualLinks();
-      showCustomPopup("Path berhasil diubah!", "Sukses");
-    });
-
-    const title = document.createElementNS(svgNS, "title");
-    title.textContent = `Path ${opt.id}: ${opt.label}`;
-    polyline.appendChild(title);
-
-    svg.appendChild(polyline);
+  // Garis selalu lurus (koordinat dihitung realtime dari posisi node)
+  // Reset waypoints agar drawManualLinks pakai posisi terkini
+  saveToUndo();
+  link.waypoints = null;
+  persistMultiState().then(() => {
+    drawManualLinks();
+    showCustomPopup("Tautan diperbarui ke posisi terkini!", "Sukses");
   });
-
-  showCustomPopup("Pilih path baru untuk garis ini.", "Ganti Path");
-
-  // Tutup preview setelah 10 detik kalau tidak dipilih
-  setTimeout(() => {
-    clearPathPreviews();
-  }, 10000);
 }
 
 // ========== KLIK GARIS EXISTING ==========
