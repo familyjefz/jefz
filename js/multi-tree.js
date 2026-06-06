@@ -67,14 +67,11 @@ async function loadMultiState() {
   let loaded = false;
   try {
     const data_raw = await apiGetTree(MULTI_TREE_ID);
-    if (res.ok) {
-      const data = await res.json();
-      if (data && (data.extras || data.links || data.offsets || data.visible)) {
-        applyMultiStateObject(data);
-        loaded = true;
-      }
+    if (data_raw && (data_raw.extras || data_raw.links || data_raw.offsets || data_raw.visible)) {
+      applyMultiStateObject(data_raw);
+      loaded = true;
     }
-  } catch (e) {}
+  } catch (e) { console.warn("loadMultiState error:", e); }
   if (!loaded) {
     try {
       const raw = localStorage.getItem(MULTI_LS_KEY);
