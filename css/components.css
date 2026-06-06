@@ -92,19 +92,12 @@
 .zoom-reset-btn:hover { background: #00a8f7 !important; }
 
 /* ========== NODE MENU ========== */
-.node-with-menu {
-  background: #d3d2d29d !important;
-  border-color: #888888 !important;
-  overflow: visible !important;
-  position: relative;
-}
 .node-menu {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 4px;
-  width: max-content;
-  min-width: 120px;
+  margin-top: 4px;
+  width: 100%;
 }
 .node-menu button {
   font-size: 8px;
@@ -518,19 +511,7 @@ svg.tree-svg, svg {
   overflow: visible !important;
 }
 
-/* ========== NODE MENU PORTAL (render ke body, selalu di depan) ========== */
-.node-menu-portal {
-  position: fixed;
-  z-index: 9999;
-  background: #d3d2d2f0;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid #888;
-  border-radius: 6px;
-  padding: 4px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-  min-width: 130px;
-}
+
 .node-menu-portal .node-menu {
   width: 100%;
 }
