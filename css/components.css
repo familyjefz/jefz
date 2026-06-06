@@ -518,3 +518,18 @@ svg.tree-svg, svg {
 .node-menu-portal .node-menu button {
   white-space: nowrap;
 }
+
+/* ========== COLLAPSE / EXPAND ========== */
+.node-name-clickable {
+  cursor: pointer !important;
+  user-select: none;
+}
+.node-name-clickable:hover {
+  opacity: 0.75;
+}
+.collapse-indicator {
+  font-size: 7px;
+  margin-left: 3px;
+  opacity: 0.7;
+  vertical-align: middle;
+}
