@@ -96,13 +96,27 @@
   background: #d3d2d29d !important;
   border-color: #888888 !important;
   overflow: visible !important;
+  position: relative;
 }
 .node-menu {
   display: flex;
   flex-direction: column;
   gap: 2px;
   margin-top: 4px;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: #d3d2d2f0;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid #888;
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }
 .node-menu button {
   font-size: 8px;
@@ -264,6 +278,11 @@ body.connect-mode .node-box { cursor: pointer; }
   pointer-events: auto !important;
 }
 
+/* ========== FOREIGN OBJECT NODE ========== */
+.tree-node {
+  overflow: visible !important;
+}
+
 /* ========== TREANT WRAPPER ========== */
 .Treant {
   width: 100%;
@@ -273,7 +292,7 @@ body.connect-mode .node-box { cursor: pointer; }
 /* ========== MANUAL LINKS SVG ========== */
 .manual-links-svg {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  pointer-events: none; overflow: visible; z-index: 0;
+  pointer-events: none; overflow: visible; z-index: 2;
 }
 .manual-links-svg line,
 .manual-links-svg polyline { pointer-events: stroke; cursor: pointer; }
