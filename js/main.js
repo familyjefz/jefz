@@ -39,6 +39,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("touchcancel", touchEnd);
 
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
+  document.getElementById("expand-btn")?.addEventListener("click", () => {
+    if (typeof resetAllCollapse === "function") resetAllCollapse();
+  });
+  document.getElementById("search-open-btn")?.addEventListener("click", () => {
+    if (typeof openSearch === "function") openSearch();
+  });
   document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
   document.getElementById("undo-btn")?.addEventListener("click", undoAction);
@@ -51,6 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   if (typeof initMultiTree === "function") initMultiTree();
+  if (typeof initSearch === "function") initSearch();
+  if (typeof initStats === "function") initStats();
   if (typeof initConnections === "function") initConnections();
 
   window.addEventListener("resize", () => {
