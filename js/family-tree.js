@@ -243,6 +243,7 @@ function renderTree() {
   overlay.setAttribute("class", "manual-links-svg");
   overlay.setAttribute("width", "10000");
   overlay.setAttribute("height", "10000");
+  overlay.style.pointerEvents = "none";  // SVG container none, children diatur sendiri
   container.appendChild(overlay);
 
   const trees = getAllTrees();
@@ -426,13 +427,16 @@ function renderD3Tree(container, rootData, treeId) {
   // Step 6: Nodes
   root.each(d => {
     const nw = nodeWidths.get(d) || NODE_WIDTH;
+    const isActiveNode = activePath && activeTreeId === treeId &&
+      JSON.stringify(d.data._path || getNodePath(root, d)) === JSON.stringify(activePath);
     const fo = g.append("foreignObject")
       .attr("x", d.x + shiftX - nw / 2)
       .attr("y", d.y + shiftY)
-      .attr("width",  nw)
-      .attr("height", NODE_HEIGHT + 4)
+      .attr("width",  nw + 20)
+      .attr("height", NODE_HEIGHT + (isActiveNode && !activeMode ? 200 : 10))
       .attr("class", "tree-node")
-      .style("overflow", "visible");
+      .style("overflow", "visible")
+      .style("z-index", isActiveNode ? "9999" : "1");
 
     const { div } = buildNodeHTML(d, root, treeId);
     fo.node().appendChild(div);
