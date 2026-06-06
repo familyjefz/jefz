@@ -248,57 +248,47 @@ function drawManualLinks() {
 
   if (!manualLinks || manualLinks.length === 0) return;
 
+  // Dapatkan scale zoom container
+  const zc = document.getElementById("tree-zoom-container");
+  const scaleVal = zc ? (parseFloat(zc.style.transform.match(/scale\(([^)]+)\)/)?.[1]) || 1) : 1;
+
+  const treeRect = treeRoot.getBoundingClientRect();
+
+  function nodeCenter(el) {
+    const r = el.getBoundingClientRect();
+    return {
+      x: (r.left - treeRect.left + r.width  / 2) / scaleVal,
+      y: (r.top  - treeRect.top  + r.height / 2) / scaleVal
+    };
+  }
+
   const svgNS = "http://www.w3.org/2000/svg";
   manualLinks.forEach(link => {
     const fromEl = document.querySelector(`.node-box[data-node-key="${cssEscapeMT(link.from)}"]`);
     const toEl   = document.querySelector(`.node-box[data-node-key="${cssEscapeMT(link.to)}"]`);
     if (!fromEl || !toEl) return;
 
-    const fromTreeId = link.from.split("|")[0];
-    const toTreeId   = link.to.split("|")[0];
-    const fromTreeEl = document.getElementById(`tree-instance-${fromTreeId}`);
-    const toTreeEl   = document.getElementById(`tree-instance-${toTreeId}`);
-    if (!fromTreeEl || !toTreeEl) return;
+    const c1 = nodeCenter(fromEl);
+    const c2 = nodeCenter(toEl);
 
-    const fromOff = treeOffsets[fromTreeId] || { x: 0, y: 0 };
-    const toOff   = treeOffsets[toTreeId]   || { x: 0, y: 0 };
+    const color = link.color || "#8cabe5";
+    const width = link.width || 2;
 
-    const c1 = nodeCenterInTree(fromEl, fromTreeEl);
-    const c2 = nodeCenterInTree(toEl,   toTreeEl);
-
-    const x1 = fromOff.x + c1.x;
-    const y1 = fromOff.y + c1.y;
-    const x2 = toOff.x   + c2.x;
-    const y2 = toOff.y   + c2.y;
-
-    const color = link.color || HEADER_BG_COLOR;
-    const width = link.width || 2.5;
-
-    let shapeEl;
-    if (link.waypoints && link.waypoints.length >= 2) {
-      // Pakai waypoints (polyline)
-      shapeEl = document.createElementNS(svgNS, "polyline");
-      const pts = link.waypoints.map(p => `${p.x},${p.y}`).join(" ");
-      shapeEl.setAttribute("points", pts);
-    } else {
-      // Garis lurus
-      shapeEl = document.createElementNS(svgNS, "line");
-      shapeEl.setAttribute("x1", x1);
-      shapeEl.setAttribute("y1", y1);
-      shapeEl.setAttribute("x2", x2);
-      shapeEl.setAttribute("y2", y2);
-    }
+    // Selalu gambar garis lurus antara center kedua node
+    // (waypoints lama diabaikan karena koordinat berubah setelah migrasi D3)
+    const shapeEl = document.createElementNS(svgNS, "line");
+    shapeEl.setAttribute("x1", c1.x);
+    shapeEl.setAttribute("y1", c1.y);
+    shapeEl.setAttribute("x2", c2.x);
+    shapeEl.setAttribute("y2", c2.y);
 
     shapeEl.setAttribute("stroke", color);
     shapeEl.setAttribute("stroke-width", String(width));
     shapeEl.setAttribute("stroke-linecap", "round");
-    shapeEl.setAttribute("stroke-linejoin", "round");
     shapeEl.setAttribute("fill", "none");
     shapeEl.setAttribute("data-link-id", link.id);
 
-    if (isAdmin) {
-      shapeEl.style.cursor = "pointer";
-    }
+    if (isAdmin) shapeEl.style.cursor = "pointer";
     svg.appendChild(shapeEl);
   });
 }
