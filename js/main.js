@@ -2,7 +2,9 @@
 document.addEventListener("click", (e) => {
   if (typeof connectModeActive !== "undefined" && connectModeActive) return;
   if (typeof repositionMode !== "undefined" && repositionMode) return;
+  if (e.target.closest(".node-menu-portal")) return;
   if (!e.target.closest(".node-box") && !e.target.closest("button") && e.target.tagName !== "TEXTAREA") {
+    if (typeof closeMenuPortal === "function") closeMenuPortal();
     activePath = null;
     activeMode = null;
     renderTree();
