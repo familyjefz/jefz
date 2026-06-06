@@ -54,7 +54,7 @@
 
 .node-buttons button:hover { opacity: 0.85; }
 
-.btn-option { background: #717a7c; color: #f1fcff; }
+.btn-option { background: #717a7c; color: #f1fcff; text-align: center; }
 .btn-option:hover { background: #455a64; }
 .btn-info { background: #5391c4; color: #000000fd; }
 .btn-info:hover { background: #0b7dda; }
