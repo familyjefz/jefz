@@ -229,12 +229,8 @@ function toggleCollapse(path, treeId) {
 
   node._collapsed = !node._collapsed;
 
-  // Simpan ke Turso
-  if (treeId === "main") {
-    apiSaveTree(1, currentTreeData).catch(e => console.warn("save collapse:", e));
-  } else if (typeof persistMultiState === "function") {
-    persistMultiState();
-  }
+  // Simpan ke memory saja (tidak ke Turso)
+  // _collapsed hanya sesi ini
 
   const scroll = getCurrentScroll();
   resetSiblingColors();
@@ -244,6 +240,21 @@ function toggleCollapse(path, treeId) {
   restoreScroll(scroll.left, scroll.top);
 }
 window.toggleCollapse = toggleCollapse;
+
+function resetAllCollapse() {
+  function clearCollapse(node) {
+    if (!node) return;
+    delete node._collapsed;
+    if (node.children) node.children.forEach(clearCollapse);
+  }
+  if (currentTreeData) clearCollapse(currentTreeData);
+  if (typeof extraTrees !== "undefined") extraTrees.forEach(t => clearCollapse(t.data));
+  const scroll = getCurrentScroll();
+  renderTree();
+  restoreScroll(scroll.left, scroll.top);
+}
+window.resetAllCollapse = resetAllCollapse;
+
 
 
 // ========== D3 TREE RENDERER ==========
