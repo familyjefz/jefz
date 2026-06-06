@@ -219,6 +219,33 @@ function isTreeVisible(treeId) {
 
 window.isTreeVisible = isTreeVisible;
 
+// ========== COLLAPSE / EXPAND ==========
+function toggleCollapse(path, treeId) {
+  const tree = getTreeDataById(treeId);
+  if (!tree) return;
+  const node = path.length === 0 ? tree : getNodeByPath(tree, path);
+  if (!node) return;
+  if (!node.children || node.children.length === 0) return; // tidak ada anak
+
+  node._collapsed = !node._collapsed;
+
+  // Simpan ke Turso
+  if (treeId === "main") {
+    apiSaveTree(1, currentTreeData).catch(e => console.warn("save collapse:", e));
+  } else if (typeof persistMultiState === "function") {
+    persistMultiState();
+  }
+
+  const scroll = getCurrentScroll();
+  resetSiblingColors();
+  if (currentTreeData) assignSiblingGroups(currentTreeData);
+  if (typeof extraTrees !== "undefined") extraTrees.forEach(t => assignSiblingGroups(t.data));
+  renderTree();
+  restoreScroll(scroll.left, scroll.top);
+}
+window.toggleCollapse = toggleCollapse;
+
+
 // ========== D3 TREE RENDERER ==========
 
 const NODE_WIDTH  = 100; // unit lebar untuk layout spacing
@@ -318,7 +345,7 @@ function buildNodeHTML(d, root, treeId) {
     wrap.innerHTML = `
       <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};overflow:visible;">
         ${edgeHtml}
-        <div class="node-name">${escapeHtml(d.data.name)}</div>
+        <div class="node-name">${escapeHtml(d.data.name)}${d.data.children && d.data.children.length ? `<span class="collapse-indicator">${d.data._collapsed ? "▶" : "▼"}</span>` : ""}</div>
         <div class="node-buttons">
           <button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>Option</button>
           <button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>
@@ -339,10 +366,15 @@ function buildNodeHTML(d, root, treeId) {
     if (isAdmin) {
       buttons = `<button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>Option</button>${buttons}`;
     }
+    const hasChildren = d.data.children && d.data.children.length > 0;
+    const isCollapsed = !!d.data._collapsed;
+    const collapseIndicator = hasChildren
+      ? `<span class="collapse-indicator">${isCollapsed ? "▶" : "▼"}</span>`
+      : "";
     wrap.innerHTML = `
       <div class="node-box" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
         ${edgeHtml}
-        <div class="node-name">${displayName}</div>
+        <div class="node-name node-name-clickable" onclick='toggleCollapse(${pathJson},${tIdQ})'>${displayName}${collapseIndicator}</div>
         <div class="node-buttons">${buttons}</div>
       </div>`;
   }
@@ -350,7 +382,7 @@ function buildNodeHTML(d, root, treeId) {
 }
 
 function renderD3Tree(container, rootData, treeId) {
-  const root = d3.hierarchy(rootData, d => d.children && d.children.length ? d.children : null);
+  const root = d3.hierarchy(rootData, d => (!d._collapsed && d.children && d.children.length) ? d.children : null);
 
   // Step 1: Render semua node ke offscreen div untuk ukur lebar nyata
   const measurer = document.createElement("div");
