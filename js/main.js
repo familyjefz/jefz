@@ -42,9 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("expand-btn")?.addEventListener("click", () => {
     if (typeof resetAllCollapse === "function") resetAllCollapse();
   });
-  document.getElementById("search-open-btn")?.addEventListener("click", () => {
-    if (typeof openSearch === "function") openSearch();
-  });
+
   document.getElementById("invert-btn")?.addEventListener("click", toggleInvert);
   document.getElementById("login-btn")?.addEventListener("click", onLoginLogoutClick);
   document.getElementById("undo-btn")?.addEventListener("click", undoAction);
