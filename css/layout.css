@@ -10,38 +10,97 @@
   background: #8cabe5;
   flex-shrink: 0;
   border-bottom: 1px solid #ddd;
-  padding: 8px 12px;
+  padding: 5px 10px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
 }
 
+/* Baris 1: Judul + Stats + Login/Search/Invert */
+.header-row1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.header-row1 h2 {
+  flex-shrink: 0;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.header-stats {
+  flex: 1;
+  font-size: 11px;
+  color: #222;
+  background: rgba(255,255,255,0.35);
+  border-radius: 8px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.header-right-top {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.header-right-top button {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.header-right-top button:hover { background: #00a8f7; }
+
+/* Baris 2: Tombol admin & aksi */
+.header-row2 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.header-row2 button {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 4px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.header-row2 button:hover { background: #00a8f7; }
+
+/* Keep compat dengan class lama yang masih dipakai di JS */
 .header-controls {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
 }
-
 .header-controls button {
   background: #000000;
   color: white;
   border: none;
-  padding: 4px 10px;
+  padding: 4px 9px;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
 }
+.header-controls button:hover { background: #00a8f7; }
 
-.header-controls button:hover {
-  background: #00a8f7;
-}
-
-.zoom-controls {
-  display: none;
-}
+.zoom-controls { display: none; }
 
 /* ========== TREE WRAPPER ========== */
 .tree-wrapper {
