@@ -12,20 +12,24 @@
 <body>
 <div class="app-container">
   <div class="header">
-    <h2>Silsilah Keluarga</h2>
-    <div class="header-controls">
-      <button id="addtree-btn" class="addtree-btn" style="display:none;">🌳 Tree Baru</button>
+    <div class="header-row1">
+      <h2>Silsilah Keluarga</h2>
+      <div class="header-stats" id="stats-display">👁 ... | 🟢 ...</div>
+      <div class="header-right-top">
+        <button id="search-open-btn" class="search-open-btn">🔍 Cari</button>
+        <button id="invert-btn" class="invert-btn">🎨</button>
+        <button id="login-btn" class="login-btn">👤 Login</button>
+      </div>
+    </div>
+    <div class="header-row2" id="header-controls">
       <button id="filter-btn" class="filter-btn">🔎 Filter</button>
+      <button id="expand-btn" class="expand-btn">👁 Show All</button>
+      <button id="addtree-btn" class="addtree-btn" style="display:none;">🌳 Tree Baru</button>
       <button id="reposition-btn" class="reposition-btn" style="display:none;">📍 Reposisi</button>
       <button id="connect-mode-btn" class="connect-mode-btn" style="display:none;">🔗 Connect</button>
       <button id="undo-btn" class="undo-btn" style="display:none;">↩️ Undo</button>
       <button id="redo-btn" class="redo-btn" style="display:none;">↪️ Redo</button>
-      <button id="expand-btn" class="expand-btn">👁 Show All</button>
-      <button id="search-open-btn" class="search-open-btn">🔍</button>
-      <button id="invert-btn" class="invert-btn">🎨 Invert</button>
-      <button id="login-btn" class="login-btn">👤 Login Admin</button>
     </div>
-    <div class="header-stats" id="stats-display">👁 ... &nbsp;|&nbsp; 🟢 ...</div>
   </div>
 
   <!-- Search Bar -->
