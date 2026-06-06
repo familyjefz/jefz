@@ -314,21 +314,15 @@ function buildNodeHTML(d, root, treeId) {
         </div>
       </div>`;
   } else if (isActive && isAdmin) {
+    // Menu ada di portal (document.body), node hanya highlight
+    const displayName = escapeHtml(d.data.name);
     wrap.innerHTML = `
-      <div class="node-box active-node node-with-menu" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
+      <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
         ${edgeHtml}
-        <div class="node-name">${escapeHtml(d.data.name)}</div>
+        <div class="node-name">${displayName}</div>
         <div class="node-buttons">
+          <button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>Option</button>
           <button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>
-        </div>
-        <div class="node-menu">
-          <button onclick='setMode(${pathJson},"add",${tIdQ})'>➕ Tambah Anak</button>
-          <button onclick='setMode(${pathJson},"edit",${tIdQ})'>✏️ Ubah Nama</button>
-          <button onclick='showHapusPopup(${pathJson},${tIdQ})'>❌ Hapus</button>
-          <button onclick='setMode(${pathJson},"parent",${tIdQ})'>⬆️ Tambah Parent</button>
-          <button onclick='setMode(${pathJson},"order",${tIdQ})'>🔢 Ubah Urutan</button>
-          <button onclick='startConnect(${pathJson},${tIdQ})'>🔗 Hubungkan</button>
-          <button onclick='disconnectNode(${pathJson},${tIdQ})'>✂️ Putuskan</button>
         </div>
       </div>`;
   } else {
@@ -657,15 +651,78 @@ function restoreScroll(left, top) {
   if (w) setTimeout(() => { w.scrollLeft = left; w.scrollTop = top; }, 50);
 }
 
+let _menuPortalEl = null;
+
+function closeMenuPortal() {
+  if (_menuPortalEl) { _menuPortalEl.remove(); _menuPortalEl = null; }
+  document.removeEventListener("click", _menuPortalOutside, true);
+}
+
+function _menuPortalOutside(e) {
+  if (_menuPortalEl && !_menuPortalEl.contains(e.target)) {
+    closeMenuPortal();
+    activePath = null; activeMode = null;
+  }
+}
+
 function openOptions(path, treeId = "main") {
   if (!isAdmin) return;
-  const scroll = getCurrentScroll();
+
+  // Jika klik node yang sama, tutup menu
+  if (activePath && JSON.stringify(activePath) === JSON.stringify(path) && activeTreeId === treeId && !activeMode) {
+    closeMenuPortal();
+    activePath = null; activeMode = null;
+    return;
+  }
+
+  closeMenuPortal();
   activePath = path; activeMode = null; activeTreeId = treeId;
-  renderTree(); restoreScroll(scroll.left, scroll.top);
+
+  const pathJson = JSON.stringify(path);
+  const tIdQ = `"${treeId}"`;
+
+  // Cari posisi tombol Option yang diklik
+  const nodeKey = `${treeId}|${path.join(",")}`;
+  const nodeBox = document.querySelector(`.node-box[data-node-key="${CSS.escape(nodeKey)}"]`);
+
+  const portal = document.createElement("div");
+  portal.className = "node-menu-portal";
+  portal.innerHTML = `<div class="node-menu">
+    <button onclick='closeMenuPortal();setMode(${pathJson},"add",${tIdQ})'>➕ Tambah Anak</button>
+    <button onclick='closeMenuPortal();setMode(${pathJson},"edit",${tIdQ})'>✏️ Ubah Nama</button>
+    <button onclick='closeMenuPortal();showHapusPopup(${pathJson},${tIdQ})'>❌ Hapus</button>
+    <button onclick='closeMenuPortal();setMode(${pathJson},"parent",${tIdQ})'>⬆️ Tambah Parent</button>
+    <button onclick='closeMenuPortal();setMode(${pathJson},"order",${tIdQ})'>🔢 Ubah Urutan</button>
+    <button onclick='closeMenuPortal();startConnect(${pathJson},${tIdQ})'>🔗 Hubungkan</button>
+    <button onclick='closeMenuPortal();disconnectNode(${pathJson},${tIdQ})'>✂️ Putuskan</button>
+  </div>`;
+
+  document.body.appendChild(portal);
+  _menuPortalEl = portal;
+
+  // Posisi di bawah node
+  if (nodeBox) {
+    const r = nodeBox.getBoundingClientRect();
+    const zc = document.getElementById("tree-zoom-container");
+    const sc = zc ? (parseFloat(zc.style.transform.match(/scale\(([^)]+)\)/)?.[1]) || 1) : 1;
+    const pw = portal.offsetWidth || 140;
+    let left = r.left;
+    let top  = r.bottom + 4;
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    if (top + 220 > window.innerHeight - 8) top = r.top - 220;
+    if (left < 8) left = 8;
+    portal.style.left = left + "px";
+    portal.style.top  = top  + "px";
+  }
+
+  setTimeout(() => document.addEventListener("click", _menuPortalOutside, true), 10);
 }
+
+window.closeMenuPortal = closeMenuPortal;
 
 function setMode(path, mode, treeId = "main") {
   if (!isAdmin) return;
+  closeMenuPortal();
   const scroll = getCurrentScroll();
   activePath = path; activeMode = mode; activeTreeId = treeId;
   renderTree(); restoreScroll(scroll.left, scroll.top);
@@ -673,6 +730,7 @@ function setMode(path, mode, treeId = "main") {
 
 function cancelInline() {
   if (!isAdmin) return;
+  closeMenuPortal();
   const scroll = getCurrentScroll();
   activePath = null; activeMode = null;
   renderTree(); restoreScroll(scroll.left, scroll.top);
