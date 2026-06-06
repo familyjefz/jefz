@@ -286,10 +286,25 @@ function drawManualLinks() {
     shapeEl.setAttribute("stroke-width", String(width));
     shapeEl.setAttribute("stroke-linecap", "round");
     shapeEl.setAttribute("fill", "none");
+    if (link.dasharray && link.dasharray !== "none") {
+      shapeEl.setAttribute("stroke-dasharray", link.dasharray);
+    }
     shapeEl.setAttribute("data-link-id", link.id);
-
     if (isAdmin) shapeEl.style.cursor = "pointer";
     svg.appendChild(shapeEl);
+
+    // Hit area transparan lebar agar mudah diklik (terutama di mobile)
+    if (isAdmin) {
+      const hit = document.createElementNS(svgNS, "line");
+      hit.setAttribute("x1", c1.x); hit.setAttribute("y1", c1.y);
+      hit.setAttribute("x2", c2.x); hit.setAttribute("y2", c2.y);
+      hit.setAttribute("stroke", "transparent");
+      hit.setAttribute("stroke-width", "16");
+      hit.setAttribute("fill", "none");
+      hit.setAttribute("data-link-id", link.id);
+      hit.style.cursor = "pointer";
+      svg.appendChild(hit);
+    }
   });
 }
 
