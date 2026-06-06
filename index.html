@@ -20,9 +20,22 @@
       <button id="connect-mode-btn" class="connect-mode-btn" style="display:none;">🔗 Connect</button>
       <button id="undo-btn" class="undo-btn" style="display:none;">↩️ Undo</button>
       <button id="redo-btn" class="redo-btn" style="display:none;">↪️ Redo</button>
+      <button id="expand-btn" class="expand-btn">👁 Show All</button>
+      <button id="search-open-btn" class="search-open-btn">🔍</button>
       <button id="invert-btn" class="invert-btn">🎨 Invert</button>
       <button id="login-btn" class="login-btn">👤 Login Admin</button>
     </div>
+    <div class="header-stats" id="stats-display">👁 ... &nbsp;|&nbsp; 🟢 ...</div>
+  </div>
+
+  <!-- Search Bar -->
+  <div id="search-bar" class="search-bar" style="display:none;">
+    <div class="search-inner">
+      <input type="text" id="search-input" class="search-input" placeholder="Cari nama...">
+      <button id="search-btn-go" class="search-btn-go">Cari</button>
+      <button onclick="closeSearch()" class="search-btn-close">✕</button>
+    </div>
+    <div id="search-suggestions" class="search-suggestions"></div>
   </div>
 
   <div class="tree-wrapper" id="tree-wrapper">
@@ -146,6 +159,8 @@
 <script src="js/family-tree.js"></script>
 <script src="js/family-info.js"></script>
 <script src="js/multi-tree.js"></script>
+<script src="js/search.js"></script>
+<script src="js/stats.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
