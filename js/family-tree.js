@@ -222,9 +222,9 @@ window.isTreeVisible = isTreeVisible;
 // ========== D3 TREE RENDERER ==========
 
 const NODE_WIDTH  = 120;  // minimum, actual width is dynamic
-const NODE_HEIGHT = 40;
-const NODE_H_GAP  = 5;
-const NODE_V_GAP  = 35;
+const NODE_HEIGHT = 50;
+const NODE_H_GAP  = 20;
+const NODE_V_GAP  = 50;
 
 function renderTree() {
   const container = document.getElementById("tree");
