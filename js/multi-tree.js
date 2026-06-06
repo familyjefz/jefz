@@ -290,7 +290,18 @@ function drawManualLinks() {
       shapeEl.setAttribute("stroke-dasharray", link.dasharray);
     }
     shapeEl.setAttribute("data-link-id", link.id);
-    if (isAdmin) shapeEl.style.cursor = "pointer";
+    shapeEl.style.pointerEvents = "stroke";
+    if (isAdmin) {
+      shapeEl.style.cursor = "pointer";
+      shapeEl.addEventListener("click", (e) => {
+        if (typeof connectModeActive !== "undefined" && connectModeActive) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof showLinkEditPopup === "function") {
+          showLinkEditPopup(link.id, e.clientX, e.clientY);
+        }
+      });
+    }
     svg.appendChild(shapeEl);
 
     // Hit area transparan lebar agar mudah diklik (terutama di mobile)
@@ -299,10 +310,20 @@ function drawManualLinks() {
       hit.setAttribute("x1", c1.x); hit.setAttribute("y1", c1.y);
       hit.setAttribute("x2", c2.x); hit.setAttribute("y2", c2.y);
       hit.setAttribute("stroke", "transparent");
-      hit.setAttribute("stroke-width", "16");
+      hit.setAttribute("stroke-width", "20");
       hit.setAttribute("fill", "none");
       hit.setAttribute("data-link-id", link.id);
+      hit.style.pointerEvents = "stroke";
       hit.style.cursor = "pointer";
+      hit.addEventListener("click", (e) => {
+        if (!isAdmin) return;
+        if (typeof connectModeActive !== "undefined" && connectModeActive) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof showLinkEditPopup === "function") {
+          showLinkEditPopup(link.id, e.clientX, e.clientY);
+        }
+      });
       svg.appendChild(hit);
     }
   });
