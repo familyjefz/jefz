@@ -13,13 +13,18 @@
 <div class="app-container">
   <div class="header">
     <div class="header-row1">
-      <h2>Silsilah Keluarga</h2>
-      <div class="header-stats" id="stats-display">👁 ... | 🟢 ...</div>
-      <div class="header-right-top">
-        <button id="search-open-btn" class="search-open-btn">🔍 Cari</button>
-        <button id="invert-btn" class="invert-btn">🎨</button>
-        <button id="login-btn" class="login-btn">👤 Login</button>
+      <h2 class="header-title">Silsilah Keluarga</h2>
+      <div class="header-search-wrap">
+        <div class="header-search-inner">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" class="search-input" placeholder="Cari nama...">
+          <button id="search-btn-go" class="search-btn-go">Cari</button>
+        </div>
+        <div id="search-suggestions" class="search-suggestions"></div>
       </div>
+      <div class="header-stats" id="stats-display">👁 — | 🟢 —</div>
+      <button id="invert-btn" class="invert-btn">🎨</button>
+      <button id="login-btn" class="login-btn">👤</button>
     </div>
     <div class="header-row2" id="header-controls">
       <button id="filter-btn" class="filter-btn">🔎 Filter</button>
@@ -30,16 +35,6 @@
       <button id="undo-btn" class="undo-btn" style="display:none;">↩️ Undo</button>
       <button id="redo-btn" class="redo-btn" style="display:none;">↪️ Redo</button>
     </div>
-  </div>
-
-  <!-- Search Bar -->
-  <div id="search-bar" class="search-bar" style="display:none;">
-    <div class="search-inner">
-      <input type="text" id="search-input" class="search-input" placeholder="Cari nama...">
-      <button id="search-btn-go" class="search-btn-go">Cari</button>
-      <button onclick="closeSearch()" class="search-btn-close">✕</button>
-    </div>
-    <div id="search-suggestions" class="search-suggestions"></div>
   </div>
 
   <div class="tree-wrapper" id="tree-wrapper">
