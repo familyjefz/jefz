@@ -221,10 +221,10 @@ window.isTreeVisible = isTreeVisible;
 
 // ========== D3 TREE RENDERER ==========
 
-const NODE_WIDTH  = 120;  // minimum, actual width is dynamic
-const NODE_HEIGHT = 50;
-const NODE_H_GAP  = 20;
-const NODE_V_GAP  = 50;
+const NODE_WIDTH  = 100; // unit lebar untuk layout spacing
+const NODE_HEIGHT = 38; // tinggi node (nama + tombol)
+const NODE_H_GAP  = 8;  // jarak horizontal
+const NODE_V_GAP  = 30; // jarak vertikal
 
 function renderTree() {
   const container = document.getElementById("tree");
@@ -281,28 +281,69 @@ function renderTree() {
   }, 50);
 }
 
-function estimateNodeWidth(name) {
-  // Estimate width based on longest line in the name
-  const lines = name.split("\n");
-  const longest = Math.max(...lines.map(l => l.length));
-  // ~5.5px per char at 9px font, min 80, max uncapped
-  return Math.max(80, longest * 5.5 + 20);
+// ====== NODE OPTION POPUP (fixed position, tidak tertutupi) ======
+let _nodePopupEl = null;
+
+function closeNodePopup() {
+  if (_nodePopupEl) { _nodePopupEl.remove(); _nodePopupEl = null; }
+  document.removeEventListener("click", _nodePopupOutside, true);
+}
+
+function _nodePopupOutside(e) {
+  if (_nodePopupEl && !_nodePopupEl.contains(e.target)) closeNodePopup();
+}
+
+function showNodePopup(clientX, clientY, pathJson, tIdQ, borderColor, nodeKey) {
+  closeNodePopup();
+  const popup = document.createElement("div");
+  popup.className = "node-popup-fixed";
+  popup.innerHTML = `
+    <div class="node-menu">
+      <button onclick='closeNodePopup();setMode(${pathJson},"add",${tIdQ})'>➕ Tambah Anak</button>
+      <button onclick='closeNodePopup();setMode(${pathJson},"edit",${tIdQ})'>✏️ Ubah Nama</button>
+      <button onclick='closeNodePopup();showHapusPopup(${pathJson},${tIdQ})'>❌ Hapus</button>
+      <button onclick='closeNodePopup();setMode(${pathJson},"parent",${tIdQ})'>⬆️ Tambah Parent</button>
+      <button onclick='closeNodePopup();setMode(${pathJson},"order",${tIdQ})'>🔢 Ubah Urutan</button>
+      <button onclick='closeNodePopup();startConnect(${pathJson},${tIdQ})'>🔗 Hubungkan</button>
+      <button onclick='closeNodePopup();disconnectNode(${pathJson},${tIdQ})'>✂️ Putuskan</button>
+    </div>`;
+  popup.style.cssText = `
+    position:fixed; z-index:2000;
+    background:rgba(30,30,30,0.97);
+    backdrop-filter:blur(10px);
+    border-radius:8px;
+    padding:6px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.5);
+    min-width:130px;
+  `;
+  // Smart positioning: avoid overflow
+  document.body.appendChild(popup);
+  _nodePopupEl = popup;
+  const pw = popup.offsetWidth || 140;
+  const ph = popup.offsetHeight || 180;
+  let left = clientX + 4;
+  let top  = clientY + 4;
+  if (left + pw > window.innerWidth  - 8) left = clientX - pw - 4;
+  if (top  + ph > window.innerHeight - 8) top  = clientY - ph - 4;
+  popup.style.left = left + "px";
+  popup.style.top  = top  + "px";
+  setTimeout(() => document.addEventListener("click", _nodePopupOutside, true), 10);
 }
 
 function buildNodeHTML(d, root, treeId) {
   const path = d.data._path || getNodePath(root, d);
   d.data._path = path;
-  const nodeKey  = `${treeId}|${path.join(",")}`;
-  const pathJson = JSON.stringify(path);
-  const tIdQ     = `"${treeId}"`;
+  const nodeKey     = `${treeId}|${path.join(",")}`;
+  const pathJson    = JSON.stringify(path);
+  const tIdQ        = `"${treeId}"`;
   const borderColor = getNodeColor(d.data);
-  const isActive = activePath && activeTreeId === treeId &&
-                   JSON.stringify(path) === JSON.stringify(activePath);
-  const inputId = `input-${treeId}-${path.join("-")}`;
-  const edgeHtml = `<div class="node-edge-left" data-edge-key="${nodeKey}"></div>`;
+  const isActive    = activePath && activeTreeId === treeId &&
+                      JSON.stringify(path) === JSON.stringify(activePath);
+  const inputId     = `input-${treeId}-${path.join("-")}`;
+  const edgeHtml    = `<div class="node-edge-left" data-edge-key="${nodeKey}"></div>`;
 
-  const div = document.createElement("div");
-  div.style.display = "inline-block";
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:inline-block;position:relative;";
 
   if (isActive && activeMode && isAdmin) {
     let inputValue = "", placeholder = "";
@@ -310,7 +351,7 @@ function buildNodeHTML(d, root, treeId) {
     else if (activeMode === "add")    placeholder = "Tulis nama anak (Enter untuk baris baru)";
     else if (activeMode === "parent") placeholder = "Tulis nama parent (Enter untuk baris baru)";
     else if (activeMode === "order")  placeholder = "Masukkan nomor urutan (0=pertama)";
-    div.innerHTML = `
+    wrap.innerHTML = `
       <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
         ${edgeHtml}
         <div class="node-name">${escapeHtml(d.data.name)}</div>
@@ -320,105 +361,108 @@ function buildNodeHTML(d, root, treeId) {
           <button onclick='cancelInline()'>✖ Batal</button>
         </div>
       </div>`;
-  } else if (isActive && isAdmin) {
-    div.innerHTML = `
-      <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
-        ${edgeHtml}
-        <div class="node-name">${escapeHtml(d.data.name)}</div>
-        <div class="node-menu">
-          <button onclick='setMode(${pathJson},"add",${tIdQ})'>➕ Tambah Anak</button>
-          <button onclick='setMode(${pathJson},"edit",${tIdQ})'>✏️ Ubah Nama</button>
-          <button onclick='showHapusPopup(${pathJson},${tIdQ})'>❌ Hapus</button>
-          <button onclick='setMode(${pathJson},"parent",${tIdQ})'>⬆️ Tambah Parent</button>
-          <button onclick='setMode(${pathJson},"order",${tIdQ})'>🔢 Ubah Urutan</button>
-          <button onclick='startConnect(${pathJson},${tIdQ})'>🔗 Hubungkan</button>
-          <button onclick='disconnectNode(${pathJson},${tIdQ})'>✂️ Putuskan</button>
-        </div>
-      </div>`;
   } else {
     const displayName = escapeHtml(d.data.name);
     let buttons = `<button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>`;
     if (isAdmin) {
-      buttons = `<button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>⚙️ Option</button>${buttons}`;
+      // Option button triggers floating popup
+      buttons = `<button class="btn-option" onclick='(function(e){e.stopPropagation();showNodePopup(e.clientX,e.clientY,${pathJson},${tIdQ},"${borderColor}","${nodeKey}")})(event)'>⚙️ Option</button>${buttons}`;
     }
-    div.innerHTML = `
-      <div class="node-box" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
+    const activeClass = isActive ? " active-node" : "";
+    wrap.innerHTML = `
+      <div class="node-box${activeClass}" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
         ${edgeHtml}
         <div class="node-name">${displayName}</div>
         <div class="node-buttons">${buttons}</div>
       </div>`;
   }
-  return { div, nodeKey, path };
+  return { div: wrap, nodeKey, path };
 }
 
 function renderD3Tree(container, rootData, treeId) {
   const root = d3.hierarchy(rootData, d => d.children && d.children.length ? d.children : null);
 
-  // Pre-compute estimated widths per node
-  root.each(d => {
-    d._w = estimateNodeWidth(d.data.name);
-  });
+  // Step 1: Render semua node ke offscreen div untuk ukur lebar nyata
+  const measurer = document.createElement("div");
+  measurer.style.cssText = "position:absolute;visibility:hidden;top:-9999px;left:-9999px;";
+  document.body.appendChild(measurer);
 
-  // Custom separation based on estimated widths
+  const nodeWidths = new Map();
+  root.each(d => {
+    const tmp = document.createElement("div");
+    tmp.className = "node-box";
+    tmp.style.cssText = "display:inline-block;white-space:pre;";
+    tmp.innerHTML = `<div class="node-name">${escapeHtml(d.data.name)}</div>
+      <div class="node-buttons"><button class="btn-option">⚙️ Option</button><button class="btn-info">📄 Info</button></div>`;
+    measurer.appendChild(tmp);
+    const w = Math.max(tmp.offsetWidth + 2, 70);
+    nodeWidths.set(d, w);
+    measurer.removeChild(tmp);
+  });
+  document.body.removeChild(measurer);
+
+  // Step 2: Layout dengan separation berdasar lebar nyata
   const treeLayout = d3.tree()
     .nodeSize([NODE_WIDTH + NODE_H_GAP, NODE_HEIGHT + NODE_V_GAP])
     .separation((a, b) => {
-      const gap = NODE_H_GAP;
-      const needed = (a._w + b._w) / 2 + gap;
-      const unit = NODE_WIDTH + NODE_H_GAP;
+      const wa = nodeWidths.get(a) || NODE_WIDTH;
+      const wb = nodeWidths.get(b) || NODE_WIDTH;
+      const needed = (wa + wb) / 2 + NODE_H_GAP;
+      const unit   = NODE_WIDTH + NODE_H_GAP;
       return Math.max(1, needed / unit);
     });
 
   treeLayout(root);
 
-  // Bounding box
+  // Step 3: Bounding box
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   root.each(d => {
-    const hw = (d._w || NODE_WIDTH) / 2;
+    const hw = (nodeWidths.get(d) || NODE_WIDTH) / 2;
     if (d.x - hw < minX) minX = d.x - hw;
     if (d.x + hw > maxX) maxX = d.x + hw;
-    if (d.y < minY) minY = d.y;
-    if (d.y > maxY) maxY = d.y;
+    if (d.y     < minY) minY = d.y;
+    if (d.y     > maxY) maxY = d.y;
   });
 
-  const PADDING = 20;
+  const PADDING = 10;
   const svgW = (maxX - minX) + PADDING * 2;
   const svgH = (maxY - minY) + NODE_HEIGHT + PADDING * 2;
   const shiftX = -minX + PADDING;
   const shiftY = -minY + PADDING;
 
+  // Step 4: SVG
   const svg = d3.select(container).append("svg")
-    .attr("width", svgW)
+    .attr("width",  svgW)
     .attr("height", svgH)
     .style("overflow", "visible");
 
   const g = svg.append("g");
 
-  // Links — connect bottom-center of parent to top-center of child
+  // Step 5: Links — elbow connector (orthogonal), presisi ke tengah node
   g.selectAll(".tree-link")
     .data(root.links())
     .enter().append("path")
       .attr("class", "tree-link")
       .attr("fill", "none")
       .attr("stroke", "#888")
-      .attr("stroke-width", 1.2)
+      .attr("stroke-width", 1)
       .attr("d", d => {
-        const sx = d.source.x + shiftX;
-        const sy = d.source.y + shiftY + NODE_HEIGHT;
-        const tx = d.target.x + shiftX;
-        const ty = d.target.y + shiftY;
-        const my = (sy + ty) / 2;
-        return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
+        const sx  = d.source.x + shiftX;
+        const sy  = d.source.y + shiftY + NODE_HEIGHT;
+        const tx  = d.target.x + shiftX;
+        const ty  = d.target.y + shiftY;
+        const mid = sy + (ty - sy) * 0.5;
+        return `M${sx},${sy} L${sx},${mid} L${tx},${mid} L${tx},${ty}`;
       });
 
-  // Nodes as foreignObject with dynamic width
+  // Step 6: Nodes
   root.each(d => {
-    const nw = d._w || NODE_WIDTH;
+    const nw = nodeWidths.get(d) || NODE_WIDTH;
     const fo = g.append("foreignObject")
       .attr("x", d.x + shiftX - nw / 2)
       .attr("y", d.y + shiftY)
-      .attr("width", nw)
-      .attr("height", NODE_HEIGHT + 200)
+      .attr("width",  nw)
+      .attr("height", NODE_HEIGHT + 4)
       .attr("class", "tree-node")
       .style("overflow", "visible");
 
