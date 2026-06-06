@@ -231,69 +231,93 @@ function showLinkEditPopup(linkId, clientX, clientY) {
   if (!link) return;
 
   editPopupLinkId = linkId;
-  editPopupPos = { x: clientX, y: clientY };
 
   const popup = document.createElement("div");
   popup.id = "link-edit-popup";
   popup.className = "link-edit-popup";
-  popup.style.left = clientX + "px";
-  popup.style.top = clientY + "px";
   popup.style.display = "block";
+  document.body.appendChild(popup);
 
-  let html = '<div style="color:#fff;font-size:10px;margin-bottom:6px;">✏️ Edit Garis</div>';
+  // Header
+  let html = '<div class="lep-title">✏️ Edit Garis</div>';
 
   // Warna
-  html += '<div style="color:#ccc;font-size:9px;">Warna:</div><div class="lep-color-row">';
+  html += '<div class="lep-label">Warna:</div><div class="lep-color-row">';
   CONNECT_COLORS.forEach(c => {
-    const active = (link.color === c) ? 'style="border:2px solid #fff;"' : '';
+    const active = (link.color === c) ? 'data-active="1"' : '';
     html += `<span class="lep-color-dot" data-color="${c}" style="background:${c};" ${active}></span>`;
   });
   html += '</div>';
 
   // Ketebalan
-  html += '<div style="color:#ccc;font-size:9px;margin-top:6px;">Ketebalan:</div><div class="lep-width-row">';
+  html += '<div class="lep-label">Ketebalan:</div><div class="lep-width-row">';
   CONNECT_WIDTHS.forEach(w => {
-    const active = (link.width === w) ? 'style="background:#00a8f7;"' : '';
+    const active = (link.width === w) ? 'data-active="1"' : '';
     html += `<span class="lep-width-btn" data-width="${w}" ${active}>${w}px</span>`;
   });
   html += '</div>';
 
-  // Ganti Path
-  html += `<button class="lep-change-path" data-link-id="${linkId}" style="background:#9c27b0;margin-top:6px;">🔄 Ganti Path</button>`;
+  // Gaya garis (solid/dashed/dotted)
+  const styles = [
+    { val: "none",   label: "━ Solid" },
+    { val: "6,3",    label: "┅ Dashed" },
+    { val: "2,3",    label: "┄ Dotted" }
+  ];
+  html += '<div class="lep-label">Gaya:</div><div class="lep-width-row">';
+  styles.forEach(s => {
+    const cur = link.dasharray || "none";
+    const active = (cur === s.val) ? 'data-active="1"' : '';
+    html += `<span class="lep-width-btn" data-dash="${s.val}" ${active}>${s.label}</span>`;
+  });
+  html += '</div>';
 
   // Hapus
-  html += `<button class="lep-delete" data-link-id="${linkId}" style="background:#f44336;margin-top:2px;">🗑 Hapus</button>`;
+  html += `<button class="lep-delete">🗑️ Hapus Garis</button>`;
 
   popup.innerHTML = html;
-  document.body.appendChild(popup);
 
-  // Event listeners
+  // Smart position
+  const pw = 180, ph = 200;
+  let left = clientX + 6;
+  let top  = clientY + 6;
+  if (left + pw > window.innerWidth  - 8) left = clientX - pw - 6;
+  if (top  + ph > window.innerHeight - 8) top  = clientY - ph - 6;
+  if (left < 8) left = 8;
+  popup.style.left = left + "px";
+  popup.style.top  = top  + "px";
+
+  // Events
   popup.querySelectorAll(".lep-color-dot").forEach(dot => {
     dot.addEventListener("click", async (e) => {
       e.stopPropagation();
-      const newColor = dot.getAttribute("data-color");
-      link.color = newColor;
+      saveToUndo();
+      link.color = dot.getAttribute("data-color");
       await persistMultiState();
       drawManualLinks();
       closeLinkEditPopup();
     });
   });
 
-  popup.querySelectorAll(".lep-width-btn").forEach(btn => {
+  popup.querySelectorAll(".lep-width-btn[data-width]").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      const newWidth = parseInt(btn.getAttribute("data-width"));
-      link.width = newWidth;
+      saveToUndo();
+      link.width = parseInt(btn.getAttribute("data-width"));
       await persistMultiState();
       drawManualLinks();
       closeLinkEditPopup();
     });
   });
 
-  popup.querySelector(".lep-change-path")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    closeLinkEditPopup();
-    changeLinkPath(link);
+  popup.querySelectorAll(".lep-width-btn[data-dash]").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      saveToUndo();
+      link.dasharray = btn.getAttribute("data-dash");
+      await persistMultiState();
+      drawManualLinks();
+      closeLinkEditPopup();
+    });
   });
 
   popup.querySelector(".lep-delete")?.addEventListener("click", async (e) => {
@@ -302,7 +326,6 @@ function showLinkEditPopup(linkId, clientX, clientY) {
     await deleteManualLink(linkId);
   });
 
-  // Tutup popup kalau klik di luar
   setTimeout(() => {
     document.addEventListener("click", closeLinkEditPopupOnOutside, true);
   }, 10);
