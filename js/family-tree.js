@@ -221,9 +221,9 @@ window.isTreeVisible = isTreeVisible;
 
 // ========== D3 TREE RENDERER ==========
 
-const NODE_WIDTH  = 90;
-const NODE_HEIGHT = 60;
-const NODE_H_GAP  = 10;
+const NODE_WIDTH  = 120;  // minimum, actual width is dynamic
+const NODE_HEIGHT = 50;
+const NODE_H_GAP  = 20;
 const NODE_V_GAP  = 50;
 
 function renderTree() {
@@ -281,40 +281,120 @@ function renderTree() {
   }, 50);
 }
 
+function estimateNodeWidth(name) {
+  // Estimate width based on longest line in the name
+  const lines = name.split("\n");
+  const longest = Math.max(...lines.map(l => l.length));
+  // ~5.5px per char at 9px font, min 80, max uncapped
+  return Math.max(80, longest * 5.5 + 20);
+}
+
+function buildNodeHTML(d, root, treeId) {
+  const path = d.data._path || getNodePath(root, d);
+  d.data._path = path;
+  const nodeKey  = `${treeId}|${path.join(",")}`;
+  const pathJson = JSON.stringify(path);
+  const tIdQ     = `"${treeId}"`;
+  const borderColor = getNodeColor(d.data);
+  const isActive = activePath && activeTreeId === treeId &&
+                   JSON.stringify(path) === JSON.stringify(activePath);
+  const inputId = `input-${treeId}-${path.join("-")}`;
+  const edgeHtml = `<div class="node-edge-left" data-edge-key="${nodeKey}"></div>`;
+
+  const div = document.createElement("div");
+  div.style.display = "inline-block";
+
+  if (isActive && activeMode && isAdmin) {
+    let inputValue = "", placeholder = "";
+    if (activeMode === "edit")   { inputValue = d.data.name; placeholder = "Tulis nama (Enter untuk baris baru)"; }
+    else if (activeMode === "add")    placeholder = "Tulis nama anak (Enter untuk baris baru)";
+    else if (activeMode === "parent") placeholder = "Tulis nama parent (Enter untuk baris baru)";
+    else if (activeMode === "order")  placeholder = "Masukkan nomor urutan (0=pertama)";
+    div.innerHTML = `
+      <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
+        ${edgeHtml}
+        <div class="node-name">${escapeHtml(d.data.name)}</div>
+        <textarea class="node-input" id="${inputId}" placeholder="${placeholder}" rows="2">${escapeHtml(inputValue)}</textarea>
+        <div class="node-actions">
+          <button onclick='submitInline(${pathJson})'>✔ Simpan</button>
+          <button onclick='cancelInline()'>✖ Batal</button>
+        </div>
+      </div>`;
+  } else if (isActive && isAdmin) {
+    div.innerHTML = `
+      <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
+        ${edgeHtml}
+        <div class="node-name">${escapeHtml(d.data.name)}</div>
+        <div class="node-menu">
+          <button onclick='setMode(${pathJson},"add",${tIdQ})'>➕ Tambah Anak</button>
+          <button onclick='setMode(${pathJson},"edit",${tIdQ})'>✏️ Ubah Nama</button>
+          <button onclick='showHapusPopup(${pathJson},${tIdQ})'>❌ Hapus</button>
+          <button onclick='setMode(${pathJson},"parent",${tIdQ})'>⬆️ Tambah Parent</button>
+          <button onclick='setMode(${pathJson},"order",${tIdQ})'>🔢 Ubah Urutan</button>
+          <button onclick='startConnect(${pathJson},${tIdQ})'>🔗 Hubungkan</button>
+          <button onclick='disconnectNode(${pathJson},${tIdQ})'>✂️ Putuskan</button>
+        </div>
+      </div>`;
+  } else {
+    const displayName = escapeHtml(d.data.name);
+    let buttons = `<button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>`;
+    if (isAdmin) {
+      buttons = `<button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>⚙️ Option</button>${buttons}`;
+    }
+    div.innerHTML = `
+      <div class="node-box" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
+        ${edgeHtml}
+        <div class="node-name">${displayName}</div>
+        <div class="node-buttons">${buttons}</div>
+      </div>`;
+  }
+  return { div, nodeKey, path };
+}
+
 function renderD3Tree(container, rootData, treeId) {
-  // Build D3 hierarchy
   const root = d3.hierarchy(rootData, d => d.children && d.children.length ? d.children : null);
 
-  // Use d3.tree layout
+  // Pre-compute estimated widths per node
+  root.each(d => {
+    d._w = estimateNodeWidth(d.data.name);
+  });
+
+  // Custom separation based on estimated widths
   const treeLayout = d3.tree()
     .nodeSize([NODE_WIDTH + NODE_H_GAP, NODE_HEIGHT + NODE_V_GAP])
-    .separation((a, b) => a.parent === b.parent ? 1 : 1.2);
+    .separation((a, b) => {
+      const gap = NODE_H_GAP;
+      const needed = (a._w + b._w) / 2 + gap;
+      const unit = NODE_WIDTH + NODE_H_GAP;
+      return Math.max(1, needed / unit);
+    });
 
   treeLayout(root);
 
-  // Compute bounding box
+  // Bounding box
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   root.each(d => {
-    if (d.x < minX) minX = d.x;
-    if (d.x > maxX) maxX = d.x;
+    const hw = (d._w || NODE_WIDTH) / 2;
+    if (d.x - hw < minX) minX = d.x - hw;
+    if (d.x + hw > maxX) maxX = d.x + hw;
     if (d.y < minY) minY = d.y;
     if (d.y > maxY) maxY = d.y;
   });
 
   const PADDING = 20;
-  const svgW = (maxX - minX) + NODE_WIDTH  + PADDING * 2;
+  const svgW = (maxX - minX) + PADDING * 2;
   const svgH = (maxY - minY) + NODE_HEIGHT + PADDING * 2;
-  const offsetX = -minX + NODE_WIDTH / 2 + PADDING;
-  const offsetY = -minY + PADDING;
+  const shiftX = -minX + PADDING;
+  const shiftY = -minY + PADDING;
 
   const svg = d3.select(container).append("svg")
-    .attr("width",  svgW)
+    .attr("width", svgW)
     .attr("height", svgH)
     .style("overflow", "visible");
 
   const g = svg.append("g");
 
-  // Draw links
+  // Links — connect bottom-center of parent to top-center of child
   g.selectAll(".tree-link")
     .data(root.links())
     .enter().append("path")
@@ -323,89 +403,27 @@ function renderD3Tree(container, rootData, treeId) {
       .attr("stroke", "#888")
       .attr("stroke-width", 1.2)
       .attr("d", d => {
-        const sx = d.source.x + offsetX;
-        const sy = d.source.y + offsetY + NODE_HEIGHT;
-        const tx = d.target.x + offsetX;
-        const ty = d.target.y + offsetY;
+        const sx = d.source.x + shiftX;
+        const sy = d.source.y + shiftY + NODE_HEIGHT;
+        const tx = d.target.x + shiftX;
+        const ty = d.target.y + shiftY;
         const my = (sy + ty) / 2;
         return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
       });
 
-  // Draw nodes as foreignObject
-  const nodes = g.selectAll(".tree-node")
-    .data(root.descendants())
-    .enter().append("foreignObject")
+  // Nodes as foreignObject with dynamic width
+  root.each(d => {
+    const nw = d._w || NODE_WIDTH;
+    const fo = g.append("foreignObject")
+      .attr("x", d.x + shiftX - nw / 2)
+      .attr("y", d.y + shiftY)
+      .attr("width", nw)
+      .attr("height", NODE_HEIGHT + 200)
       .attr("class", "tree-node")
-      .attr("x", d => d.x + offsetX - NODE_WIDTH / 2)
-      .attr("y", d => d.y + offsetY)
-      .attr("width",  NODE_WIDTH)
-      .attr("height", NODE_HEIGHT + 80) // extra room for menus
       .style("overflow", "visible");
 
-  nodes.each(function(d) {
-    const fo   = this;
-    const path = d.data._path || getNodePath(root, d);
-    d.data._path = path; // cache it
-
-    const nodeKey  = `${treeId}|${path.join(",")}`;
-    const pathJson = JSON.stringify(path);
-    const tIdQ     = `"${treeId}"`;
-    const borderColor = getNodeColor(d.data);
-
-    const isActive = activePath && activeTreeId === treeId &&
-                     JSON.stringify(path) === JSON.stringify(activePath);
-    const inputId = `input-${treeId}-${path.join("-")}`;
-
-    const div = document.createElement("div");
-    const edgeHtml = `<div class="node-edge-left" data-edge-key="${nodeKey}"></div>`;
-
-    if (isActive && activeMode && isAdmin) {
-      let inputValue = "", placeholder = "";
-      if (activeMode === "edit")   { inputValue = d.data.name; placeholder = "Tulis nama (Enter untuk baris baru)"; }
-      else if (activeMode === "add")    placeholder = "Tulis nama anak (Enter untuk baris baru)";
-      else if (activeMode === "parent") placeholder = "Tulis nama parent (Enter untuk baris baru)";
-      else if (activeMode === "order")  placeholder = "Masukkan nomor urutan (0=pertama)";
-
-      div.innerHTML = `
-        <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
-          ${edgeHtml}
-          <div class="node-name">${escapeHtml(d.data.name)}</div>
-          <textarea class="node-input" id="${inputId}" placeholder="${placeholder}" rows="2">${escapeHtml(inputValue)}</textarea>
-          <div class="node-actions">
-            <button onclick='submitInline(${pathJson})'>✔ Simpan</button>
-            <button onclick='cancelInline()'>✖ Batal</button>
-          </div>
-        </div>`;
-    } else if (isActive && isAdmin) {
-      div.innerHTML = `
-        <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
-          ${edgeHtml}
-          <div class="node-name">${escapeHtml(d.data.name)}</div>
-          <div class="node-menu">
-            <button onclick='setMode(${pathJson},"add",${tIdQ})'>➕ Tambah Anak</button>
-            <button onclick='setMode(${pathJson},"edit",${tIdQ})'>✏️ Ubah Nama</button>
-            <button onclick='showHapusPopup(${pathJson},${tIdQ})'>❌ Hapus</button>
-            <button onclick='setMode(${pathJson},"parent",${tIdQ})'>⬆️ Tambah Parent</button>
-            <button onclick='setMode(${pathJson},"order",${tIdQ})'>🔢 Ubah Urutan</button>
-            <button onclick='startConnect(${pathJson},${tIdQ})'>🔗 Hubungkan</button>
-            <button onclick='disconnectNode(${pathJson},${tIdQ})'>✂️ Putuskan</button>
-          </div>
-        </div>`;
-    } else {
-      const displayName = escapeHtml(d.data.name).replace(/\n/g, "<br>");
-      let buttons = `<button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>`;
-      if (isAdmin) {
-        buttons = `<button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>⚙️ Option</button>${buttons}`;
-      }
-      div.innerHTML = `
-        <div class="node-box" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
-          ${edgeHtml}
-          <div class="node-name">${displayName}</div>
-          <div class="node-buttons">${buttons}</div>
-        </div>`;
-    }
-
-    fo.appendChild(div);
+    const { div } = buildNodeHTML(d, root, treeId);
+    fo.node().appendChild(div);
   });
 }
 
