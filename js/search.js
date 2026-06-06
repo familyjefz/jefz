@@ -25,56 +25,86 @@ function searchAndGoTo(query) {
 }
 
 function goToNode(treeId, path) {
-  // Buka semua collapse di jalur menuju node ini
+  // 1. Buka semua collapse di jalur
   function openPath(node, remainPath) {
     if (!node || !remainPath.length) return;
     node._collapsed = false;
     const idx = remainPath[0];
     if (node.children && node.children[idx]) openPath(node.children[idx], remainPath.slice(1));
   }
-  const tree = (treeId === "main") ? currentTreeData : (extraTrees.find(t => t.id === treeId) || {}).data;
+  const tree = (treeId === "main")
+    ? currentTreeData
+    : (typeof extraTrees !== "undefined" ? extraTrees.find(t => t.id === treeId) : null)?.data;
   if (tree && path.length > 0) openPath(tree, path);
 
+  // 2. Render ulang
   renderTree();
 
-  // Scroll ke node setelah render
+  // 3. Setelah render, cari posisi node dan center viewport ke sana
+  // Gunakan requestAnimationFrame untuk pastikan DOM sudah settle
+  const attempts = [80, 180, 350];
+  attempts.forEach(delay => {
+    setTimeout(() => _centerOnNode(treeId, path), delay);
+  });
+}
+
+function _centerOnNode(treeId, path) {
+  const nodeKey = `${treeId}|${path.join(",")}`;
+  const el = document.querySelector(`.node-box[data-node-key="${CSS.escape(nodeKey)}"]`);
+  if (!el) return;
+
+  const wrapper = document.getElementById("tree-wrapper");
+  if (!wrapper) return;
+
+  // Dapatkan scale dari transform string
+  const zc = document.getElementById("tree-zoom-container");
+  let sc = 1;
+  if (zc && zc.style.transform) {
+    const m = zc.style.transform.match(/scale\(([^)]+)\)/);
+    if (m) sc = parseFloat(m[1]) || 1;
+  }
+
+  // Posisi node relatif ke viewport
+  const elRect = el.getBoundingClientRect();
+  const wrapRect = wrapper.getBoundingClientRect();
+
+  // Center node di dalam wrapper
+  // elRect.left/top = posisi di viewport
+  // Kita mau node center = wrapper center
+  const wrapCX = wrapRect.left + wrapRect.width  / 2;
+  const wrapCY = wrapRect.top  + wrapRect.height / 2;
+
+  const nodeCX = elRect.left + elRect.width  / 2;
+  const nodeCY = elRect.top  + elRect.height / 2;
+
+  // Delta yang perlu digeser (dalam pixel viewport)
+  const dx = wrapCX - nodeCX;
+  const dy = wrapCY - nodeCY;
+
+  // Update offset global (zoom-pan.js)
+  offsetX = (offsetX || 0) + dx;
+  offsetY = (offsetY || 0) + dy;
+
+  if (typeof applyTransform === "function") applyTransform();
+  if (typeof saveViewState === "function") saveViewState();
+
+  // Highlight
+  el.style.outline = "3px solid #f44336";
+  el.style.outlineOffset = "3px";
+  el.style.transition = "outline 0.3s";
   setTimeout(() => {
-    const nodeKey = `${treeId}|${path.join(",")}`;
-    const el = document.querySelector(`.node-box[data-node-key="${CSS.escape(nodeKey)}"]`);
-    if (!el) return;
-
-    const wrapper = document.getElementById("tree-wrapper");
-    const zc = document.getElementById("tree-zoom-container");
-    const sc = zc ? (parseFloat(zc.style.transform.match(/scale\(([^)]+)\)/)?.[1]) || 1) : 1;
-
-    const treeRect = document.getElementById("tree").getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
-
-    // Posisi node di dalam tree container (unscaled)
-    const nodeX = (elRect.left - treeRect.left) / sc;
-    const nodeY = (elRect.top  - treeRect.top)  / sc;
-
-    // Set offset agar node center di viewport
-    const wrapW = wrapper.clientWidth;
-    const wrapH = wrapper.clientHeight;
-
-    // Update offsetX/offsetY (zoom-pan.js globals)
-    offsetX = -(nodeX * sc) + wrapW / 2 - (elRect.width / 2);
-    offsetY = -(nodeY * sc) + wrapH / 2 - (elRect.height / 2);
-    if (typeof applyTransform === "function") applyTransform();
-    if (typeof saveViewState === "function") saveViewState();
-
-    // Highlight sebentar
-    el.style.outline = "3px solid #f44336";
-    el.style.outlineOffset = "2px";
-    setTimeout(() => { el.style.outline = ""; el.style.outlineOffset = ""; }, 2000);
-  }, 120);
+    el.style.outline = "";
+    el.style.outlineOffset = "";
+  }, 2500);
 }
 window.goToNode = goToNode;
 
 function openSearch() {
   const bar = document.getElementById("search-bar");
-  if (bar) { bar.style.display = "flex"; document.getElementById("search-input").focus(); }
+  if (bar) {
+    bar.style.display = "flex";
+    setTimeout(() => document.getElementById("search-input")?.focus(), 50);
+  }
 }
 function closeSearch() {
   const bar = document.getElementById("search-bar");
@@ -102,7 +132,9 @@ function initSearch() {
       const li = document.createElement("div");
       li.className = "search-suggestion-item";
       li.textContent = m.name;
-      li.addEventListener("click", () => {
+      li.addEventListener("mousedown", (e) => {
+        // mousedown bukan click agar tidak tertutup blur event
+        e.preventDefault();
         input.value = m.name;
         sug.innerHTML = "";
         goToNode(m.treeId, m.path);
@@ -113,7 +145,7 @@ function initSearch() {
   });
 
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") searchAndGoTo(input.value.trim());
+    if (e.key === "Enter") { e.preventDefault(); searchAndGoTo(input.value.trim()); }
     if (e.key === "Escape") closeSearch();
   });
 
