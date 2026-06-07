@@ -397,11 +397,10 @@ function renderD3Tree(container, rootData, treeId) {
     d => (!d._collapsed && d.children && d.children.length) ? d.children : null
   );
 
-  // ── Ukur lebar & tinggi nyata setiap node ──
+  // ── Ukur lebar nyata setiap node ──
   const measurer = document.createElement("div");
-  measurer.style.cssText = "position:absolute;visibility:hidden;top:-9999px;left:-9999px;white-space:pre;";
+  measurer.style.cssText = "position:absolute;visibility:hidden;top:-9999px;left:-9999px;";
   document.body.appendChild(measurer);
-
   const nodeWidths  = new Map();
   const nodeHeights = new Map();
   root.each(d => {
@@ -418,129 +417,118 @@ function renderD3Tree(container, rootData, treeId) {
   });
   document.body.removeChild(measurer);
 
-  // ── Hitung tinggi rata-rata per depth (bukan max global) ──
-  // Pakai tinggi yang cukup untuk level terbesar, bukan seluruh tree
-  const depthMaxH = new Map();
-  root.each(d => {
-    const h = nodeHeights.get(d) || NODE_HEIGHT;
-    depthMaxH.set(d.depth, Math.max(depthMaxH.get(d.depth) || 0, h));
-  });
-  // unitH = median height + gap kecil supaya tidak terlalu renggang
-  const allDepthH = Array.from(depthMaxH.values()).sort((a,b)=>a-b);
-  const medH = allDepthH[Math.floor(allDepthH.length / 2)] || NODE_HEIGHT;
-  const unitH = medH + NODE_V_GAP;
+  // ── Layout awal dengan D3 tree ──
   const unitW = NODE_WIDTH + NODE_H_GAP;
-
-  // ── Layout ──
+  const unitH = NODE_HEIGHT + NODE_V_GAP;
   d3.tree()
     .nodeSize([unitW, unitH])
     .separation((a, b) => {
       const wa = nodeWidths.get(a) || NODE_WIDTH;
       const wb = nodeWidths.get(b) || NODE_WIDTH;
-      // Selalu pakai lebar nyata kedua node + gap minimum
-      const needed = (wa / 2) + NODE_H_GAP + (wb / 2);
-      return needed / unitW;
+      return ((wa + wb) / 2 + NODE_H_GAP) / unitW;
     })(root);
 
-  // ── Post-process: pastikan gap antar node di level yang sama selalu >= NODE_H_GAP ──
-  // Kelompokkan semua node per depth, sort by x, geser yang terlalu dekat ke kanan
-  const byDepth = new Map();
-  root.each(d => {
-    if (!byDepth.has(d.depth)) byDepth.set(d.depth, []);
-    byDepth.get(d.depth).push(d);
-  });
+  // ── Compact: kumpulkan semua node per level, sort x, pastikan gap >= NODE_H_GAP ──
+  // Jalankan beberapa pass sampai tidak ada perubahan lagi
+  for (let pass = 0; pass < 10; pass++) {
+    let changed = false;
 
-  // Proses dari depth terdalam ke atas agar parent bisa ikut re-center
-  const depths = Array.from(byDepth.keys()).sort((a, b) => b - a);
-  depths.forEach(dep => {
-    const nodes = byDepth.get(dep).slice().sort((a, b) => a.x - b.x);
-    for (let i = 1; i < nodes.length; i++) {
-      const L = nodes[i - 1];
-      const R = nodes[i];
-      const rEdgeL = L.x + (nodeWidths.get(L) || NODE_WIDTH) / 2;
-      const lEdgeR = R.x - (nodeWidths.get(R) || NODE_WIDTH) / 2;
-      const gap = lEdgeR - rEdgeL;
-      if (gap < NODE_H_GAP) {
-        const shift = NODE_H_GAP - gap;
-        // Geser R dan semua node di kanannya pada level ini beserta subtree masing-masing
-        for (let j = i; j < nodes.length; j++) {
-          nodes[j].each(d => { d.x += shift; });
+    // Kumpulkan per depth
+    const byDepth = new Map();
+    root.each(d => {
+      if (!byDepth.has(d.depth)) byDepth.set(d.depth, []);
+      byDepth.get(d.depth).push(d);
+    });
+
+    // Dari depth terdalam ke atas
+    const depths = Array.from(byDepth.keys()).sort((a,b) => b - a);
+    depths.forEach(dep => {
+      const nodes = byDepth.get(dep).slice().sort((a,b) => a.x - b.x);
+      for (let i = 1; i < nodes.length; i++) {
+        const L = nodes[i-1];
+        const R = nodes[i];
+        const needed = (nodeWidths.get(L)||NODE_WIDTH)/2 + NODE_H_GAP + (nodeWidths.get(R)||NODE_WIDTH)/2;
+        const actual = R.x - L.x;
+        if (actual < needed) {
+          const shift = needed - actual;
+          // Geser R dan semua yang lebih kanan di level ini + subtree mereka
+          const toShift = new Set();
+          for (let j = i; j < nodes.length; j++) {
+            nodes[j].each(d => toShift.add(d));
+          }
+          toShift.forEach(d => { d.x += shift; });
+          changed = true;
         }
       }
-    }
-  });
+    });
 
-  // Re-center semua parent setelah posisi children berubah
-  root.each(d => {
-    if (d.children && d.children.length > 0) {
-      const xs = d.children.map(c => c.x);
-      d.x = (Math.min(...xs) + Math.max(...xs)) / 2;
-    }
-  });
+    // Re-center parent di tengah children (hanya jika children ada)
+    root.each(d => {
+      if (d.children && d.children.length > 0) {
+        const minX = Math.min(...d.children.map(c => c.x));
+        const maxX = Math.max(...d.children.map(c => c.x));
+        d.x = (minX + maxX) / 2;
+      }
+    });
+
+    if (!changed) break;
+  }
 
   // ── Bounding box ──
-  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  let x0=Infinity, x1=-Infinity, y0=Infinity, y1=-Infinity;
   root.each(d => {
-    const hw = (nodeWidths.get(d)  || NODE_WIDTH)  / 2;
-    const nh =  nodeHeights.get(d) || NODE_HEIGHT;
-    if (d.x - hw < x0) x0 = d.x - hw;
-    if (d.x + hw > x1) x1 = d.x + hw;
-    if (d.y      < y0) y0 = d.y;
-    if (d.y + nh > y1) y1 = d.y + nh;
+    const hw = (nodeWidths.get(d)||NODE_WIDTH)/2;
+    const nh = nodeHeights.get(d)||NODE_HEIGHT;
+    if (d.x-hw < x0) x0 = d.x-hw;
+    if (d.x+hw > x1) x1 = d.x+hw;
+    if (d.y    < y0) y0 = d.y;
+    if (d.y+nh > y1) y1 = d.y+nh;
   });
-
-  const PAD = 16;
-  const ox  = -x0 + PAD;
-  const oy  = -y0 + PAD;
+  const PAD=16, ox=-x0+PAD, oy=-y0+PAD;
 
   // ── SVG ──
   const svg = d3.select(container).append("svg")
-    .attr("width",  x1 - x0 + PAD * 2)
-    .attr("height", y1 - y0 + PAD * 2)
-    .style("overflow", "visible");
-
+    .attr("width",  x1-x0+PAD*2)
+    .attr("height", y1-y0+PAD*2)
+    .style("overflow","visible");
   const g = svg.append("g");
 
-  // ── Garis orthogonal hitam ──
+  // ── Garis: render SEBELUM node agar tertutup node ──
   g.selectAll(".tree-link")
     .data(root.links())
     .enter().append("path")
-      .attr("class", "tree-link")
-      .attr("fill",         "none")
-      .attr("stroke",       "#555")
-      .attr("stroke-width", "1.5")
+      .attr("class","tree-link")
+      .attr("fill","none")
+      .attr("stroke","#666")
+      .attr("stroke-width","1.5")
       .attr("d", lk => {
-        const sh = nodeHeights.get(lk.source) || NODE_HEIGHT;
-        const sx = lk.source.x + ox;
-        const sy = lk.source.y + oy + sh + 1; // +1 masuk ke dalam node sedikit
-        const tx = lk.target.x + ox;
-        const ty = lk.target.y + oy - 1;      // -1 masuk ke dalam node sedikit
-        const hy = sy + (ty - sy) / 2;
+        const sh = nodeHeights.get(lk.source)||NODE_HEIGHT;
+        const sx = lk.source.x+ox;
+        const sy = lk.source.y+oy+sh;
+        const tx = lk.target.x+ox;
+        const ty = lk.target.y+oy;
+        const hy = (sy+ty)/2;
         return `M${sx},${sy} V${hy} H${tx} V${ty}`;
       });
 
-  // ── Node (aktif paling akhir agar di atas) ──
+  // ── Node (aktif paling akhir) ──
   const all = root.descendants();
-  const isAct = n => activePath && activeTreeId === treeId &&
-    JSON.stringify(n.data._path || getNodePath(root, n)) === JSON.stringify(activePath);
-
-  [...all.filter(d => !isAct(d)), ...all.filter(d => isAct(d))].forEach(d => {
-    const p  = d.data._path || getNodePath(root, d);
+  const isAct = n => activePath && activeTreeId===treeId &&
+    JSON.stringify(n.data._path||getNodePath(root,n))===JSON.stringify(activePath);
+  [...all.filter(d=>!isAct(d)), ...all.filter(d=>isAct(d))].forEach(d => {
+    const p  = d.data._path||getNodePath(root,d);
     d.data._path = p;
-    const nw = nodeWidths.get(d)  || NODE_WIDTH;
-    const nh = nodeHeights.get(d) || NODE_HEIGHT;
+    const nw = nodeWidths.get(d)||NODE_WIDTH;
+    const nh = nodeHeights.get(d)||NODE_HEIGHT;
     const active = isAct(d);
-
-    const fo = g.append("foreignObject")
-      .attr("x", d.x + ox - nw / 2)
-      .attr("y", d.y + oy)
-      .attr("width",  active ? Math.max(nw, 150) : nw)
-      .attr("height", active && !activeMode ? nh + 200 : nh + 6)
-      .attr("class", "tree-node")
-      .style("overflow", "visible");
-
-    const { div } = buildNodeHTML(d, root, treeId);
-    fo.node().appendChild(div);
+    g.append("foreignObject")
+      .attr("x", d.x+ox-nw/2)
+      .attr("y", d.y+oy)
+      .attr("width",  active ? Math.max(nw,150) : nw)
+      .attr("height", active&&!activeMode ? nh+200 : nh+6)
+      .attr("class","tree-node")
+      .style("overflow","visible")
+      .node().appendChild(buildNodeHTML(d,root,treeId).div);
   });
 }
 
