@@ -57,7 +57,7 @@
 
 .node-buttons button:hover { opacity: 0.85; }
 
-.btn-option { background: #90a4ae; color: #fff; display: flex !important; align-items: center; justify-content: center; text-align: center; }
+.btn-option { background: #90a4ae; color: #111; display: flex !important; align-items: center; justify-content: center; text-align: center; font-weight: 600; }
 .btn-option:hover { background: #455a64; }
 .btn-info { background: #4a90d9; color: #fff; }
 .btn-info:hover { background: #2171b5; }
