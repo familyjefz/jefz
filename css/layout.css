@@ -184,11 +184,18 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: geometricPrecision;
+  will-change: transform;
+  contain: layout style;
 }
 
 .tree-zoom-container,
 .tree-zoom-container * {
   backface-visibility: hidden;
+}
+
+.tree-wrapper {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
 }
 
 #tree {
