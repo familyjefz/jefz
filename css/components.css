@@ -1,34 +1,36 @@
 /* ========== NODE BOX ========== */
 .node-box {
-  background: #d3d2d29d;
-  border: 1px solid #888888;
-  border-radius: 5px;
-  padding: 3px 6px;
+  background: #e8f0fe;
+  border: 1.5px solid #b0bec5;
+  border-radius: 6px;
+  padding: 4px 8px;
   min-width: 70px;
   width: max-content;
   max-width: none;
   text-align: center;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.10);
   position: relative;
   box-sizing: border-box;
   overflow: visible;
 }
 
 .active-node {
-  border: 2px solid #2196f3 !important;
-  background: #e3f2fd !important;
+  border: 2px solid #1565c0 !important;
+  background: #dceefb !important;
+  box-shadow: 0 0 0 3px rgba(21,101,192,0.15) !important;
 }
 
 
 .node-name {
   font-weight: bold;
-  font-size: 9px;
+  font-size: 9.5px;
   margin-bottom: 3px;
   white-space: pre;
   word-break: normal;
   overflow: visible;
-  line-height: 1.3;
+  line-height: 1.35;
   text-align: left;
+  color: #1a1a2e;
 }
 
 .node-buttons {
@@ -55,10 +57,10 @@
 
 .node-buttons button:hover { opacity: 0.85; }
 
-.btn-option { background: #717a7c; color: #f1fcff; display: flex !important; align-items: center; justify-content: center; text-align: center; }
+.btn-option { background: #90a4ae; color: #fff; display: flex !important; align-items: center; justify-content: center; text-align: center; }
 .btn-option:hover { background: #455a64; }
-.btn-info { background: #5391c4; color: #000000fd; }
-.btn-info:hover { background: #0b7dda; }
+.btn-info { background: #4a90d9; color: #fff; }
+.btn-info:hover { background: #2171b5; }
 
 .login-btn { background: #000000 !important; }
 .login-btn:hover { background: #00a8f7 !important; }
