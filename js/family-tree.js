@@ -393,11 +393,13 @@ function buildNodeHTML(d, root, treeId) {
 }
 
 function renderD3Tree(container, rootData, treeId) {
-  const root = d3.hierarchy(rootData, d => (!d._collapsed && d.children && d.children.length) ? d.children : null);
+  const root = d3.hierarchy(rootData,
+    d => (!d._collapsed && d.children && d.children.length) ? d.children : null
+  );
 
-  // Step 1: Render semua node ke offscreen div untuk ukur lebar nyata
+  // ── Ukur lebar & tinggi nyata setiap node ──
   const measurer = document.createElement("div");
-  measurer.style.cssText = "position:absolute;visibility:hidden;top:-9999px;left:-9999px;";
+  measurer.style.cssText = "position:absolute;visibility:hidden;top:-9999px;left:-9999px;white-space:pre;";
   document.body.appendChild(measurer);
 
   const nodeWidths  = new Map();
@@ -406,108 +408,94 @@ function renderD3Tree(container, rootData, treeId) {
     const tmp = document.createElement("div");
     tmp.className = "node-box";
     tmp.style.cssText = "display:inline-block;white-space:pre;";
-    tmp.innerHTML = `<div class="node-name">${escapeHtml(d.data.name)}</div>
-      <div class="node-buttons"><button class="btn-option">Option</button><button class="btn-info">📄 Info</button></div>`;
+    tmp.innerHTML = `<div class="node-name">${escapeHtml(d.data.name)}</div>`
+      + `<div class="node-buttons"><button class="btn-option">Option</button>`
+      + `<button class="btn-info">📄 Info</button></div>`;
     measurer.appendChild(tmp);
-    const w = Math.max(tmp.offsetWidth + 2, 70);
-    const h = Math.max(tmp.offsetHeight + 4, NODE_HEIGHT);
-    nodeWidths.set(d, w);
-    nodeHeights.set(d, h);
+    nodeWidths.set(d,  Math.max(tmp.offsetWidth  + 4, 80));
+    nodeHeights.set(d, Math.max(tmp.offsetHeight + 4, NODE_HEIGHT));
     measurer.removeChild(tmp);
   });
   document.body.removeChild(measurer);
 
-  // Step 2: Hitung tinggi max per depth level
-  const depthHeights = new Map();
-  root.each(d => {
-    const h = nodeHeights.get(d) || NODE_HEIGHT;
-    if (!depthHeights.has(d.depth) || h > depthHeights.get(d.depth)) {
-      depthHeights.set(d.depth, h);
-    }
-  });
+  // ── Layout ──
+  // nodeSize: [lebar unit, tinggi unit]
+  // Tinggi unit = tinggi node terbesar + gap vertikal
+  const maxNodeH = Math.max(...Array.from(nodeHeights.values()), NODE_HEIGHT);
+  const unitH    = maxNodeH + NODE_V_GAP;
+  const unitW    = NODE_WIDTH + NODE_H_GAP;
 
-  // unitW untuk spacing horizontal; unitH = tinggi max level + gap vertikal
-  const unitW = NODE_WIDTH + NODE_H_GAP;
-  // Untuk nodeSize, pakai tinggi terbesar + gap
-  const maxH  = Math.max(...depthHeights.values(), NODE_HEIGHT);
-  const unitH = maxH + NODE_V_GAP;
-
-  const treeLayout = d3.tree()
+  d3.tree()
     .nodeSize([unitW, unitH])
     .separation((a, b) => {
       const wa = nodeWidths.get(a) || NODE_WIDTH;
       const wb = nodeWidths.get(b) || NODE_WIDTH;
-      const needed = (wa + wb) / 2 + NODE_H_GAP;
-      const extra  = (a.parent === b.parent) ? 0 : NODE_H_GAP;
-      return (needed + extra) / unitW;
-    });
+      // Ruang minimum = setengah kiri + gap + setengah kanan
+      return ((wa + wb) / 2 + NODE_H_GAP) / unitW;
+    })(root);
 
-  treeLayout(root);
-
-  // Step 3: Bounding box
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  // ── Bounding box ──
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   root.each(d => {
-    const hw = (nodeWidths.get(d)  || NODE_WIDTH) / 2;
+    const hw = (nodeWidths.get(d)  || NODE_WIDTH)  / 2;
     const nh =  nodeHeights.get(d) || NODE_HEIGHT;
-    if (d.x - hw < minX) minX = d.x - hw;
-    if (d.x + hw > maxX) maxX = d.x + hw;
-    if (d.y      < minY) minY = d.y;
-    if (d.y + nh > maxY) maxY = d.y + nh;
+    if (d.x - hw < x0) x0 = d.x - hw;
+    if (d.x + hw > x1) x1 = d.x + hw;
+    if (d.y      < y0) y0 = d.y;
+    if (d.y + nh > y1) y1 = d.y + nh;
   });
 
-  const PADDING = 14;
-  const svgW = (maxX - minX) + PADDING * 2;
-  const svgH = (maxY - minY) + PADDING * 2;
-  const shiftX = -minX + PADDING;
-  const shiftY = -minY + PADDING;
+  const PAD = 16;
+  const W   = x1 - x0 + PAD * 2;
+  const H   = y1 - y0 + PAD * 2;
+  const ox  = -x0 + PAD;   // shift agar semua positif
+  const oy  = -y0 + PAD;
 
-  // Step 4: SVG
+  // ── SVG ──
   const svg = d3.select(container).append("svg")
-    .attr("width",  svgW)
-    .attr("height", svgH)
-    .attr("class", "tree-svg")
+    .attr("width",  W)
+    .attr("height", H)
     .style("overflow", "visible");
 
   const g = svg.append("g");
 
-  // Step 5: Links — orthogonal: turun dari parent, horizontal, naik ke child
+  // ── Garis penghubung: orthogonal hitam ──
   g.selectAll(".tree-link")
     .data(root.links())
     .enter().append("path")
       .attr("class", "tree-link")
-      .attr("fill", "none")
-      .attr("stroke", "#b0bec5")
-      .attr("stroke-width", 1.2)
-      .attr("d", link => {
-        const sh  = nodeHeights.get(link.source) || NODE_HEIGHT;
-        const sx  = link.source.x + shiftX;
-        const sy  = link.source.y + shiftY + sh; // tepat bawah node parent
-        const tx  = link.target.x + shiftX;
-        const ty  = link.target.y + shiftY;       // tepat atas node child
-        const hy  = sy + (ty - sy) / 2;           // titik tengah vertikal
+      .attr("fill",   "none")
+      .attr("stroke", "#444")
+      .attr("stroke-width", 1.5)
+      .attr("d", lk => {
+        const sh = nodeHeights.get(lk.source) || NODE_HEIGHT;
+        const sx = lk.source.x + ox;
+        const sy = lk.source.y + oy + sh;      // bawah parent
+        const tx = lk.target.x + ox;
+        const ty = lk.target.y + oy;            // atas child
+        const hy = (sy + ty) / 2;               // titik belok
         return `M${sx},${sy} V${hy} H${tx} V${ty}`;
       });
 
-  // Step 6: Nodes — render non-aktif dulu, aktif paling akhir (SVG paint order = z-order)
-  const allNodes = root.descendants();
-  const nonActive = allNodes.filter(d => {
-    const p = d.data._path || getNodePath(root, d);
-    d.data._path = p;
-    return !(activePath && activeTreeId === treeId && JSON.stringify(p) === JSON.stringify(activePath));
-  });
-  const activeNodes = allNodes.filter(d => {
-    return activePath && activeTreeId === treeId && JSON.stringify(d.data._path) === JSON.stringify(activePath);
-  });
+  // ── Node ──
+  const all      = root.descendants();
+  const isActive = n =>
+    activePath && activeTreeId === treeId &&
+    JSON.stringify(n.data._path || getNodePath(root, n)) === JSON.stringify(activePath);
 
-  [...nonActive, ...activeNodes].forEach(d => {
+  // render aktif paling akhir (di atas secara paint-order)
+  [...all.filter(d => !isActive(d)), ...all.filter(d => isActive(d))].forEach(d => {
+    const p  = d.data._path || getNodePath(root, d);
+    d.data._path = p;
     const nw = nodeWidths.get(d)  || NODE_WIDTH;
     const nh = nodeHeights.get(d) || NODE_HEIGHT;
-    const isActiveNode = activeNodes.includes(d);
+    const active = isActive(d);
+
     const fo = g.append("foreignObject")
-      .attr("x", d.x + shiftX - nw / 2)
-      .attr("y", d.y + shiftY)
-      .attr("width",  isActiveNode ? Math.max(nw, 150) : nw)
-      .attr("height", isActiveNode && !activeMode ? nh + 200 : nh + 6)
+      .attr("x", d.x + ox - nw / 2)
+      .attr("y", d.y + oy)
+      .attr("width",  active ? Math.max(nw, 150) : nw)
+      .attr("height", active && !activeMode ? nh + 200 : nh + 6)
       .attr("class", "tree-node")
       .style("overflow", "visible");
 
