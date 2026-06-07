@@ -410,7 +410,7 @@ function renderD3Tree(container, rootData, treeId) {
     tmp.style.cssText = "display:inline-block;white-space:pre;";
     tmp.innerHTML = `<div class="node-name">${escapeHtml(d.data.name)}</div>`
       + `<div class="node-buttons"><button class="btn-option">Option</button>`
-      + `<button class="btn-info">📄 Info</button></div>`;
+      + `<button class="btn-info">Info</button></div>`;
     measurer.appendChild(tmp);
     nodeWidths.set(d,  Math.max(tmp.offsetWidth  + 4, 80));
     nodeHeights.set(d, Math.max(tmp.offsetHeight + 4, NODE_HEIGHT));
@@ -418,21 +418,63 @@ function renderD3Tree(container, rootData, treeId) {
   });
   document.body.removeChild(measurer);
 
-  // ── Layout ──
-  // nodeSize: [lebar unit, tinggi unit]
-  // Tinggi unit = tinggi node terbesar + gap vertikal
-  const maxNodeH = Math.max(...Array.from(nodeHeights.values()), NODE_HEIGHT);
-  const unitH    = maxNodeH + NODE_V_GAP;
-  const unitW    = NODE_WIDTH + NODE_H_GAP;
+  // ── Hitung tinggi rata-rata per depth (bukan max global) ──
+  // Pakai tinggi yang cukup untuk level terbesar, bukan seluruh tree
+  const depthMaxH = new Map();
+  root.each(d => {
+    const h = nodeHeights.get(d) || NODE_HEIGHT;
+    depthMaxH.set(d.depth, Math.max(depthMaxH.get(d.depth) || 0, h));
+  });
+  // unitH = median height + gap kecil supaya tidak terlalu renggang
+  const allDepthH = Array.from(depthMaxH.values()).sort((a,b)=>a-b);
+  const medH = allDepthH[Math.floor(allDepthH.length / 2)] || NODE_HEIGHT;
+  const unitH = medH + NODE_V_GAP;
+  const unitW = NODE_WIDTH + NODE_H_GAP;
 
+  // ── Layout ──
   d3.tree()
     .nodeSize([unitW, unitH])
     .separation((a, b) => {
       const wa = nodeWidths.get(a) || NODE_WIDTH;
       const wb = nodeWidths.get(b) || NODE_WIDTH;
-      // Ruang minimum = setengah kiri + gap + setengah kanan
-      return ((wa + wb) / 2 + NODE_H_GAP) / unitW;
+      // Selalu pakai lebar nyata kedua node + gap minimum
+      const needed = (wa / 2) + NODE_H_GAP + (wb / 2);
+      return needed / unitW;
     })(root);
+
+  // ── Post-process: fix overlap antar subtree beda parent ──
+  // Iterasi tiap level, geser subtree kanan jika ada tumpang tindih
+  function treeLeft(node) {
+    let min = node.x - (nodeWidths.get(node) || NODE_WIDTH) / 2;
+    if (node.children) node.children.forEach(c => { min = Math.min(min, treeLeft(c)); });
+    return min;
+  }
+  function treeRight(node) {
+    let max = node.x + (nodeWidths.get(node) || NODE_WIDTH) / 2;
+    if (node.children) node.children.forEach(c => { max = Math.max(max, treeRight(c)); });
+    return max;
+  }
+  function shiftTree(node, delta) {
+    node.x += delta;
+    if (node.children) node.children.forEach(c => shiftTree(c, delta));
+  }
+  function fixSubtreeOverlaps(parent) {
+    if (!parent.children || parent.children.length < 2) return;
+    parent.children.forEach(fixSubtreeOverlaps);
+    for (let i = 1; i < parent.children.length; i++) {
+      const left  = parent.children[i - 1];
+      const right = parent.children[i];
+      const gap = treeLeft(right) - treeRight(left);
+      if (gap < NODE_H_GAP) {
+        shiftTree(right, NODE_H_GAP - gap);
+      }
+    }
+    // Re-center parent di atas children
+    const fc = parent.children[0];
+    const lc = parent.children[parent.children.length - 1];
+    parent.x = (fc.x + lc.x) / 2;
+  }
+  fixSubtreeOverlaps(root);
 
   // ── Bounding box ──
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
@@ -446,50 +488,46 @@ function renderD3Tree(container, rootData, treeId) {
   });
 
   const PAD = 16;
-  const W   = x1 - x0 + PAD * 2;
-  const H   = y1 - y0 + PAD * 2;
-  const ox  = -x0 + PAD;   // shift agar semua positif
+  const ox  = -x0 + PAD;
   const oy  = -y0 + PAD;
 
   // ── SVG ──
   const svg = d3.select(container).append("svg")
-    .attr("width",  W)
-    .attr("height", H)
+    .attr("width",  x1 - x0 + PAD * 2)
+    .attr("height", y1 - y0 + PAD * 2)
     .style("overflow", "visible");
 
   const g = svg.append("g");
 
-  // ── Garis penghubung: orthogonal hitam ──
+  // ── Garis orthogonal hitam ──
   g.selectAll(".tree-link")
     .data(root.links())
     .enter().append("path")
       .attr("class", "tree-link")
-      .attr("fill",   "none")
-      .attr("stroke", "#444")
-      .attr("stroke-width", 1.5)
+      .attr("fill",         "none")
+      .attr("stroke",       "#555")
+      .attr("stroke-width", "1.5")
       .attr("d", lk => {
         const sh = nodeHeights.get(lk.source) || NODE_HEIGHT;
         const sx = lk.source.x + ox;
-        const sy = lk.source.y + oy + sh;      // bawah parent
+        const sy = lk.source.y + oy + sh;
         const tx = lk.target.x + ox;
-        const ty = lk.target.y + oy;            // atas child
-        const hy = (sy + ty) / 2;               // titik belok
+        const ty = lk.target.y + oy;
+        const hy = sy + (ty - sy) / 2;
         return `M${sx},${sy} V${hy} H${tx} V${ty}`;
       });
 
-  // ── Node ──
-  const all      = root.descendants();
-  const isActive = n =>
-    activePath && activeTreeId === treeId &&
+  // ── Node (aktif paling akhir agar di atas) ──
+  const all = root.descendants();
+  const isAct = n => activePath && activeTreeId === treeId &&
     JSON.stringify(n.data._path || getNodePath(root, n)) === JSON.stringify(activePath);
 
-  // render aktif paling akhir (di atas secara paint-order)
-  [...all.filter(d => !isActive(d)), ...all.filter(d => isActive(d))].forEach(d => {
+  [...all.filter(d => !isAct(d)), ...all.filter(d => isAct(d))].forEach(d => {
     const p  = d.data._path || getNodePath(root, d);
     d.data._path = p;
     const nw = nodeWidths.get(d)  || NODE_WIDTH;
     const nh = nodeHeights.get(d) || NODE_HEIGHT;
-    const active = isActive(d);
+    const active = isAct(d);
 
     const fo = g.append("foreignObject")
       .attr("x", d.x + ox - nw / 2)
