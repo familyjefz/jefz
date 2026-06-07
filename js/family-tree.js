@@ -259,10 +259,10 @@ window.resetAllCollapse = resetAllCollapse;
 
 // ========== D3 TREE RENDERER ==========
 
-const NODE_WIDTH  = 100;
-const NODE_HEIGHT = 42;
-const NODE_H_GAP  = 10;
-const NODE_V_GAP  = 50;
+const NODE_WIDTH  = 110;
+const NODE_HEIGHT = 44;
+const NODE_H_GAP  = 8;
+const NODE_V_GAP  = 44;
 
 function renderTree() {
   const container = document.getElementById("tree");
@@ -425,10 +425,9 @@ function renderD3Tree(container, rootData, treeId) {
     .separation((a, b) => {
       const wa = nodeWidths.get(a) || NODE_WIDTH;
       const wb = nodeWidths.get(b) || NODE_WIDTH;
-      const needed = (wa / 2) + NODE_H_GAP + (wb / 2);
-      // Sameparent: separation normal; beda parent: tambah extra gap
-      const extra = (a.parent === b.parent) ? 0 : NODE_H_GAP;
-      return (needed + extra) / unitW;
+      const half = (wa + wb) / 2 + NODE_H_GAP;
+      const extra = (a.parent === b.parent) ? 0 : NODE_H_GAP * 1.5;
+      return (half + extra) / unitW;
     });
 
   treeLayout(root);
@@ -459,22 +458,23 @@ function renderD3Tree(container, rootData, treeId) {
 
   const g = svg.append("g");
 
-  // Step 5: Links — bezier curve dari bawah-tengah parent ke atas-tengah child
+  // Step 5: Links — orthogonal T-shape seperti gambar referensi
+  // Garis turun dari parent, horizontal, lalu naik ke child
   g.selectAll(".tree-link")
     .data(root.links())
     .enter().append("path")
       .attr("class", "tree-link")
       .attr("fill", "none")
-      .attr("stroke", "#888")
-      .attr("stroke-width", 1.2)
+      .attr("stroke", "#aaa")
+      .attr("stroke-width", 1)
       .attr("d", d => {
         const sh  = nodeHeights.get(d.source) || NODE_HEIGHT;
         const sx  = d.source.x + shiftX;
-        const sy  = d.source.y + shiftY + sh;
+        const sy  = d.source.y + shiftY + sh;   // bawah parent
         const tx  = d.target.x + shiftX;
-        const ty  = d.target.y + shiftY;
-        const my  = (sy + ty) / 2;
-        return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
+        const ty  = d.target.y + shiftY;          // atas child
+        const mid = sy + (ty - sy) * 0.45;        // titik belok horizontal
+        return `M${sx},${sy} V${mid} H${tx} V${ty}`;
       });
 
   // Step 6: Nodes — render non-aktif dulu, aktif paling akhir (SVG paint order = z-order)
