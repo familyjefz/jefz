@@ -162,7 +162,7 @@
 .tree-wrapper {
   flex: 1;
   overflow: hidden;
-  background: #f1fcff;
+  background: #e8f4fc;
   position: relative;
   touch-action: none;
   cursor: grab;
