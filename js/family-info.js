@@ -52,8 +52,8 @@ async function showInfoFor(treeId, path) {
       <div><div class="info-label">👶 Ponakan</div><div class="info-value">${info.nephews || '<span class="empty-info">- Tidak ada</span>'}</div></div>
       <div><div class="info-label">👨‍👩‍👧‍👦 Paman/Bibi</div><div class="info-value">${info.auntsUncles || '<span class="empty-info">- Tidak ada</span>'}</div></div>
       <div><div class="info-label">👨‍👩‍👧‍👦 Sepupu</div><div class="info-value">${info.cousins || '<span class="empty-info">- Tidak ada</span>'}</div></div>
-      <div><div class="info-label">📜 7 Keturunan ke Atas</div><div class="info-value">${info.ancestors7 || '<span class="empty-info">- Tidak ada</span>'}</div></div>
-      <div><div class="info-label">📜 7 Keturunan ke Bawah</div><div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">📜 Leluhur (ke Atas)</div><div class="info-value">${info.ancestors7 || '<span class="empty-info">- Tidak ada</span>'}</div></div>
+      <div><div class="info-label">📜 Keturunan (ke Bawah)</div><div class="info-value">${info.descendants7 || '<span class="empty-info">- Tidak ada</span>'}</div></div>
     </div>
   `;
 
@@ -159,9 +159,7 @@ function generateFamilyInfo(treeData, path, node) {
   let ancestors = [];
   let currentParent = parent;
   let gen = 1;
-  let maxGen = 7;
-
-  while (currentParent && gen <= maxGen) {
+  while (currentParent) {  // semua generasi ke atas
     ancestors.push(`Generasi ke-${gen}: ${currentParent.name.replace(/\n/g, '<br>')}`);
     const currentParentPath = getPathOfNode(treeData, currentParent);
     if (currentParentPath && currentParentPath.length > 0) {
@@ -179,20 +177,20 @@ function generateFamilyInfo(treeData, path, node) {
     }
     gen++;
   }
-  const ancestors7 = ancestors.length > 0 ? ancestors.join('<br>') : null;
+  const ancestorsAll = ancestors.length > 0 ? ancestors.join('<br>') : null;
 
   let descendants = [];
   let queue = [{ node: node, level: 1 }];
   while (queue.length > 0) {
     const { node: n, level } = queue.shift();
-    if (level > 1 && level <= 7) {
+    if (level > 1) {
       descendants.push(`Generasi ke-${level - 1}: ${n.name.replace(/\n/g, '<br>')}`);
     }
-    if (n.children && level < 7) {
+    if (n.children) {
       n.children.forEach(child => queue.push({ node: child, level: level + 1 }));
     }
   }
-  const descendants7 = descendants.length > 0 ? descendants.join('<br>') : null;
+  const descendantsAll = descendants.length > 0 ? descendants.join('<br>') : null;
 
   return {
     spouse,
@@ -200,12 +198,12 @@ function generateFamilyInfo(treeData, path, node) {
     grandchildrenList,
     parents,
     grandparents: grandparent,
-    ancestors7,
+    ancestors7: ancestorsAll,
     siblings: siblings.length > 0 ? siblings.map((s, i) => `${i + 1}. ${s.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
     nephews: nephews.length > 0 ? nephews.map((n, i) => `${i + 1}. ${n.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
     auntsUncles: auntsUncles.length > 0 ? auntsUncles.map((au, i) => `${i + 1}. ${au.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
     cousins: cousins.length > 0 ? cousins.map((c, i) => `${i + 1}. ${c.name.replace(/\n/g, '<br>')}`).join('<br>') : null,
-    descendants7
+    descendants7: descendantsAll
   };
 }
 /*Stable + multi-tree*/
