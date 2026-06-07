@@ -442,40 +442,41 @@ function renderD3Tree(container, rootData, treeId) {
       return needed / unitW;
     })(root);
 
-  // ── Post-process: fix gap antar sibling (cek subtree bounds) ──
-  function subtreeRight(n) {
-    let r = n.x + (nodeWidths.get(n) || NODE_WIDTH) / 2;
-    if (n.children) n.children.forEach(c => { r = Math.max(r, subtreeRight(c)); });
-    return r;
-  }
-  function subtreeLeft(n) {
-    let l = n.x - (nodeWidths.get(n) || NODE_WIDTH) / 2;
-    if (n.children) n.children.forEach(c => { l = Math.min(l, subtreeLeft(c)); });
-    return l;
-  }
-  function shiftSubtree(n, dx) { n.each(d => { d.x += dx; }); }
+  // ── Post-process: pastikan gap antar node di level yang sama selalu >= NODE_H_GAP ──
+  // Kelompokkan semua node per depth, sort by x, geser yang terlalu dekat ke kanan
+  const byDepth = new Map();
+  root.each(d => {
+    if (!byDepth.has(d.depth)) byDepth.set(d.depth, []);
+    byDepth.get(d.depth).push(d);
+  });
 
-  function fixSiblingGaps(node) {
-    if (!node.children || node.children.length === 0) return;
-    node.children.forEach(fixSiblingGaps);
-    if (node.children.length < 2) return;
-
-    for (let i = 1; i < node.children.length; i++) {
-      const L = node.children[i - 1];
-      const R = node.children[i];
-      const gap = subtreeLeft(R) - subtreeRight(L);
+  // Proses dari depth terdalam ke atas agar parent bisa ikut re-center
+  const depths = Array.from(byDepth.keys()).sort((a, b) => b - a);
+  depths.forEach(dep => {
+    const nodes = byDepth.get(dep).slice().sort((a, b) => a.x - b.x);
+    for (let i = 1; i < nodes.length; i++) {
+      const L = nodes[i - 1];
+      const R = nodes[i];
+      const rEdgeL = L.x + (nodeWidths.get(L) || NODE_WIDTH) / 2;
+      const lEdgeR = R.x - (nodeWidths.get(R) || NODE_WIDTH) / 2;
+      const gap = lEdgeR - rEdgeL;
       if (gap < NODE_H_GAP) {
         const shift = NODE_H_GAP - gap;
-        // Geser R dan semua sibling di kanannya
-        for (let j = i; j < node.children.length; j++) {
-          shiftSubtree(node.children[j], shift);
+        // Geser R dan semua node di kanannya pada level ini beserta subtree masing-masing
+        for (let j = i; j < nodes.length; j++) {
+          nodes[j].each(d => { d.x += shift; });
         }
       }
     }
-    // Re-center parent
-    node.x = (subtreeLeft(node.children[0]) + subtreeRight(node.children[node.children.length-1])) / 2;
-  }
-  fixSiblingGaps(root);
+  });
+
+  // Re-center semua parent setelah posisi children berubah
+  root.each(d => {
+    if (d.children && d.children.length > 0) {
+      const xs = d.children.map(c => c.x);
+      d.x = (Math.min(...xs) + Math.max(...xs)) / 2;
+    }
+  });
 
   // ── Bounding box ──
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
