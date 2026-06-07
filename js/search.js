@@ -37,6 +37,8 @@ function searchAndGoTo(query) {
     all.find(n => n.name.toLowerCase().includes(q));
   if (!match) { showCustomPopup("Nama tidak ditemukan.", "Pencarian"); return; }
   clearSuggestions();
+  const inp2 = document.getElementById("search-input");
+  if (inp2) { inp2.value = ""; inp2.blur(); }
   goToNode(match.treeId, match.path);
 }
 
@@ -121,8 +123,9 @@ function initSearch() {
       li.textContent = m.name + (m.isSpouse ? " (pasangan)" : "");
       li.addEventListener("mousedown", (e) => {
         e.preventDefault();
-        input.value = m.name;
         sug.innerHTML = "";
+        input.value = "";
+        input.blur();
         goToNode(m.treeId, m.path);
       });
       sug.appendChild(li);
@@ -136,7 +139,10 @@ function initSearch() {
 
   // Tutup suggest saat klik di luar
   document.addEventListener("click", (e) => {
-    if (!e.target.closest(".header-search-wrap")) clearSuggestions();
+    if (!e.target.closest(".header-search-wrap")) {
+      clearSuggestions();
+      input.blur();
+    }
   });
 
   document.getElementById("search-btn-go")?.addEventListener("click", () => {
