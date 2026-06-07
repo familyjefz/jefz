@@ -259,10 +259,10 @@ window.resetAllCollapse = resetAllCollapse;
 
 // ========== D3 TREE RENDERER ==========
 
-const NODE_WIDTH  = 100; // unit lebar untuk layout spacing
-const NODE_HEIGHT = 38; // tinggi node (nama + tombol)
-const NODE_H_GAP  = 8;  // jarak horizontal
-const NODE_V_GAP  = 30; // jarak vertikal
+const NODE_WIDTH  = 100;
+const NODE_HEIGHT = 42; // base, actual diukur per-node
+const NODE_H_GAP  = 12; // jarak horizontal minimum
+const NODE_V_GAP  = 36; // jarak vertikal
 
 function renderTree() {
   const container = document.getElementById("tree");
@@ -400,7 +400,8 @@ function renderD3Tree(container, rootData, treeId) {
   measurer.style.cssText = "position:absolute;visibility:hidden;top:-9999px;left:-9999px;";
   document.body.appendChild(measurer);
 
-  const nodeWidths = new Map();
+  const nodeWidths  = new Map();
+  const nodeHeights = new Map();
   root.each(d => {
     const tmp = document.createElement("div");
     tmp.className = "node-box";
@@ -409,37 +410,83 @@ function renderD3Tree(container, rootData, treeId) {
       <div class="node-buttons"><button class="btn-option">Option</button><button class="btn-info">📄 Info</button></div>`;
     measurer.appendChild(tmp);
     const w = Math.max(tmp.offsetWidth + 2, 70);
+    const h = Math.max(tmp.offsetHeight + 4, NODE_HEIGHT);
     nodeWidths.set(d, w);
+    nodeHeights.set(d, h);
     measurer.removeChild(tmp);
   });
   document.body.removeChild(measurer);
 
   // Step 2: Layout dengan separation berdasar lebar nyata
+  const unitW = NODE_WIDTH + NODE_H_GAP;
+  const unitH = NODE_HEIGHT + NODE_V_GAP;
   const treeLayout = d3.tree()
-    .nodeSize([NODE_WIDTH + NODE_H_GAP, NODE_HEIGHT + NODE_V_GAP])
+    .nodeSize([unitW, unitH])
     .separation((a, b) => {
       const wa = nodeWidths.get(a) || NODE_WIDTH;
       const wb = nodeWidths.get(b) || NODE_WIDTH;
-      const needed = (wa + wb) / 2 + NODE_H_GAP;
-      const unit   = NODE_WIDTH + NODE_H_GAP;
-      return Math.max(1, needed / unit);
+      const needed = (wa / 2) + NODE_H_GAP + (wb / 2);
+      return Math.ceil(needed / unitW * 100) / 100;
     });
 
   treeLayout(root);
 
-  // Step 3: Bounding box
+  // ── Post-process: fix overlap antar subtree ──
+  // D3 separation hanya menjamin sibling langsung.
+  // Kita perlu pastikan tidak ada node yang bbox-nya tumpang tindih
+  // dengan cara menggeser subtree kanan sejauh yang diperlukan.
+  function fixOverlaps(node) {
+    if (!node.children || node.children.length === 0) return;
+    node.children.forEach(fixOverlaps);
+
+    // Kumpulkan semua leaves/nodes per level dalam subtree ini
+    // Gunakan pendekatan: iterasi children dari kiri ke kanan,
+    // geser subtree kanan jika overlap dengan subtree kiri
+    for (let i = 1; i < node.children.length; i++) {
+      const left  = node.children[i - 1];
+      const right = node.children[i];
+
+      // Cari rightmost x di subtree kiri dan leftmost x di subtree kanan
+      let maxRight = -Infinity;
+      let minLeft  =  Infinity;
+
+      left.each(d => {
+        const rEdge = d.x + (nodeWidths.get(d) || NODE_WIDTH) / 2;
+        if (rEdge > maxRight) maxRight = rEdge;
+      });
+      right.each(d => {
+        const lEdge = d.x - (nodeWidths.get(d) || NODE_WIDTH) / 2;
+        if (lEdge < minLeft) minLeft = lEdge;
+      });
+
+      const overlap = maxRight + NODE_H_GAP - minLeft;
+      if (overlap > 0) {
+        // Geser seluruh subtree kanan sejauh overlap
+        right.each(d => { d.x += overlap; });
+      }
+    }
+
+    // Setelah fix children, center parent di atas children-nya
+    const firstChild = node.children[0];
+    const lastChild  = node.children[node.children.length - 1];
+    node.x = (firstChild.x + lastChild.x) / 2;
+  }
+  fixOverlaps(root);
+
+  // Step 3: Bounding box menggunakan ukuran nyata
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   root.each(d => {
-    const hw = (nodeWidths.get(d) || NODE_WIDTH) / 2;
+    const hw = (nodeWidths.get(d)  || NODE_WIDTH)  / 2;
+    const nh =  nodeHeights.get(d) || NODE_HEIGHT;
     if (d.x - hw < minX) minX = d.x - hw;
     if (d.x + hw > maxX) maxX = d.x + hw;
-    if (d.y     < minY) minY = d.y;
-    if (d.y     > maxY) maxY = d.y;
+    if (d.y      < minY) minY = d.y;
+    if (d.y + nh > maxY) maxY = d.y + nh;
   });
 
-  const PADDING = 10;
+  const PADDING = 14;
   const svgW = (maxX - minX) + PADDING * 2;
-  const svgH = (maxY - minY) + NODE_HEIGHT + PADDING * 2;
+  const svgH = (maxY - minY) + PADDING * 2;
   const shiftX = -minX + PADDING;
   const shiftY = -minY + PADDING;
 
@@ -452,17 +499,18 @@ function renderD3Tree(container, rootData, treeId) {
 
   const g = svg.append("g");
 
-  // Step 5: Links — elbow connector (orthogonal), presisi ke tengah node
+  // Step 5: Links — elbow connector, pakai tinggi nyata node sumber
   g.selectAll(".tree-link")
     .data(root.links())
     .enter().append("path")
       .attr("class", "tree-link")
       .attr("fill", "none")
-      .attr("stroke", "#888")
+      .attr("stroke", "#999")
       .attr("stroke-width", 1)
       .attr("d", d => {
+        const sh  = nodeHeights.get(d.source) || NODE_HEIGHT;
         const sx  = d.source.x + shiftX;
-        const sy  = d.source.y + shiftY + NODE_HEIGHT;
+        const sy  = d.source.y + shiftY + sh;
         const tx  = d.target.x + shiftX;
         const ty  = d.target.y + shiftY;
         const mid = sy + (ty - sy) * 0.5;
@@ -481,13 +529,14 @@ function renderD3Tree(container, rootData, treeId) {
   });
 
   [...nonActive, ...activeNodes].forEach(d => {
-    const nw = nodeWidths.get(d) || NODE_WIDTH;
+    const nw = nodeWidths.get(d)  || NODE_WIDTH;
+    const nh = nodeHeights.get(d) || NODE_HEIGHT;
     const isActiveNode = activeNodes.includes(d);
     const fo = g.append("foreignObject")
       .attr("x", d.x + shiftX - nw / 2)
       .attr("y", d.y + shiftY)
       .attr("width",  isActiveNode ? Math.max(nw, 150) : nw)
-      .attr("height", isActiveNode && !activeMode ? NODE_HEIGHT + 200 : NODE_HEIGHT + 4)
+      .attr("height", isActiveNode && !activeMode ? nh + 200 : nh + 6)
       .attr("class", "tree-node")
       .style("overflow", "visible");
 
