@@ -50,6 +50,7 @@ function resetInfoZoom() {
 function applyTransform() {
   const el = getContainer();
   if (!el) return;
+  el.style.willChange = "transform";
   el.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
   el.style.transformOrigin = "0 0";
 }
@@ -94,17 +95,15 @@ function updateZoomFromSlider(e) {
 }
 
 function zoomReset() {
-  scale = 1;
-  offsetX = 0;
-  offsetY = 0;
-  currentZoom = 1;
-
-  applyTransform();
-  updateZoomUI(100);
-  const slider = document.getElementById("zoom-slider");
-  if (slider) slider.value = 100;
-  centerOnMainTree();
-  saveViewState();
+  if (typeof zoomResetToJabbar === "function") {
+    zoomResetToJabbar();
+  } else {
+    scale = 1; offsetX = 0; offsetY = 0; currentZoom = 1;
+    applyTransform(); updateZoomUI(100);
+    const slider = document.getElementById("zoom-slider");
+    if (slider) slider.value = 100;
+    centerOnMainTree(); saveViewState();
+  }
 }
 
 // ========== CENTER AKURAT KE ROOT NODE ==========
@@ -215,6 +214,7 @@ function startDrag(e) {
   }
 }
 
+let _rafId = null;
 function moveDrag(e) {
   if (!pendingDrag && !isDragging) return;
 
@@ -226,9 +226,16 @@ function moveDrag(e) {
     isDragging = true;
   }
 
-  offsetX = startOffsetX + dx;
-  offsetY = startOffsetY + dy;
-  applyTransform();
+  const nx = startOffsetX + dx;
+  const ny = startOffsetY + dy;
+
+  if (_rafId) cancelAnimationFrame(_rafId);
+  _rafId = requestAnimationFrame(() => {
+    offsetX = nx;
+    offsetY = ny;
+    applyTransform();
+    _rafId = null;
+  });
 }
 
 function endDrag(e) {
