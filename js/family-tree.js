@@ -260,9 +260,9 @@ window.resetAllCollapse = resetAllCollapse;
 // ========== D3 TREE RENDERER ==========
 
 const NODE_WIDTH  = 100;
-const NODE_HEIGHT = 42; // base, actual diukur per-node
-const NODE_H_GAP  = 12; // jarak horizontal minimum
-const NODE_V_GAP  = 36; // jarak vertikal
+const NODE_HEIGHT = 42;
+const NODE_H_GAP  = 16;
+const NODE_V_GAP  = 40;
 
 function renderTree() {
   const container = document.getElementById("tree");
@@ -425,53 +425,12 @@ function renderD3Tree(container, rootData, treeId) {
     .separation((a, b) => {
       const wa = nodeWidths.get(a) || NODE_WIDTH;
       const wb = nodeWidths.get(b) || NODE_WIDTH;
-      const needed = (wa / 2) + NODE_H_GAP + (wb / 2);
-      return Math.ceil(needed / unitW * 100) / 100;
+      // Hitung separation minimal agar tidak overlap + gap
+      const needed = (wa + wb) / 2 + NODE_H_GAP;
+      return Math.max(1, needed / unitW);
     });
 
   treeLayout(root);
-
-  // ── Post-process: fix overlap antar subtree ──
-  // D3 separation hanya menjamin sibling langsung.
-  // Kita perlu pastikan tidak ada node yang bbox-nya tumpang tindih
-  // dengan cara menggeser subtree kanan sejauh yang diperlukan.
-  function fixOverlaps(node) {
-    if (!node.children || node.children.length === 0) return;
-    node.children.forEach(fixOverlaps);
-
-    // Kumpulkan semua leaves/nodes per level dalam subtree ini
-    // Gunakan pendekatan: iterasi children dari kiri ke kanan,
-    // geser subtree kanan jika overlap dengan subtree kiri
-    for (let i = 1; i < node.children.length; i++) {
-      const left  = node.children[i - 1];
-      const right = node.children[i];
-
-      // Cari rightmost x di subtree kiri dan leftmost x di subtree kanan
-      let maxRight = -Infinity;
-      let minLeft  =  Infinity;
-
-      left.each(d => {
-        const rEdge = d.x + (nodeWidths.get(d) || NODE_WIDTH) / 2;
-        if (rEdge > maxRight) maxRight = rEdge;
-      });
-      right.each(d => {
-        const lEdge = d.x - (nodeWidths.get(d) || NODE_WIDTH) / 2;
-        if (lEdge < minLeft) minLeft = lEdge;
-      });
-
-      const overlap = maxRight + NODE_H_GAP - minLeft;
-      if (overlap > 0) {
-        // Geser seluruh subtree kanan sejauh overlap
-        right.each(d => { d.x += overlap; });
-      }
-    }
-
-    // Setelah fix children, center parent di atas children-nya
-    const firstChild = node.children[0];
-    const lastChild  = node.children[node.children.length - 1];
-    node.x = (firstChild.x + lastChild.x) / 2;
-  }
-  fixOverlaps(root);
 
   // Step 3: Bounding box menggunakan ukuran nyata
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
