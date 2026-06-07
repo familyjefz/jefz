@@ -261,8 +261,8 @@ window.resetAllCollapse = resetAllCollapse;
 
 const NODE_WIDTH  = 100;
 const NODE_HEIGHT = 42;
-const NODE_H_GAP  = 16;
-const NODE_V_GAP  = 40;
+const NODE_H_GAP  = 10;
+const NODE_V_GAP  = 50;
 
 function renderTree() {
   const container = document.getElementById("tree");
@@ -425,9 +425,10 @@ function renderD3Tree(container, rootData, treeId) {
     .separation((a, b) => {
       const wa = nodeWidths.get(a) || NODE_WIDTH;
       const wb = nodeWidths.get(b) || NODE_WIDTH;
-      // Hitung separation minimal agar tidak overlap + gap
-      const needed = (wa + wb) / 2 + NODE_H_GAP;
-      return Math.max(1, needed / unitW);
+      const needed = (wa / 2) + NODE_H_GAP + (wb / 2);
+      // Sameparent: separation normal; beda parent: tambah extra gap
+      const extra = (a.parent === b.parent) ? 0 : NODE_H_GAP;
+      return (needed + extra) / unitW;
     });
 
   treeLayout(root);
@@ -458,22 +459,22 @@ function renderD3Tree(container, rootData, treeId) {
 
   const g = svg.append("g");
 
-  // Step 5: Links — elbow connector, pakai tinggi nyata node sumber
+  // Step 5: Links — bezier curve dari bawah-tengah parent ke atas-tengah child
   g.selectAll(".tree-link")
     .data(root.links())
     .enter().append("path")
       .attr("class", "tree-link")
       .attr("fill", "none")
-      .attr("stroke", "#999")
-      .attr("stroke-width", 1)
+      .attr("stroke", "#888")
+      .attr("stroke-width", 1.2)
       .attr("d", d => {
         const sh  = nodeHeights.get(d.source) || NODE_HEIGHT;
         const sx  = d.source.x + shiftX;
         const sy  = d.source.y + shiftY + sh;
         const tx  = d.target.x + shiftX;
         const ty  = d.target.y + shiftY;
-        const mid = sy + (ty - sy) * 0.5;
-        return `M${sx},${sy} L${sx},${mid} L${tx},${mid} L${tx},${ty}`;
+        const my  = (sy + ty) / 2;
+        return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
       });
 
   // Step 6: Nodes — render non-aktif dulu, aktif paling akhir (SVG paint order = z-order)
