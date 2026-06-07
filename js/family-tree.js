@@ -399,7 +399,7 @@ function renderD3Tree(container, rootData, treeId) {
 
   // ── Ukur lebar nyata setiap node ──
   const measurer = document.createElement("div");
-  measurer.style.cssText = "position:absolute;visibility:hidden;top:-9999px;left:-9999px;";
+  measurer.style.cssText = "position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;";
   document.body.appendChild(measurer);
   const nodeWidths  = new Map();
   const nodeHeights = new Map();
@@ -428,50 +428,37 @@ function renderD3Tree(container, rootData, treeId) {
       return ((wa + wb) / 2 + NODE_H_GAP) / unitW;
     })(root);
 
-  // ── Compact: kumpulkan semua node per level, sort x, pastikan gap >= NODE_H_GAP ──
-  // Jalankan beberapa pass sampai tidak ada perubahan lagi
-  for (let pass = 0; pass < 10; pass++) {
-    let changed = false;
-
-    // Kumpulkan per depth
+  // ── Fix gap: satu pass dari level terdalam ke level teratas ──
+  // Tidak re-center parent agar posisi tidak berubah-ubah
+  {
     const byDepth = new Map();
     root.each(d => {
       if (!byDepth.has(d.depth)) byDepth.set(d.depth, []);
       byDepth.get(d.depth).push(d);
     });
 
-    // Dari depth terdalam ke atas
-    const depths = Array.from(byDepth.keys()).sort((a,b) => b - a);
-    depths.forEach(dep => {
-      const nodes = byDepth.get(dep).slice().sort((a,b) => a.x - b.x);
+    // Process dari depth terdalam ke atas
+    const maxDepth = Math.max(...byDepth.keys());
+    for (let dep = maxDepth; dep >= 0; dep--) {
+      const nodes = (byDepth.get(dep) || []).slice().sort((a,b) => a.x - b.x);
       for (let i = 1; i < nodes.length; i++) {
         const L = nodes[i-1];
         const R = nodes[i];
-        const needed = (nodeWidths.get(L)||NODE_WIDTH)/2 + NODE_H_GAP + (nodeWidths.get(R)||NODE_WIDTH)/2;
-        const actual = R.x - L.x;
-        if (actual < needed) {
-          const shift = needed - actual;
-          // Geser R dan semua yang lebih kanan di level ini + subtree mereka
-          const toShift = new Set();
-          for (let j = i; j < nodes.length; j++) {
-            nodes[j].each(d => toShift.add(d));
+        const minDist = (nodeWidths.get(L)||NODE_WIDTH)/2
+                      + NODE_H_GAP
+                      + (nodeWidths.get(R)||NODE_WIDTH)/2;
+        const dist = R.x - L.x;
+        if (dist < minDist) {
+          const shift = minDist - dist;
+          // Geser node R dan seluruh keturunannya
+          R.each(d => { d.x += shift; });
+          // Geser semua node lebih kanan di level ini beserta subtree
+          for (let j = i+1; j < nodes.length; j++) {
+            nodes[j].each(d => { d.x += shift; });
           }
-          toShift.forEach(d => { d.x += shift; });
-          changed = true;
         }
       }
-    });
-
-    // Re-center parent di tengah children (hanya jika children ada)
-    root.each(d => {
-      if (d.children && d.children.length > 0) {
-        const minX = Math.min(...d.children.map(c => c.x));
-        const maxX = Math.max(...d.children.map(c => c.x));
-        d.x = (minX + maxX) / 2;
-      }
-    });
-
-    if (!changed) break;
+    }
   }
 
   // ── Bounding box ──
