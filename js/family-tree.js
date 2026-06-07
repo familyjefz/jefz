@@ -260,9 +260,9 @@ window.resetAllCollapse = resetAllCollapse;
 // ========== D3 TREE RENDERER ==========
 
 const NODE_WIDTH  = 110;
-const NODE_HEIGHT = 44;
-const NODE_H_GAP  = 8;
-const NODE_V_GAP  = 44;
+const NODE_HEIGHT = 44; // diukur nyata di measurer
+const NODE_H_GAP  = 10;
+const NODE_V_GAP  = 20; // gap tambahan antara bawah node dan atas node berikutnya
 
 function renderTree() {
   const container = document.getElementById("tree");
@@ -417,25 +417,37 @@ function renderD3Tree(container, rootData, treeId) {
   });
   document.body.removeChild(measurer);
 
-  // Step 2: Layout dengan separation berdasar lebar nyata
+  // Step 2: Hitung tinggi max per depth level
+  const depthHeights = new Map();
+  root.each(d => {
+    const h = nodeHeights.get(d) || NODE_HEIGHT;
+    if (!depthHeights.has(d.depth) || h > depthHeights.get(d.depth)) {
+      depthHeights.set(d.depth, h);
+    }
+  });
+
+  // unitW untuk spacing horizontal; unitH = tinggi max level + gap vertikal
   const unitW = NODE_WIDTH + NODE_H_GAP;
-  const unitH = NODE_HEIGHT + NODE_V_GAP;
+  // Untuk nodeSize, pakai tinggi terbesar + gap
+  const maxH  = Math.max(...depthHeights.values(), NODE_HEIGHT);
+  const unitH = maxH + NODE_V_GAP;
+
   const treeLayout = d3.tree()
     .nodeSize([unitW, unitH])
     .separation((a, b) => {
       const wa = nodeWidths.get(a) || NODE_WIDTH;
       const wb = nodeWidths.get(b) || NODE_WIDTH;
-      const half = (wa + wb) / 2 + NODE_H_GAP;
-      const extra = (a.parent === b.parent) ? 0 : NODE_H_GAP * 1.5;
-      return (half + extra) / unitW;
+      const needed = (wa + wb) / 2 + NODE_H_GAP;
+      const extra  = (a.parent === b.parent) ? 0 : NODE_H_GAP;
+      return (needed + extra) / unitW;
     });
 
   treeLayout(root);
 
-  // Step 3: Bounding box menggunakan ukuran nyata
+  // Step 3: Bounding box
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   root.each(d => {
-    const hw = (nodeWidths.get(d)  || NODE_WIDTH)  / 2;
+    const hw = (nodeWidths.get(d)  || NODE_WIDTH) / 2;
     const nh =  nodeHeights.get(d) || NODE_HEIGHT;
     if (d.x - hw < minX) minX = d.x - hw;
     if (d.x + hw > maxX) maxX = d.x + hw;
@@ -458,23 +470,22 @@ function renderD3Tree(container, rootData, treeId) {
 
   const g = svg.append("g");
 
-  // Step 5: Links — orthogonal T-shape seperti gambar referensi
-  // Garis turun dari parent, horizontal, lalu naik ke child
+  // Step 5: Links — orthogonal: turun dari parent, horizontal, naik ke child
   g.selectAll(".tree-link")
     .data(root.links())
     .enter().append("path")
       .attr("class", "tree-link")
       .attr("fill", "none")
-      .attr("stroke", "#aaa")
-      .attr("stroke-width", 1)
-      .attr("d", d => {
-        const sh  = nodeHeights.get(d.source) || NODE_HEIGHT;
-        const sx  = d.source.x + shiftX;
-        const sy  = d.source.y + shiftY + sh;   // bawah parent
-        const tx  = d.target.x + shiftX;
-        const ty  = d.target.y + shiftY;          // atas child
-        const mid = sy + (ty - sy) * 0.45;        // titik belok horizontal
-        return `M${sx},${sy} V${mid} H${tx} V${ty}`;
+      .attr("stroke", "#b0bec5")
+      .attr("stroke-width", 1.2)
+      .attr("d", link => {
+        const sh  = nodeHeights.get(link.source) || NODE_HEIGHT;
+        const sx  = link.source.x + shiftX;
+        const sy  = link.source.y + shiftY + sh; // tepat bawah node parent
+        const tx  = link.target.x + shiftX;
+        const ty  = link.target.y + shiftY;       // tepat atas node child
+        const hy  = sy + (ty - sy) / 2;           // titik tengah vertikal
+        return `M${sx},${sy} V${hy} H${tx} V${ty}`;
       });
 
   // Step 6: Nodes — render non-aktif dulu, aktif paling akhir (SVG paint order = z-order)
