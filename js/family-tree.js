@@ -442,39 +442,36 @@ function renderD3Tree(container, rootData, treeId) {
       return needed / unitW;
     })(root);
 
-  // ── Post-process: fix overlap antar subtree beda parent ──
-  // Iterasi tiap level, geser subtree kanan jika ada tumpang tindih
-  function treeLeft(node) {
-    let min = node.x - (nodeWidths.get(node) || NODE_WIDTH) / 2;
-    if (node.children) node.children.forEach(c => { min = Math.min(min, treeLeft(c)); });
-    return min;
-  }
-  function treeRight(node) {
-    let max = node.x + (nodeWidths.get(node) || NODE_WIDTH) / 2;
-    if (node.children) node.children.forEach(c => { max = Math.max(max, treeRight(c)); });
-    return max;
-  }
-  function shiftTree(node, delta) {
-    node.x += delta;
-    if (node.children) node.children.forEach(c => shiftTree(c, delta));
-  }
-  function fixSubtreeOverlaps(parent) {
-    if (!parent.children || parent.children.length < 2) return;
-    parent.children.forEach(fixSubtreeOverlaps);
-    for (let i = 1; i < parent.children.length; i++) {
-      const left  = parent.children[i - 1];
-      const right = parent.children[i];
-      const gap = treeLeft(right) - treeRight(left);
+  // ── Post-process: fix gap antar sibling langsung (same parent) ──
+  // Hanya geser node kanan jika jarak tepi kanan node-kiri ke tepi kiri node-kanan < NODE_H_GAP
+  function fixSiblingGaps(node) {
+    if (!node.children || node.children.length < 2) {
+      if (node.children) node.children.forEach(fixSiblingGaps);
+      return;
+    }
+    node.children.forEach(fixSiblingGaps);
+    for (let i = 1; i < node.children.length; i++) {
+      const L = node.children[i - 1];
+      const R = node.children[i];
+      const rEdgeL = L.x + (nodeWidths.get(L) || NODE_WIDTH) / 2;
+      const lEdgeR = R.x - (nodeWidths.get(R) || NODE_WIDTH) / 2;
+      const gap = lEdgeR - rEdgeL;
       if (gap < NODE_H_GAP) {
-        shiftTree(right, NODE_H_GAP - gap);
+        const shift = NODE_H_GAP - gap;
+        // Geser R dan seluruh subtree-nya
+        R.each(d => { d.x += shift; });
+        // Geser semua sibling di sebelah kanan R juga
+        for (let j = i + 1; j < node.children.length; j++) {
+          node.children[j].each(d => { d.x += shift; });
+        }
       }
     }
-    // Re-center parent di atas children
-    const fc = parent.children[0];
-    const lc = parent.children[parent.children.length - 1];
-    parent.x = (fc.x + lc.x) / 2;
+    // Re-center parent
+    const fc = node.children[0];
+    const lc = node.children[node.children.length - 1];
+    node.x = (fc.x + lc.x) / 2;
   }
-  fixSubtreeOverlaps(root);
+  fixSiblingGaps(root);
 
   // ── Bounding box ──
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
