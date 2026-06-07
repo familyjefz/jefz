@@ -442,34 +442,38 @@ function renderD3Tree(container, rootData, treeId) {
       return needed / unitW;
     })(root);
 
-  // ── Post-process: fix gap antar sibling langsung (same parent) ──
-  // Hanya geser node kanan jika jarak tepi kanan node-kiri ke tepi kiri node-kanan < NODE_H_GAP
+  // ── Post-process: fix gap antar sibling (cek subtree bounds) ──
+  function subtreeRight(n) {
+    let r = n.x + (nodeWidths.get(n) || NODE_WIDTH) / 2;
+    if (n.children) n.children.forEach(c => { r = Math.max(r, subtreeRight(c)); });
+    return r;
+  }
+  function subtreeLeft(n) {
+    let l = n.x - (nodeWidths.get(n) || NODE_WIDTH) / 2;
+    if (n.children) n.children.forEach(c => { l = Math.min(l, subtreeLeft(c)); });
+    return l;
+  }
+  function shiftSubtree(n, dx) { n.each(d => { d.x += dx; }); }
+
   function fixSiblingGaps(node) {
-    if (!node.children || node.children.length < 2) {
-      if (node.children) node.children.forEach(fixSiblingGaps);
-      return;
-    }
+    if (!node.children || node.children.length === 0) return;
     node.children.forEach(fixSiblingGaps);
+    if (node.children.length < 2) return;
+
     for (let i = 1; i < node.children.length; i++) {
       const L = node.children[i - 1];
       const R = node.children[i];
-      const rEdgeL = L.x + (nodeWidths.get(L) || NODE_WIDTH) / 2;
-      const lEdgeR = R.x - (nodeWidths.get(R) || NODE_WIDTH) / 2;
-      const gap = lEdgeR - rEdgeL;
+      const gap = subtreeLeft(R) - subtreeRight(L);
       if (gap < NODE_H_GAP) {
         const shift = NODE_H_GAP - gap;
-        // Geser R dan seluruh subtree-nya
-        R.each(d => { d.x += shift; });
-        // Geser semua sibling di sebelah kanan R juga
-        for (let j = i + 1; j < node.children.length; j++) {
-          node.children[j].each(d => { d.x += shift; });
+        // Geser R dan semua sibling di kanannya
+        for (let j = i; j < node.children.length; j++) {
+          shiftSubtree(node.children[j], shift);
         }
       }
     }
     // Re-center parent
-    const fc = node.children[0];
-    const lc = node.children[node.children.length - 1];
-    node.x = (fc.x + lc.x) / 2;
+    node.x = (subtreeLeft(node.children[0]) + subtreeRight(node.children[node.children.length-1])) / 2;
   }
   fixSiblingGaps(root);
 
@@ -507,9 +511,9 @@ function renderD3Tree(container, rootData, treeId) {
       .attr("d", lk => {
         const sh = nodeHeights.get(lk.source) || NODE_HEIGHT;
         const sx = lk.source.x + ox;
-        const sy = lk.source.y + oy + sh;
+        const sy = lk.source.y + oy + sh + 1; // +1 masuk ke dalam node sedikit
         const tx = lk.target.x + ox;
-        const ty = lk.target.y + oy;
+        const ty = lk.target.y + oy - 1;      // -1 masuk ke dalam node sedikit
         const hy = sy + (ty - sy) / 2;
         return `M${sx},${sy} V${hy} H${tx} V${ty}`;
       });
