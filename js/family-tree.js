@@ -163,16 +163,11 @@ async function apiUpdateTree({ action, id = 1, data, path, name, position }) {
 
 async function loadTree() {
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
-    const data = await res.json();
+    const data = await apiGetTree(1);
     currentTreeData = data;
     resetSiblingColors();
     assignSiblingGroups(currentTreeData);
-
-    if (typeof loadMultiState === "function") {
-      await loadMultiState();
-    }
-
+    if (typeof loadMultiState === "function") await loadMultiState();
     renderTree();
   } catch (err) {
     console.error("Gagal load tree:", err);
@@ -783,12 +778,7 @@ async function submitInline(path) {
 
     try {
       saveToUndo();
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-tree`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, ...body })
-      });
-      const result = await res.json();
+      const result = await apiUpdateTree({ action, id: 1, path, name: val, position: body.position });
       if (result.success) {
         activePath = null; activeMode = null;
         await loadTree();
