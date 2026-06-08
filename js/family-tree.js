@@ -34,6 +34,184 @@ function getNodeColor(node) {
   return getOrCreateSiblingColor(node._siblingGroupId);
 }
 
+
+// ========== D3 TREE RENDERER ==========
+
+const NODE_WIDTH  = 110;
+const NODE_HEIGHT = 44;
+const NODE_H_GAP  = 10;
+const NODE_V_GAP  = 20;
+
+function buildNodeHTML(d, root, treeId) {
+  const path = d.data._path || getNodePath(root, d);
+  d.data._path = path;
+  const nodeKey     = `${treeId}|${path.join(",")}`;
+  const pathJson    = JSON.stringify(path);
+  const tIdQ        = `"${treeId}"`;
+  const borderColor = getNodeColor(d.data);
+  const isActive    = activePath && activeTreeId === treeId &&
+                      JSON.stringify(path) === JSON.stringify(activePath);
+  const inputId     = `input-${treeId}-${path.join("-")}`;
+  const edgeHtml    = `<div class="node-edge-left" data-edge-key="${nodeKey}"></div>`;
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:inline-block;position:relative;";
+
+  if (isActive && activeMode && isAdmin) {
+    let inputValue = "", placeholder = "";
+    if (activeMode === "edit")   { inputValue = d.data.name; placeholder = "Tulis nama (Enter untuk baris baru)"; }
+    else if (activeMode === "add")    placeholder = "Tulis nama anak (Enter untuk baris baru)";
+    else if (activeMode === "parent") placeholder = "Tulis nama parent (Enter untuk baris baru)";
+    else if (activeMode === "order")  placeholder = "Masukkan nomor urutan (0=pertama)";
+    wrap.innerHTML = `
+      <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
+        ${edgeHtml}
+        <div class="node-name">${escapeHtml(d.data.name)}</div>
+        <textarea class="node-input" id="${inputId}" placeholder="${placeholder}" rows="2">${escapeHtml(inputValue)}</textarea>
+        <div class="node-actions">
+          <button onclick='submitInline(${pathJson})'>✔ Simpan</button>
+          <button onclick='cancelInline()'>✖ Batal</button>
+        </div>
+      </div>`;
+  } else if (isActive && isAdmin) {
+    wrap.innerHTML = `
+      <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};overflow:visible;">
+        ${edgeHtml}
+        <div class="node-name">${escapeHtml(d.data.name)}${d.data.children&&d.data.children.length?`<span class="collapse-indicator">${d.data._collapsed?"▶":"▼"}</span>`:""}</div>
+        <div class="node-buttons">
+          <button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>Option</button>
+          <button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>
+        </div>
+        <div class="node-menu">
+          <button onclick='setMode(${pathJson},"add",${tIdQ})'>➕ Tambah Anak</button>
+          <button onclick='setMode(${pathJson},"edit",${tIdQ})'>✏️ Ubah Nama</button>
+          <button onclick='showHapusPopup(${pathJson},${tIdQ})'>❌ Hapus</button>
+          <button onclick='setMode(${pathJson},"parent",${tIdQ})'>⬆️ Tambah Parent</button>
+          <button onclick='setMode(${pathJson},"order",${tIdQ})'>🔢 Ubah Urutan</button>
+          <button onclick='startConnect(${pathJson},${tIdQ})'>🔗 Hubungkan</button>
+          <button onclick='disconnectNode(${pathJson},${tIdQ})'>✂️ Putuskan</button>
+        </div>
+      </div>`;
+  } else {
+    const displayName = escapeHtml(d.data.name);
+    let buttons = `<button class="btn-info" onclick='showInfoFor(${tIdQ},${pathJson})'>📄 Info</button>`;
+    if (isAdmin) buttons = `<button class="btn-option" onclick='openOptions(${pathJson},${tIdQ})'>Option</button>${buttons}`;
+    const hasChildren = d.data.children && d.data.children.length > 0;
+    const isCollapsed = !!d.data._collapsed;
+    const collapseIndicator = hasChildren ? `<span class="collapse-indicator">${isCollapsed?"▶":"▼"}</span>` : "";
+    wrap.innerHTML = `
+      <div class="node-box" data-node-key="${nodeKey}" style="border-left:4px solid ${borderColor};">
+        ${edgeHtml}
+        <div class="node-name node-name-clickable" onclick='toggleCollapse(${pathJson},${tIdQ})'>${displayName}${collapseIndicator}</div>
+        <div class="node-buttons">${buttons}</div>
+      </div>`;
+  }
+  return { div: wrap, nodeKey, path };
+}
+
+function getNodePath(root, node) {
+  if (node === root) return [];
+  const path = [];
+  let cur = node;
+  while (cur.parent) {
+    path.unshift(cur.parent.children.indexOf(cur));
+    cur = cur.parent;
+  }
+  return path;
+}
+
+function renderD3Tree(container, rootData, treeId) {
+  const root = d3.hierarchy(rootData,
+    d => (!d._collapsed && d.children && d.children.length) ? d.children : null
+  );
+
+  const measurer = document.createElement("div");
+  measurer.style.cssText = "position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;";
+  document.body.appendChild(measurer);
+  const nodeWidths  = new Map();
+  const nodeHeights = new Map();
+  root.each(d => {
+    const tmp = document.createElement("div");
+    tmp.className = "node-box";
+    tmp.style.cssText = "display:inline-block;white-space:pre;";
+    tmp.innerHTML = `<div class="node-name">${escapeHtml(d.data.name)}</div>`
+      + `<div class="node-buttons"><button class="btn-option">Option</button><button class="btn-info">Info</button></div>`;
+    measurer.appendChild(tmp);
+    nodeWidths.set(d,  Math.max(tmp.offsetWidth  + 4, 80));
+    nodeHeights.set(d, Math.max(tmp.offsetHeight + 4, NODE_HEIGHT));
+    measurer.removeChild(tmp);
+  });
+  document.body.removeChild(measurer);
+
+  const unitW = NODE_WIDTH + NODE_H_GAP;
+  const unitH = NODE_HEIGHT + NODE_V_GAP;
+  d3.tree()
+    .nodeSize([unitW, unitH])
+    .separation((a, b) => {
+      const wa = nodeWidths.get(a) || NODE_WIDTH;
+      const wb = nodeWidths.get(b) || NODE_WIDTH;
+      return ((wa + wb) / 2 + NODE_H_GAP) / unitW;
+    })(root);
+
+  // Fix gap per depth level
+  {
+    const byDepth = new Map();
+    root.each(d => {
+      if (!byDepth.has(d.depth)) byDepth.set(d.depth, []);
+      byDepth.get(d.depth).push(d);
+    });
+    const maxDepth = Math.max(...byDepth.keys());
+    for (let dep = maxDepth; dep >= 0; dep--) {
+      const nodes = (byDepth.get(dep)||[]).slice().sort((a,b) => a.x - b.x);
+      for (let i = 1; i < nodes.length; i++) {
+        const L = nodes[i-1], R = nodes[i];
+        const minDist = (nodeWidths.get(L)||NODE_WIDTH)/2 + NODE_H_GAP + (nodeWidths.get(R)||NODE_WIDTH)/2;
+        const dist = R.x - L.x;
+        if (dist < minDist) {
+          const shift = minDist - dist;
+          R.each(d => { d.x += shift; });
+          for (let j = i+1; j < nodes.length; j++) nodes[j].each(d => { d.x += shift; });
+        }
+      }
+    }
+  }
+
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  root.each(d => {
+    const hw=(nodeWidths.get(d)||NODE_WIDTH)/2, nh=nodeHeights.get(d)||NODE_HEIGHT;
+    if(d.x-hw<x0)x0=d.x-hw; if(d.x+hw>x1)x1=d.x+hw;
+    if(d.y<y0)y0=d.y; if(d.y+nh>y1)y1=d.y+nh;
+  });
+  const PAD=16, ox=-x0+PAD, oy=-y0+PAD;
+
+  const svg = d3.select(container).append("svg")
+    .attr("width", x1-x0+PAD*2).attr("height", y1-y0+PAD*2).style("overflow","visible");
+  const g = svg.append("g");
+
+  g.selectAll(".tree-link").data(root.links()).enter().append("path")
+    .attr("class","tree-link").attr("fill","none").attr("stroke","#666").attr("stroke-width","1.5")
+    .attr("d", lk => {
+      const sh=nodeHeights.get(lk.source)||NODE_HEIGHT;
+      const sx=lk.source.x+ox, sy=lk.source.y+oy+sh;
+      const tx=lk.target.x+ox, ty=lk.target.y+oy;
+      const hy=(sy+ty)/2;
+      return `M${sx},${sy} V${hy} H${tx} V${ty}`;
+    });
+
+  const all=root.descendants();
+  const isAct=n=>activePath&&activeTreeId===treeId&&JSON.stringify(n.data._path||getNodePath(root,n))===JSON.stringify(activePath);
+  [...all.filter(d=>!isAct(d)),...all.filter(d=>isAct(d))].forEach(d=>{
+    const p=d.data._path||getNodePath(root,d); d.data._path=p;
+    const nw=nodeWidths.get(d)||NODE_WIDTH, nh=nodeHeights.get(d)||NODE_HEIGHT;
+    const active=isAct(d);
+    g.append("foreignObject")
+      .attr("x",d.x+ox-nw/2).attr("y",d.y+oy)
+      .attr("width",active?Math.max(nw,150):nw)
+      .attr("height",active&&!activeMode?nh+200:nh+6)
+      .attr("class","tree-node").style("overflow","visible")
+      .node().appendChild(buildNodeHTML(d,root,treeId).div);
+  });
+}
+
 function getNodeByPath(node, path) {
   if (!path || path.length === 0) return node;
   let current = node;
@@ -252,63 +430,10 @@ function renderTree() {
       assignSiblingGroups(t.data);
     }
 
-    try {
-      new Treant({
-        chart: {
-          container: `#tree-instance-${t.id}`,
-          rootOrientation: "NORTH",
-          connectors: { type: "bCurve" },
-          animateOnInit: false,
-          levelSeparation: 50,
-          siblingSeparation: 3,
-          subTeeSeparation: 30,
-          padding: 50
-        },
-        nodeStructure: convert(t.data, [], 1, t.id)
-      });
-    } catch (err) {
-      console.error("Treant error tree", t.id, err);
-    }
+    renderD3Tree(div, t.data, t.id);
   });
 
   setTimeout(() => {
-    trees.forEach(t => {
-      if (!isTreeVisible(t.id)) return;
-      const inst = document.getElementById(`tree-instance-${t.id}`);
-      if (!inst) return;
-      
-      const treantDiv = inst.querySelector('.Treant');
-      const svg = inst.querySelector('svg');
-      if (!treantDiv || !svg) return;
-      
-      treantDiv.style.width = '100%';
-      treantDiv.style.height = '100%';
-      
-      let contentWidth = 0, contentHeight = 0;
-      try {
-        const bbox = svg.getBBox();
-        contentWidth = bbox.width;
-        contentHeight = bbox.height;
-      } catch (e) {
-        contentWidth = 500;
-        contentHeight = 300;
-      }
-      
-      const PADDING = 10;
-      const newWidth = contentWidth + PADDING;
-      const newHeight = contentHeight + PADDING;
-      
-      treantDiv.style.width = newWidth + 'px';
-      treantDiv.style.height = newHeight + 'px';
-    });
-    
-    if (typeof isAdmin !== 'undefined' && isAdmin && typeof onEdgeClickForConnect === 'function') {
-      document.querySelectorAll('.node-edge-left').forEach(edge => {
-        edge.removeEventListener('dblclick', onEdgeClickForConnect);
-        edge.addEventListener('dblclick', onEdgeClickForConnect);
-      });
-    }
-    
     attachConnectTargetListener();
     
     if (wrapper) {
