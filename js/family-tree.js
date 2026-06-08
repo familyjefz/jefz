@@ -80,6 +80,87 @@ let connectMode = null;
 let connectSourcePath = null;
 let connectSourceTreeId = null;
 
+// ========== TURSO DATA API ==========
+
+async function apiGetTree(id) {
+  const result = await tursoFetch(
+    "SELECT data FROM tree_data WHERE id = ?",
+    [{ type: "integer", value: String(id) }]
+  );
+  const row = result?.rows?.[0];
+  if (!row) return null;
+  const val = row[0];
+  const str = (val && typeof val === "object") ? (val.value ?? val) : val;
+  return JSON.parse(str);
+}
+
+async function apiSaveTree(id, data) {
+  const json = JSON.stringify(data);
+  await tursoFetch(
+    "INSERT INTO tree_data (id, data) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data",
+    [
+      { type: "integer", value: String(id) },
+      { type: "text",    value: json }
+    ]
+  );
+}
+
+async function apiUpdateTree({ action, id = 1, data, path, name, position }) {
+  let treeData = await apiGetTree(id);
+  if (!treeData) treeData = {};
+
+  if (action === "replace") { await apiSaveTree(id, data); return { success: true }; }
+  if (action === "delete") {
+    if (!path || path.length === 0) return { success: false, error: "No path" };
+    const parent = path.length === 1 ? treeData : getNodeByPath(treeData, path.slice(0, -1));
+    if (!parent || !parent.children) return { success: false, error: "Parent not found" };
+    parent.children.splice(path[path.length - 1], 1);
+    await apiSaveTree(id, treeData);
+    return { success: true };
+  }
+  if (action === "add") {
+    const target = path.length === 0 ? treeData : getNodeByPath(treeData, path);
+    if (!target) return { success: false, error: "Node not found" };
+    if (!target.children) target.children = [];
+    target.children.push({ name });
+    await apiSaveTree(id, treeData);
+    return { success: true };
+  }
+  if (action === "edit") {
+    const target = path.length === 0 ? treeData : getNodeByPath(treeData, path);
+    if (!target) return { success: false, error: "Node not found" };
+    target.name = name;
+    await apiSaveTree(id, treeData);
+    return { success: true };
+  }
+  if (action === "addParent") {
+    if (!path || path.length === 0) {
+      await apiSaveTree(id, { name, children: [treeData] });
+      return { success: true };
+    }
+    const parentPath = path.slice(0, -1);
+    const idx = path[path.length - 1];
+    const parent = parentPath.length === 0 ? treeData : getNodeByPath(treeData, parentPath);
+    if (!parent || !parent.children) return { success: false, error: "Parent not found" };
+    const orig = parent.children[idx];
+    parent.children[idx] = { name, children: [orig] };
+    await apiSaveTree(id, treeData);
+    return { success: true };
+  }
+  if (action === "reorder") {
+    if (!path || path.length === 0) return { success: false, error: "No path" };
+    const parentPath = path.slice(0, -1);
+    const idx = path[path.length - 1];
+    const parent = parentPath.length === 0 ? treeData : getNodeByPath(treeData, parentPath);
+    if (!parent || !parent.children) return { success: false, error: "Parent not found" };
+    const item = parent.children.splice(idx, 1)[0];
+    parent.children.splice(Math.max(0, Math.min(parent.children.length, position)), 0, item);
+    await apiSaveTree(id, treeData);
+    return { success: true };
+  }
+  return { success: false, error: "Unknown action" };
+}
+
 async function loadTree() {
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/get-tree?id=1`);
