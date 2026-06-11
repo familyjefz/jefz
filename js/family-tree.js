@@ -35,6 +35,37 @@ function getNodeColor(node) {
 }
 
 
+
+// ========== COLLAPSE / EXPAND ==========
+function toggleCollapse(path, treeId) {
+  const tree = getTreeDataById(treeId);
+  if (!tree) return;
+  const node = path.length === 0 ? tree : getNodeByPath(tree, path);
+  if (!node || !node.children || node.children.length === 0) return;
+  node._collapsed = !node._collapsed;
+  const scroll = getCurrentScroll();
+  resetSiblingColors();
+  if (currentTreeData) assignSiblingGroups(currentTreeData);
+  if (typeof extraTrees !== "undefined") extraTrees.forEach(t => assignSiblingGroups(t.data));
+  renderTree();
+  restoreScroll(scroll.left, scroll.top);
+}
+window.toggleCollapse = toggleCollapse;
+
+function resetAllCollapse() {
+  function clearCollapse(node) {
+    if (!node) return;
+    delete node._collapsed;
+    if (node.children) node.children.forEach(clearCollapse);
+  }
+  if (currentTreeData) clearCollapse(currentTreeData);
+  if (typeof extraTrees !== "undefined") extraTrees.forEach(t => clearCollapse(t.data));
+  const scroll = getCurrentScroll();
+  renderTree();
+  restoreScroll(scroll.left, scroll.top);
+}
+window.resetAllCollapse = resetAllCollapse;
+
 // ========== D3 TREE RENDERER ==========
 
 const NODE_WIDTH  = 110;
@@ -913,3 +944,68 @@ document.addEventListener('DOMContentLoaded', () => {
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
 /*Stable + cutting-root-fix*/
+
+// ========== RESET ZOOM → Muhammad Jabbar @ 150% ==========
+function zoomResetToJabbar() {
+  scale = 1.5;
+  currentZoom = 1.5;
+  offsetX = 0;
+  offsetY = 0;
+  if (typeof applyTransform === "function") applyTransform();
+  if (typeof updateZoomUI === "function") updateZoomUI(150);
+  const slider = document.getElementById("zoom-slider");
+  if (slider) slider.value = 150;
+
+  function findNode(node, path, treeId, keywords) {
+    if (!node) return null;
+    const n = (node.name||"").split("|")[0].replace(/^>/,"").trim().toLowerCase();
+    if (keywords.some(k=>n.includes(k))) return { path:[...path], treeId };
+    if (node.children) {
+      for (let i=0;i<node.children.length;i++) {
+        const r=findNode(node.children[i],[...path,i],treeId,keywords);
+        if(r) return r;
+      }
+    }
+    return null;
+  }
+
+  const keywords = ["muhammad jabbar","jabbar"];
+  let found = null;
+  if (currentTreeData) found = findNode(currentTreeData,[],"main",keywords);
+  if (!found && typeof extraTrees!=="undefined") {
+    for (const t of extraTrees) {
+      const r=findNode(t.data,[],t.id,keywords);
+      if(r){found=r;break;}
+    }
+  }
+
+  if (found) {
+    const tree = found.treeId==="main" ? currentTreeData :
+      (typeof extraTrees!=="undefined"?extraTrees.find(t=>t.id===found.treeId)?.data:null);
+    function openPath(node,rem) {
+      if(!node||!rem.length) return;
+      node._collapsed=false;
+      const idx=rem[0];
+      if(node.children&&node.children[idx]) openPath(node.children[idx],rem.slice(1));
+    }
+    if(tree&&found.path.length>0) openPath(tree,found.path);
+    renderTree();
+  }
+
+  [60,150,300].forEach(delay => {
+    setTimeout(() => {
+      const nodeKey = found ? `${found.treeId}|${found.path.join(",")}` : null;
+      const el = nodeKey ? document.querySelector(`.node-box[data-node-key="${CSS.escape(nodeKey)}"]`) : null;
+      const wrapper = document.getElementById("tree-wrapper");
+      if(!el||!wrapper) return;
+      const wrapRect=wrapper.getBoundingClientRect();
+      const elRect=el.getBoundingClientRect();
+      offsetX=(offsetX||0)+(wrapRect.left+wrapRect.width/2)-(elRect.left+elRect.width/2);
+      offsetY=(offsetY||0)+(wrapRect.top+wrapRect.height/2)-(elRect.top+elRect.height/2);
+      if(typeof applyTransform==="function") applyTransform();
+      if(typeof saveViewState==="function") saveViewState();
+    },delay);
+  });
+}
+window.zoomResetToJabbar = zoomResetToJabbar;
+
