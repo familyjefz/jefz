@@ -433,97 +433,25 @@ function renderTree() {
     renderD3Tree(div, t.data, t.id);
   });
 
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     attachConnectTargetListener();
     
     if (wrapper) {
       if (isFirstLoad) {
-        if (typeof loadViewState === "function") loadViewState();
-        else if (typeof centerOnMainTree === "function") centerOnMainTree();
         isFirstLoad = false;
+        const hasState = (typeof loadViewState === "function") ? loadViewState() : false;
+        if (!hasState && typeof zoomResetToJabbar === "function") {
+          zoomResetToJabbar();
+        }
       } else {
         wrapper.scrollLeft = savedLeft;
         wrapper.scrollTop = savedTop;
       }
     }
     if (typeof drawManualLinks === "function") drawManualLinks();
-  }, 200);
+  });
 }
 
-function convert(node, path = [], generation = 1, treeId = "main") {
-  const isActive = activePath && activeTreeId === treeId &&
-                   JSON.stringify(path) === JSON.stringify(activePath);
-  const borderColor = getNodeColor(node);
-  const inputId = `input-${treeId}-${path.join("-")}`;
-  const nodeKey = `${treeId}|${path.join(",")}`;
-  const pathJson = JSON.stringify(path);
-  const tIdQ = `"${treeId}"`;
-
-  const edgeHtml = `<div class="node-edge-left" data-edge-key="${nodeKey}"></div>`;
-
-  let innerHTML = "";
-
-  if (isActive && activeMode && isAdmin) {
-    let inputValue = "";
-    let placeholder = "";
-    if (activeMode === "edit") { inputValue = node.name; placeholder = "Tulis nama (Enter untuk baris baru)"; }
-    else if (activeMode === "add") placeholder = "Tulis nama anak (Enter untuk baris baru)";
-    else if (activeMode === "parent") placeholder = "Tulis nama parent (Enter untuk baris baru)";
-    else if (activeMode === "order") placeholder = "Masukkan nomor urutan (0=pertama)";
-
-    innerHTML = `
-      <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left: 4px solid ${borderColor};">
-        ${edgeHtml}
-        <div class="node-name">${escapeHtml(node.name)}</div>
-        <textarea class="node-input" id="${inputId}"
-          placeholder="${placeholder}" rows="2">${escapeHtml(inputValue)}</textarea>
-        <div class="node-actions">
-          <button onclick='submitInline(${pathJson})'>✔ Simpan</button>
-          <button onclick='cancelInline()'>✖ Batal</button>
-        </div>
-      </div>
-    `;
-  }
-  else if (isActive && isAdmin) {
-    innerHTML = `
-      <div class="node-box active-node" data-node-key="${nodeKey}" style="border-left: 4px solid ${borderColor};">
-        ${edgeHtml}
-        <div class="node-name">${escapeHtml(node.name)}</div>
-        <div class="node-menu">
-          <button onclick='setMode(${pathJson}, "add", ${tIdQ})'>➕ Tambah Anak</button>
-          <button onclick='setMode(${pathJson}, "edit", ${tIdQ})'>✏️ Ubah Nama</button>
-          <button onclick='showHapusPopup(${pathJson}, ${tIdQ})'>❌ Hapus</button>
-          <button onclick='setMode(${pathJson}, "parent", ${tIdQ})'>⬆️ Tambah Parent</button>
-          <button onclick='setMode(${pathJson}, "order", ${tIdQ})'>🔢 Ubah Urutan</button>
-          <button onclick='startConnect(${pathJson}, ${tIdQ})'>🔗 Hubungkan</button>
-          <button onclick='disconnectNode(${pathJson}, ${tIdQ})'>✂️ Putuskan</button>
-        </div>
-      </div>
-    `;
-  }
-  else {
-    const displayName = escapeHtml(node.name).replace(/\n/g, '<br>');
-    let buttons = `<button class="btn-info" onclick='showInfoFor(${tIdQ}, ${pathJson})'>📄 Info</button>`;
-    if (isAdmin) {
-      buttons = `<button class="btn-option" onclick='openOptions(${pathJson}, ${tIdQ})'>⚙️ Option</button>${buttons}`;
-    }
-
-    innerHTML = `
-      <div class="node-box" data-node-key="${nodeKey}" style="border-left: 4px solid ${borderColor};">
-        ${edgeHtml}
-        <div class="node-name">${displayName}</div>
-        <div class="node-buttons">
-          ${buttons}
-        </div>
-      </div>
-    `;
-  }
-
-  return {
-    innerHTML: innerHTML,
-    children: node.children?.map((child, i) => convert(child, [...path, i], generation + 1, treeId))
-  };
-}
 
 // ========== HELPER ==========
 
