@@ -5,27 +5,36 @@ let offsetY = 0;
 
 let isDragging = false;
 let pendingDrag = false;
-let startX = 0, startY = 0;
-let startOffsetX = 0, startOffsetY = 0;
+let startX = 0;
+let startY = 0;
+let startOffsetX = 0;
+let startOffsetY = 0;
 
-// Fling / momentum
-let velX = 0, velY = 0;
-let lastX = 0, lastY = 0;
-let lastT = 0;
-let flingRAF = null;
+// Momentum/fling
+let velX = 0;
+let velY = 0;
+let lastMoveTime = 0;
+let lastMoveX = 0;
+let lastMoveY = 0;
+let _flingRaf = null;
 
 let isPinching = false;
-let startDist = 0, startScale = 1;
+let startDist = 0;
+let startScale = 1;
 let pinchCooldown = 0;
 
 let isInfoPinching = false;
-let infoZoom = 1, startInfoZoom = 1;
+let infoZoom = 1;
+let startInfoZoom = 1;
 
 let repositionMode = false;
 
 const DRAG_THRESHOLD = 4;
 const INFO_ZOOM_MIN = 0.6;
 const INFO_ZOOM_MAX = 4;
+const FRICTION = 0.92;
+const MIN_VEL = 0.3;
+
 const VIEW_KEY = "silsilah_view_state_v2";
 
 const getContainer = () => document.getElementById("tree-zoom-container");
@@ -34,8 +43,7 @@ const getInfoModal = () => document.getElementById("info-modal");
 function isInfoModalOpen() {
   const m = getInfoModal();
   if (!m) return false;
-  const d = m.style.display;
-  return d === "flex" || d === "block";
+  return m.style.display === "flex" || m.style.display === "block";
 }
 
 function applyInfoZoom() {
@@ -43,13 +51,22 @@ function applyInfoZoom() {
   if (body) body.style.setProperty("--info-zoom", String(infoZoom));
 }
 
-function resetInfoZoom() { infoZoom = 1; applyInfoZoom(); }
+function resetInfoZoom() {
+  infoZoom = 1;
+  applyInfoZoom();
+}
 
-// applyTransform: NO willChange here (set once in CSS), NO transition
 function applyTransform() {
   const el = getContainer();
   if (!el) return;
-  el.style.transform = `translate(${offsetX}px,${offsetY}px) scale(${scale})`;
+  // Gunakan integer pixel untuk mencegah blur subpixel
+  const tx = Math.round(offsetX);
+  const ty = Math.round(offsetY);
+  el.style.willChange = "transform";
+  el.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  el.style.transformOrigin = "0 0";
+  // Crisp rendering
+  el.style.imageRendering = "crisp-edges";
 }
 
 function setZoom(zoom, centerX = null, centerY = null) {
@@ -58,8 +75,10 @@ function setZoom(zoom, centerX = null, centerY = null) {
   const el = getContainer();
   if (!el) return;
 
-  if (centerX === null) centerX = window.innerWidth  / 2;
-  if (centerY === null) centerY = window.innerHeight / 2;
+  if (centerX === null || centerY === null) {
+    centerX = window.innerWidth / 2;
+    centerY = window.innerHeight / 2;
+  }
 
   const rect = el.getBoundingClientRect();
   const dx = centerX - rect.left;
@@ -67,8 +86,12 @@ function setZoom(zoom, centerX = null, centerY = null) {
 
   offsetX -= dx * (newScale / scale - 1);
   offsetY -= dy * (newScale / scale - 1);
-  scale = newScale;
 
+  // Round offset untuk anti-blur
+  offsetX = Math.round(offsetX);
+  offsetY = Math.round(offsetY);
+
+  scale = newScale;
   applyTransform();
   updateZoomUI(zoom);
   currentZoom = newScale;
@@ -76,31 +99,27 @@ function setZoom(zoom, centerX = null, centerY = null) {
 }
 
 function updateZoomUI(zoom) {
-  const zv = document.getElementById("zoom-value");
-  if (zv) zv.textContent = Math.round(zoom) + "%";
-  const sl = document.getElementById("zoom-slider");
-  if (sl && sl.value != zoom) sl.value = zoom;
+  const zoomValue = document.getElementById("zoom-value");
+  if (zoomValue) zoomValue.textContent = Math.round(zoom) + "%";
+  const slider = document.getElementById("zoom-slider");
+  if (slider && slider.value != zoom) slider.value = zoom;
 }
 
 function updateZoomFromSlider(e) {
   setZoom(parseInt(e.target.value));
 }
 
-// ── Reset zoom → Muhammad Jabbar @ 150% ──
 function zoomReset() {
   if (typeof zoomResetToJabbar === "function") {
     zoomResetToJabbar();
   } else {
-    _resetToDefault();
+    scale = 1; offsetX = 0; offsetY = 0; currentZoom = 1;
+    applyTransform(); updateZoomUI(100);
+    const slider = document.getElementById("zoom-slider");
+    if (slider) slider.value = 100;
+    if (typeof centerOnMainTree === "function") centerOnMainTree();
+    saveViewState();
   }
-}
-
-function _resetToDefault() {
-  scale = 1; offsetX = 0; offsetY = 0; currentZoom = 1;
-  applyTransform(); updateZoomUI(100);
-  const sl = document.getElementById("zoom-slider");
-  if (sl) sl.value = 100;
-  centerOnMainTree(); saveViewState();
 }
 
 function centerOnMainTree() {
@@ -109,12 +128,10 @@ function centerOnMainTree() {
   const wrapper = document.getElementById("tree-wrapper");
   const rootNode = document.querySelector("#tree-instance-main .node-box");
   if (!wrapper || !rootNode) return;
-  const rootRect = rootNode.getBoundingClientRect();
+  const rootRect    = rootNode.getBoundingClientRect();
   const wrapperRect = wrapper.getBoundingClientRect();
-  wrapper.scrollLeft = Math.max(0,
-    wrapper.scrollLeft + (rootRect.left - wrapperRect.left) - (wrapper.clientWidth / 2) + (rootRect.width / 2));
-  wrapper.scrollTop = Math.max(0,
-    wrapper.scrollTop + (rootRect.top - wrapperRect.top) - (wrapper.clientHeight / 2) + (rootRect.height / 2));
+  wrapper.scrollLeft = Math.max(0, wrapper.scrollLeft + (rootRect.left - wrapperRect.left) - wrapper.clientWidth  / 2 + rootRect.width  / 2);
+  wrapper.scrollTop  = Math.max(0, wrapper.scrollTop  + (rootRect.top  - wrapperRect.top)  - wrapper.clientHeight / 2 + rootRect.height / 2);
   saveViewState();
 }
 
@@ -126,74 +143,87 @@ function saveViewState() {
       scrollLeft: w ? w.scrollLeft : 0,
       scrollTop:  w ? w.scrollTop  : 0
     }));
-  } catch(e) {}
+  } catch (e) {}
 }
 
 function loadViewState() {
   try {
     const raw = localStorage.getItem(VIEW_KEY);
-    const w   = document.getElementById("tree-wrapper");
+    const w = document.getElementById("tree-wrapper");
     if (!raw) return false;
-    const d = JSON.parse(raw);
-    scale = d.scale || 1; offsetX = d.offsetX || 0; offsetY = d.offsetY || 0;
+    const data = JSON.parse(raw);
+    scale   = data.scale   || 1;
+    offsetX = data.offsetX || 0;
+    offsetY = data.offsetY || 0;
     currentZoom = scale;
-    applyTransform(); updateZoomUI(Math.round(scale * 100));
-    if (w) { w.scrollLeft = d.scrollLeft || 0; w.scrollTop = d.scrollTop || 0; }
+    applyTransform();
+    updateZoomUI(Math.round(scale * 100));
+    if (w) {
+      w.scrollLeft = data.scrollLeft || 0;
+      w.scrollTop  = data.scrollTop  || 0;
+    }
     return true;
-  } catch(e) { return false; }
+  } catch (e) { return false; }
 }
 
-function isAlwaysInteractive(t) {
-  if (!t) return false;
-  return !!(t.closest("textarea") || t.closest("input") ||
-            t.closest(".zoom-slider") || t.closest(".modal") || t.closest(".custom-popup"));
+function isAlwaysInteractive(target) {
+  if (!target) return false;
+  return !!(target.closest("textarea") || target.closest("input") ||
+            target.closest(".zoom-slider") || target.closest(".modal") ||
+            target.closest(".custom-popup"));
 }
 
-function isClickable(t) {
-  return !!(t && (t.closest("button") || t.closest(".node-box")));
+function isClickable(target) {
+  if (!target) return false;
+  return !!(target.closest("button") || target.closest(".node-box"));
 }
 
 function suppressNextClick() {
-  const h = ev => { ev.stopPropagation(); ev.preventDefault(); };
-  document.addEventListener("click", h, { capture: true, once: true });
-  setTimeout(() => document.removeEventListener("click", h, { capture: true }), 400);
+  const handler = ev => { ev.stopPropagation(); ev.preventDefault(); };
+  document.addEventListener("click", handler, { capture: true, once: true });
+  setTimeout(() => document.removeEventListener("click", handler, { capture: true }), 400);
 }
 
-// ── Fling ──
-function stopFling() {
-  if (flingRAF) { cancelAnimationFrame(flingRAF); flingRAF = null; }
-  velX = 0; velY = 0;
+function cancelFling() {
+  if (_flingRaf) { cancelAnimationFrame(_flingRaf); _flingRaf = null; }
 }
 
 function startFling() {
-  stopFling();
-  const FRICTION = 0.92;
-  const MIN_VEL  = 0.5;
-  function step() {
-    if (Math.abs(velX) < MIN_VEL && Math.abs(velY) < MIN_VEL) {
-      saveViewState(); flingRAF = null; return;
-    }
-    offsetX += velX; offsetY += velY;
-    velX *= FRICTION; velY *= FRICTION;
+  cancelFling();
+  if (Math.hypot(velX, velY) < MIN_VEL) return;
+
+  function frame() {
+    velX *= FRICTION;
+    velY *= FRICTION;
+    offsetX += velX;
+    offsetY += velY;
     applyTransform();
-    flingRAF = requestAnimationFrame(step);
+    if (Math.hypot(velX, velY) > MIN_VEL) {
+      _flingRaf = requestAnimationFrame(frame);
+    } else {
+      _flingRaf = null;
+      saveViewState();
+    }
   }
-  flingRAF = requestAnimationFrame(step);
+  _flingRaf = requestAnimationFrame(frame);
 }
 
 // ── Mouse drag ──
 function startDrag(e) {
-  stopFling();
   const t = e.target;
   if (isAlwaysInteractive(t)) return;
-  pendingDrag = true; isDragging = false;
+  cancelFling();
+  pendingDrag = true;
+  isDragging  = false;
   startX = e.clientX; startY = e.clientY;
   startOffsetX = offsetX; startOffsetY = offsetY;
-  lastX = e.clientX; lastY = e.clientY; lastT = Date.now();
   velX = 0; velY = 0;
+  lastMoveTime = Date.now();
+  lastMoveX = e.clientX; lastMoveY = e.clientY;
   if (!isClickable(t)) { isDragging = true; e.preventDefault(); }
 }
 
+let _dragRaf = null;
 function moveDrag(e) {
   if (!pendingDrag && !isDragging) return;
   const dx = e.clientX - startX;
@@ -202,22 +232,30 @@ function moveDrag(e) {
     if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
     isDragging = true;
   }
-
   const now = Date.now();
-  const dt  = now - lastT || 16;
-  velX = (e.clientX - lastX) / dt * 16;
-  velY = (e.clientY - lastY) / dt * 16;
-  lastX = e.clientX; lastY = e.clientY; lastT = now;
+  const dt  = now - lastMoveTime;
+  if (dt > 0) {
+    velX = (e.clientX - lastMoveX) / dt * 16;
+    velY = (e.clientY - lastMoveY) / dt * 16;
+  }
+  lastMoveTime = now;
+  lastMoveX = e.clientX;
+  lastMoveY = e.clientY;
 
-  offsetX = startOffsetX + dx;
-  offsetY = startOffsetY + dy;
-  applyTransform();
+  const nx = Math.round(startOffsetX + dx);
+  const ny = Math.round(startOffsetY + dy);
+  if (_dragRaf) cancelAnimationFrame(_dragRaf);
+  _dragRaf = requestAnimationFrame(() => {
+    offsetX = nx; offsetY = ny;
+    applyTransform();
+    _dragRaf = null;
+  });
 }
 
 function endDrag(e) {
-  if (isDragging) {
-    const dx = (e?.clientX ?? startX) - startX;
-    const dy = (e?.clientY ?? startY) - startY;
+  if (isDragging && e) {
+    const dx = (e.clientX ?? startX) - startX;
+    const dy = (e.clientY ?? startY) - startY;
     if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
       suppressNextClick();
       startFling();
@@ -225,21 +263,22 @@ function endDrag(e) {
       saveViewState();
     }
   }
-  isDragging = false; pendingDrag = false;
+  isDragging = false;
+  pendingDrag = false;
 }
 
 // ── Touch ──
 function getDist(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx*dx + dy*dy);
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 function touchStart(e) {
-  stopFling();
   if (e.touches.length >= 2) {
+    cancelFling();
     if (isInfoModalOpen()) {
-      isInfoPinching = true; isPinching = false; isDragging = false; pendingDrag = false;
+      isInfoPinching = true; isPinching = false;
       startDist = getDist(e.touches); startInfoZoom = infoZoom;
       e.preventDefault(); return;
     }
@@ -249,14 +288,16 @@ function touchStart(e) {
   }
   if (e.touches.length === 1) {
     if (isPinching || isInfoPinching || Date.now() < pinchCooldown) return;
-    const touch = e.touches[0];
+    cancelFling();
+    const touch  = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
     if (isAlwaysInteractive(target)) return;
     pendingDrag = true; isDragging = false;
     startX = touch.clientX; startY = touch.clientY;
     startOffsetX = offsetX; startOffsetY = offsetY;
-    lastX = touch.clientX; lastY = touch.clientY; lastT = Date.now();
     velX = 0; velY = 0;
+    lastMoveTime = Date.now();
+    lastMoveX = touch.clientX; lastMoveY = touch.clientY;
     if (!isClickable(target)) isDragging = true;
   }
 }
@@ -264,19 +305,20 @@ function touchStart(e) {
 function touchMove(e) {
   if (isInfoPinching && e.touches.length >= 2) {
     e.preventDefault();
-    const f = getDist(e.touches) / startDist;
-    infoZoom = Math.max(INFO_ZOOM_MIN, Math.min(INFO_ZOOM_MAX, startInfoZoom * f));
+    const dist = getDist(e.touches);
+    if (startDist <= 0) return;
+    infoZoom = Math.max(INFO_ZOOM_MIN, Math.min(INFO_ZOOM_MAX, startInfoZoom * dist / startDist));
     applyInfoZoom(); return;
   }
   if (isPinching && e.touches.length >= 2) {
     e.preventDefault();
-    const dist  = getDist(e.touches);
-    const zoom  = (startScale * dist / startDist) * 100;
-    const cx    = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    const cy    = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-    setZoom(zoom, cx, cy); return;
+    const dist = getDist(e.touches);
+    if (startDist <= 0) return;
+    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    setZoom((startScale * dist / startDist) * 100, cx, cy); return;
   }
-  if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching && !isInfoPinching) {
+  if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching) {
     const t  = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
@@ -285,16 +327,22 @@ function touchMove(e) {
       isDragging = true;
     }
     e.preventDefault();
-
     const now = Date.now();
-    const dt  = now - lastT || 16;
-    velX = (t.clientX - lastX) / dt * 16;
-    velY = (t.clientY - lastY) / dt * 16;
-    lastX = t.clientX; lastY = t.clientY; lastT = now;
+    const dt  = now - lastMoveTime;
+    if (dt > 0) {
+      velX = (t.clientX - lastMoveX) / dt * 16;
+      velY = (t.clientY - lastMoveY) / dt * 16;
+    }
+    lastMoveTime = now;
+    lastMoveX = t.clientX; lastMoveY = t.clientY;
 
-    offsetX = startOffsetX + dx;
-    offsetY = startOffsetY + dy;
-    applyTransform();
+    if (_dragRaf) cancelAnimationFrame(_dragRaf);
+    _dragRaf = requestAnimationFrame(() => {
+      offsetX = Math.round(startOffsetX + dx);
+      offsetY = Math.round(startOffsetY + dy);
+      applyTransform();
+      _dragRaf = null;
+    });
   }
 }
 
@@ -326,8 +374,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (w) {
     let t = null;
     w.addEventListener("scroll", () => {
-      clearTimeout(t); t = setTimeout(saveViewState, 200);
+      clearTimeout(t);
+      t = setTimeout(saveViewState, 200);
     });
   }
 });
-/*Stable + fling + smooth*/
+/*Stable + fling + anti-blur*/
