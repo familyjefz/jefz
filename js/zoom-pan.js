@@ -230,7 +230,6 @@ function startDrag(e) {
   if (!isClickable(t)) { isDragging = true; e.preventDefault(); }
 }
 
-let _dragRaf = null;
 function moveDrag(e) {
   if (!pendingDrag && !isDragging) return;
   const dx = e.clientX - startX;
@@ -241,7 +240,7 @@ function moveDrag(e) {
   }
   const now = Date.now();
   const dt  = now - lastMoveTime;
-  if (dt > 0 && dt < 100) {
+  if (dt > 0 && dt < 80) {
     const vx = (e.clientX - lastMoveX) / dt * 16;
     const vy = (e.clientY - lastMoveY) / dt * 16;
     moveSamples.push({ vx, vy, t: now });
@@ -250,15 +249,9 @@ function moveDrag(e) {
   lastMoveTime = now;
   lastMoveX = e.clientX;
   lastMoveY = e.clientY;
-
-  const nx = Math.round(startOffsetX + dx);
-  const ny = Math.round(startOffsetY + dy);
-  if (_dragRaf) cancelAnimationFrame(_dragRaf);
-  _dragRaf = requestAnimationFrame(() => {
-    offsetX = nx; offsetY = ny;
-    applyTransform();
-    _dragRaf = null;
-  });
+  offsetX = startOffsetX + dx;
+  offsetY = startOffsetY + dy;
+  applyTransform();
 }
 
 function endDrag(e) {
@@ -339,7 +332,7 @@ function touchMove(e) {
     e.preventDefault();
     const now = Date.now();
     const dt  = now - lastMoveTime;
-    if (dt > 0 && dt < 100) {
+    if (dt > 0 && dt < 80) {
       const vx = (t.clientX - lastMoveX) / dt * 16;
       const vy = (t.clientY - lastMoveY) / dt * 16;
       moveSamples.push({ vx, vy, t: now });
@@ -348,13 +341,9 @@ function touchMove(e) {
     lastMoveTime = now;
     lastMoveX = t.clientX; lastMoveY = t.clientY;
 
-    if (_dragRaf) cancelAnimationFrame(_dragRaf);
-    _dragRaf = requestAnimationFrame(() => {
-      offsetX = Math.round(startOffsetX + dx);
-      offsetY = Math.round(startOffsetY + dy);
-      applyTransform();
-      _dragRaf = null;
-    });
+    offsetX = startOffsetX + dx;
+    offsetY = startOffsetY + dy;
+    applyTransform();
   }
 }
 
