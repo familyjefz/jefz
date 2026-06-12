@@ -233,7 +233,7 @@ function renderD3Tree(container, rootData, treeId) {
   const g = svg.append("g");
 
   g.selectAll(".tree-link").data(root.links()).enter().append("path")
-    .attr("class","tree-link").attr("fill","none").attr("stroke","#666").attr("stroke-width","1.5")
+    .attr("class","tree-link").attr("fill","none").attr("stroke","#333").attr("stroke-width","1.5")
     .attr("d", lk => {
       const sh=nodeHeights.get(lk.source)||NODE_HEIGHT;
       const sx=lk.source.x+ox, sy=lk.source.y+oy+sh;
