@@ -6,11 +6,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html {
-  -webkit-font-smoothing: subpixel-antialiased;
-  -moz-osx-font-smoothing: auto;
-  text-size-adjust: 100%;
-}
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
