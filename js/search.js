@@ -43,7 +43,7 @@ function searchAndGoTo(query) {
 }
 
 function goToNode(treeId, path) {
-  // Buka semua collapse di jalur
+  // Buka collapse
   function openPath(node, remainPath) {
     if (!node || !remainPath.length) return;
     node._collapsed = false;
@@ -55,34 +55,40 @@ function goToNode(treeId, path) {
     : (typeof extraTrees !== "undefined" ? extraTrees.find(t => t.id === treeId) : null)?.data;
   if (tree && path.length > 0) openPath(tree, path);
 
+  // Set zoom 150% dulu sebelum render
+  scale = 1.5;
+  currentZoom = 1.5;
+  offsetX = 0;
+  offsetY = 0;
+  if (typeof applyTransform === "function") applyTransform();
+  if (typeof updateZoomUI   === "function") updateZoomUI(150);
+  const slider = document.getElementById("zoom-slider");
+  if (slider) slider.value = 150;
+
   renderTree();
 
-  // Center ke node setelah DOM siap — coba 3x dengan delay meningkat
-  [80, 200, 400].forEach(d => setTimeout(() => _centerOnNode(treeId, path), d));
+  // Center setelah render
+  [80, 180, 350].forEach(d => setTimeout(() => _centerOnNode(treeId, path), d));
 }
 
 function _centerOnNode(treeId, path) {
   const nodeKey = `${treeId}|${path.join(",")}`;
   const el = document.querySelector(`.node-box[data-node-key="${CSS.escape(nodeKey)}"]`);
   if (!el) return;
-
   const wrapper = document.getElementById("tree-wrapper");
   if (!wrapper) return;
 
   const wrapRect = wrapper.getBoundingClientRect();
   const elRect   = el.getBoundingClientRect();
-
-  // Delta antara center wrapper dan center node di viewport
   const dx = (wrapRect.left + wrapRect.width  / 2) - (elRect.left + elRect.width  / 2);
   const dy = (wrapRect.top  + wrapRect.height / 2) - (elRect.top  + elRect.height / 2);
 
   offsetX = (offsetX || 0) + dx;
   offsetY = (offsetY || 0) + dy;
-
   if (typeof applyTransform === "function") applyTransform();
   if (typeof saveViewState  === "function") saveViewState();
 
-  // Highlight
+  // Highlight node
   el.style.outline = "3px solid #f44336";
   el.style.outlineOffset = "3px";
   setTimeout(() => { el.style.outline = ""; el.style.outlineOffset = ""; }, 2500);
