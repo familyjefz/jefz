@@ -181,18 +181,14 @@
   height: fit-content;
   min-width: max-content;
   min-height: max-content;
-  will-change: transform;
-  /* Anti-blur: hindari subpixel rendering */
-  -webkit-font-smoothing: subpixel-antialiased;
-  -moz-osx-font-smoothing: auto;
-  text-rendering: optimizeLegibility;
-  /* GPU layer */
-  transform: translateZ(0);
-  image-rendering: -webkit-optimize-contrast;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
 }
 
+.tree-zoom-container,
 .tree-zoom-container * {
-  /* Jangan pakai backface-visibility di semua elemen — itu yg bikin buram */
+  backface-visibility: hidden;
 }
 
 .tree-wrapper {
