@@ -17,6 +17,9 @@ let lastMoveTime = 0;
 let lastMoveX = 0;
 let lastMoveY = 0;
 let _flingRaf = null;
+// Rolling samples untuk velocity yang akurat
+const VEL_SAMPLES = 4;
+let moveSamples = [];
 
 let isPinching = false;
 let startDist = 0;
@@ -32,8 +35,8 @@ let repositionMode = false;
 const DRAG_THRESHOLD = 4;
 const INFO_ZOOM_MIN = 0.6;
 const INFO_ZOOM_MAX = 4;
-const FRICTION = 0.92;
-const MIN_VEL = 0.3;
+const FRICTION = 0.96;   // lebih lambat berhenti = terasa lebih natural
+const MIN_VEL = 0.15;  // berhenti saat benar-benar lambat
 
 const VIEW_KEY = "silsilah_view_state_v2";
 
@@ -184,6 +187,15 @@ function cancelFling() {
 
 function startFling() {
   cancelFling();
+
+  // Hitung velocity dari rolling average sample terbaru (max 80ms terakhir)
+  const now = Date.now();
+  const recent = moveSamples.filter(s => now - s.t < 80);
+  if (recent.length > 0) {
+    velX = recent.reduce((s,v)=>s+v.vx,0) / recent.length;
+    velY = recent.reduce((s,v)=>s+v.vy,0) / recent.length;
+  }
+
   if (Math.hypot(velX, velY) < MIN_VEL) return;
 
   function frame() {
@@ -212,6 +224,7 @@ function startDrag(e) {
   startX = e.clientX; startY = e.clientY;
   startOffsetX = offsetX; startOffsetY = offsetY;
   velX = 0; velY = 0;
+  moveSamples = [];
   lastMoveTime = Date.now();
   lastMoveX = e.clientX; lastMoveY = e.clientY;
   if (!isClickable(t)) { isDragging = true; e.preventDefault(); }
@@ -228,9 +241,11 @@ function moveDrag(e) {
   }
   const now = Date.now();
   const dt  = now - lastMoveTime;
-  if (dt > 0) {
-    velX = (e.clientX - lastMoveX) / dt * 16;
-    velY = (e.clientY - lastMoveY) / dt * 16;
+  if (dt > 0 && dt < 100) {
+    const vx = (e.clientX - lastMoveX) / dt * 16;
+    const vy = (e.clientY - lastMoveY) / dt * 16;
+    moveSamples.push({ vx, vy, t: now });
+    if (moveSamples.length > VEL_SAMPLES) moveSamples.shift();
   }
   lastMoveTime = now;
   lastMoveX = e.clientX;
@@ -290,6 +305,7 @@ function touchStart(e) {
     startX = touch.clientX; startY = touch.clientY;
     startOffsetX = offsetX; startOffsetY = offsetY;
     velX = 0; velY = 0;
+    moveSamples = [];
     lastMoveTime = Date.now();
     lastMoveX = touch.clientX; lastMoveY = touch.clientY;
     if (!isClickable(target)) isDragging = true;
@@ -323,9 +339,11 @@ function touchMove(e) {
     e.preventDefault();
     const now = Date.now();
     const dt  = now - lastMoveTime;
-    if (dt > 0) {
-      velX = (t.clientX - lastMoveX) / dt * 16;
-      velY = (t.clientY - lastMoveY) / dt * 16;
+    if (dt > 0 && dt < 100) {
+      const vx = (t.clientX - lastMoveX) / dt * 16;
+      const vy = (t.clientY - lastMoveY) / dt * 16;
+      moveSamples.push({ vx, vy, t: now });
+      if (moveSamples.length > VEL_SAMPLES) moveSamples.shift();
     }
     lastMoveTime = now;
     lastMoveX = t.clientX; lastMoveY = t.clientY;
