@@ -59,10 +59,7 @@ function resetInfoZoom() {
 function applyTransform() {
   const el = getContainer();
   if (!el) return;
-  // Round ke integer pixel - cegah subpixel blur
-  const tx = Math.round(offsetX * 100) / 100;
-  const ty = Math.round(offsetY * 100) / 100;
-  el.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  el.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
   el.style.transformOrigin = "0 0";
 }
 
@@ -188,8 +185,6 @@ function cancelFling() {
 function startFling() {
   cancelFling();
   if (Math.hypot(velX, velY) < MIN_VEL) return;
-  const el = getContainer();
-  if (el) el.style.willChange = "transform";
 
   function frame() {
     velX *= FRICTION;
@@ -201,11 +196,6 @@ function startFling() {
       _flingRaf = requestAnimationFrame(frame);
     } else {
       _flingRaf = null;
-      // Selesai fling: round ke pixel penuh & hapus willChange
-      offsetX = Math.round(offsetX);
-      offsetY = Math.round(offsetY);
-      applyTransform();
-      if (el) el.style.willChange = "auto";
       saveViewState();
     }
   }
