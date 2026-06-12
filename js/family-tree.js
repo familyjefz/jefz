@@ -156,14 +156,28 @@ function renderD3Tree(container, rootData, treeId) {
   );
 
   const measurer = document.createElement("div");
-  measurer.style.cssText = "position:absolute;left:-9999px;top:-9999px;opacity:0;pointer-events:none;";
+  // Harus visible untuk force browser hitung layout dengan benar
+  // Tapi di luar viewport agar tidak terlihat
+  measurer.style.cssText = [
+    "position:fixed",
+    "left:-9999px",
+    "top:0",
+    "opacity:0",
+    "pointer-events:none",
+    "z-index:-1",
+    "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
+    "font-size:9.5px"
+  ].join(";");
   document.body.appendChild(measurer);
+  // Force reflow sebelum measure
+  void measurer.offsetHeight;
   const nodeWidths  = new Map();
   const nodeHeights = new Map();
   root.each(d => {
     const tmp = document.createElement("div");
     tmp.className = "node-box";
-    tmp.style.cssText = "display:inline-block;white-space:pre;";
+    tmp.style.cssText = "display:inline-block;white-space:pre;position:relative;";
+    void tmp.offsetHeight; // force layout
     tmp.innerHTML = `<div class="node-name">${escapeHtml(d.data.name)}</div>`
       + `<div class="node-buttons"><button class="btn-option">Option</button><button class="btn-info">Info</button></div>`;
     measurer.appendChild(tmp);
@@ -464,23 +478,21 @@ function renderTree() {
     renderD3Tree(div, t.data, t.id);
   });
 
-  requestAnimationFrame(() => {
-    attachConnectTargetListener();
-    
-    if (wrapper) {
-      if (isFirstLoad) {
-        isFirstLoad = false;
-        const hasState = (typeof loadViewState === "function") ? loadViewState() : false;
-        if (!hasState && typeof zoomResetToJabbar === "function") {
-          zoomResetToJabbar();
-        }
-      } else {
-        wrapper.scrollLeft = savedLeft;
-        wrapper.scrollTop = savedTop;
+  // Langsung sync - tidak ada delay/setTimeout
+  if (typeof attachConnectTargetListener === "function") attachConnectTargetListener();
+  if (wrapper) {
+    if (isFirstLoad) {
+      isFirstLoad = false;
+      const hasState = (typeof loadViewState === "function") ? loadViewState() : false;
+      if (!hasState && typeof zoomResetToJabbar === "function") {
+        zoomResetToJabbar();
       }
+    } else {
+      wrapper.scrollLeft = savedLeft;
+      wrapper.scrollTop  = savedTop;
     }
-    if (typeof drawManualLinks === "function") drawManualLinks();
-  });
+  }
+  if (typeof drawManualLinks === "function") drawManualLinks();
 }
 
 
@@ -944,7 +956,6 @@ document.addEventListener('DOMContentLoaded', () => {
 window.startConnect = startConnect;
 window.disconnectNode = disconnectNode;
 /*Stable + cutting-root-fix*/
-
 // ========== RESET ZOOM → Muhammad Jabbar @ 150% ==========
 function zoomResetToJabbar() {
   scale = 1.5;
@@ -1008,4 +1019,3 @@ function zoomResetToJabbar() {
   });
 }
 window.zoomResetToJabbar = zoomResetToJabbar;
-
