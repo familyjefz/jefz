@@ -277,6 +277,7 @@ function getDist(touches) {
 }
 
 function touchStart(e) {
+  const wasFling = !!_flingRaf;
   cancelFling(); // stop fling saat ada sentuhan baru
   if (e.touches.length >= 2) {
     if (isInfoModalOpen()) {
@@ -306,7 +307,7 @@ function touchStart(e) {
 }
 
 function touchMove(e) {
-  // Info modal pinch - handle dulu, jangan ganggu scroll modal
+  // Info modal pinch
   if (isInfoPinching && e.touches.length >= 2) {
     e.preventDefault();
     const dist = getDist(e.touches);
@@ -314,10 +315,9 @@ function touchMove(e) {
     infoZoom = Math.max(INFO_ZOOM_MIN, Math.min(INFO_ZOOM_MAX, startInfoZoom * dist / startDist));
     applyInfoZoom(); return;
   }
-  // Jika modal info terbuka, jangan intercept gerakan apapun
   if (isInfoModalOpen()) return;
-  // Blok default browser hanya untuk tree drag/pinch
-  if (isDragging || pendingDrag || isPinching) {
+  // Selalu blok scroll browser saat ada sentuhan aktif di tree
+  if (pendingDrag || isDragging || isPinching) {
     e.preventDefault();
   }
   if (isPinching && e.touches.length >= 2) {
