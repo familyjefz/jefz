@@ -278,7 +278,13 @@ function getDist(touches) {
 
 function touchStart(e) {
   const wasFling = !!_flingRaf;
-  cancelFling(); // stop fling saat ada sentuhan baru
+  cancelFling();
+  // Blok browser scroll segera - sebelum apapun
+  // kecuali jika target adalah elemen interaktif atau modal
+  const tgt = e.touches[0] && document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+  if (!isAlwaysInteractive(tgt) && !isInfoModalOpen()) {
+    e.preventDefault();
+  }
   if (e.touches.length >= 2) {
     if (isInfoModalOpen()) {
       isInfoPinching = true; isPinching = false;
