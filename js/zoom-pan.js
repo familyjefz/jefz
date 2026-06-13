@@ -306,15 +306,19 @@ function touchStart(e) {
 }
 
 function touchMove(e) {
-  // Blok default browser SEGERA - hapus 300ms delay browser
-  if ((isDragging || pendingDrag || isPinching || isInfoPinching) && !isAlwaysInteractive(e.target)) {
-    e.preventDefault();
-  }
+  // Info modal pinch - handle dulu, jangan ganggu scroll modal
   if (isInfoPinching && e.touches.length >= 2) {
+    e.preventDefault();
     const dist = getDist(e.touches);
     if (startDist <= 0) return;
     infoZoom = Math.max(INFO_ZOOM_MIN, Math.min(INFO_ZOOM_MAX, startInfoZoom * dist / startDist));
     applyInfoZoom(); return;
+  }
+  // Jika modal info terbuka, jangan intercept gerakan apapun
+  if (isInfoModalOpen()) return;
+  // Blok default browser hanya untuk tree drag/pinch
+  if (isDragging || pendingDrag || isPinching) {
+    e.preventDefault();
   }
   if (isPinching && e.touches.length >= 2) {
     const dist = getDist(e.touches);
