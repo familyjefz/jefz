@@ -33,10 +33,19 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("mousemove", moveDrag);
   document.addEventListener("mouseup", endDrag);
 
-  document.addEventListener("touchstart", touchStart, { passive: false });
-  document.addEventListener("touchmove", touchMove, { passive: false });
-  document.addEventListener("touchend", touchEnd);
-  document.addEventListener("touchcancel", touchEnd);
+  // Touch langsung di wrapper - tidak ada propagation delay
+  const _tw = document.getElementById("tree-wrapper");
+  if (_tw) {
+    _tw.addEventListener("touchstart",  touchStart,  { passive: false, capture: false });
+    _tw.addEventListener("touchmove",   touchMove,   { passive: false, capture: false });
+    _tw.addEventListener("touchend",    touchEnd,    { passive: true });
+    _tw.addEventListener("touchcancel", touchEnd,    { passive: true });
+  } else {
+    document.addEventListener("touchstart",  touchStart,  { passive: false });
+    document.addEventListener("touchmove",   touchMove,   { passive: false });
+    document.addEventListener("touchend",    touchEnd);
+    document.addEventListener("touchcancel", touchEnd);
+  }
 
   document.getElementById("zoom-reset")?.addEventListener("click", zoomReset);
   document.getElementById("expand-btn")?.addEventListener("click", () => {
