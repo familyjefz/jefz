@@ -181,20 +181,14 @@
   height: fit-content;
   min-width: max-content;
   min-height: max-content;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: geometricPrecision;
-}
-
-.tree-zoom-container,
-.tree-zoom-container * {
-  backface-visibility: hidden;
+  contain: layout paint;
+  will-change: transform;
 }
 
 .tree-wrapper {
-  -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
   overflow: hidden;
+  touch-action: none;
 }
 
 #tree {
