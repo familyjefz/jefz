@@ -214,9 +214,10 @@ function startFling() {
 
 // ── Mouse drag ──
 function startDrag(e) {
+  // Stop fling PERTAMA - sebelum cek apapun
+  cancelFling();
   const t = e.target;
   if (isAlwaysInteractive(t)) return;
-  cancelFling();
   pendingDrag = true;
   isDragging  = false;
   startX = e.clientX; startY = e.clientY;
@@ -276,8 +277,8 @@ function getDist(touches) {
 }
 
 function touchStart(e) {
+  cancelFling(); // stop fling saat ada sentuhan baru
   if (e.touches.length >= 2) {
-    cancelFling();
     if (isInfoModalOpen()) {
       isInfoPinching = true; isPinching = false;
       startDist = getDist(e.touches); startInfoZoom = infoZoom;
