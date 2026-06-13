@@ -474,15 +474,12 @@ function renderTree() {
     renderD3Tree(div, t.data, t.id);
   });
 
-  // Langsung sync - tidak ada delay/setTimeout
   if (typeof attachConnectTargetListener === "function") attachConnectTargetListener();
-  if (wrapper) {
-    if (isFirstLoad) {
-      isFirstLoad = false;
-      const hasState = (typeof loadViewState === "function") ? loadViewState() : false;
-      if (!hasState && typeof zoomResetToJabbar === "function") {
-        zoomResetToJabbar();
-      }
+  if (isFirstLoad) {
+    isFirstLoad = false;
+    const hasState = (typeof loadViewState === "function") ? loadViewState() : false;
+    if (!hasState && typeof zoomResetToJabbar === "function") {
+      zoomResetToJabbar();
     }
   }
   if (typeof drawManualLinks === "function") drawManualLinks();
