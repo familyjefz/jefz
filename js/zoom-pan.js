@@ -306,15 +306,17 @@ function touchStart(e) {
 }
 
 function touchMove(e) {
-  if (isInfoPinching && e.touches.length >= 2) {
+  // Blok default browser SEGERA - hapus 300ms delay browser
+  if ((isDragging || pendingDrag || isPinching || isInfoPinching) && !isAlwaysInteractive(e.target)) {
     e.preventDefault();
+  }
+  if (isInfoPinching && e.touches.length >= 2) {
     const dist = getDist(e.touches);
     if (startDist <= 0) return;
     infoZoom = Math.max(INFO_ZOOM_MIN, Math.min(INFO_ZOOM_MAX, startInfoZoom * dist / startDist));
     applyInfoZoom(); return;
   }
   if (isPinching && e.touches.length >= 2) {
-    e.preventDefault();
     const dist = getDist(e.touches);
     if (startDist <= 0) return;
     const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
@@ -329,7 +331,6 @@ function touchMove(e) {
       if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
       isDragging = true;
     }
-    e.preventDefault();
     const now = Date.now();
     const dt  = now - lastMoveTime;
     if (dt > 0 && dt < 80) {
