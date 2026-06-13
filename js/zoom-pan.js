@@ -59,10 +59,14 @@ function resetInfoZoom() {
   applyInfoZoom();
 }
 
+let _lastTransform = "";
 function applyTransform() {
   const el = getContainer();
   if (!el) return;
-  el.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+  const t = `translate(${offsetX}px,${offsetY}px) scale(${scale})`;
+  if (t === _lastTransform) return; // skip jika tidak ada perubahan
+  _lastTransform = t;
+  el.style.transform = t;
   el.style.transformOrigin = "0 0";
 }
 
@@ -134,19 +138,13 @@ function centerOnMainTree() {
 
 function saveViewState() {
   try {
-    const w = document.getElementById("tree-wrapper");
-    localStorage.setItem(VIEW_KEY, JSON.stringify({
-      scale, offsetX, offsetY,
-      scrollLeft: w ? w.scrollLeft : 0,
-      scrollTop:  w ? w.scrollTop  : 0
-    }));
+    localStorage.setItem(VIEW_KEY, JSON.stringify({ scale, offsetX, offsetY }));
   } catch (e) {}
 }
 
 function loadViewState() {
   try {
     const raw = localStorage.getItem(VIEW_KEY);
-    const w = document.getElementById("tree-wrapper");
     if (!raw) return false;
     const data = JSON.parse(raw);
     scale   = data.scale   || 1;
@@ -155,10 +153,6 @@ function loadViewState() {
     currentZoom = scale;
     applyTransform();
     updateZoomUI(Math.round(scale * 100));
-    if (w) {
-      w.scrollLeft = data.scrollLeft || 0;
-      w.scrollTop  = data.scrollTop  || 0;
-    }
     return true;
   } catch (e) { return false; }
 }
@@ -176,9 +170,13 @@ function isClickable(target) {
 }
 
 function suppressNextClick() {
-  const handler = ev => { ev.stopPropagation(); ev.preventDefault(); };
-  document.addEventListener("click", handler, { capture: true, once: true });
-  setTimeout(() => document.removeEventListener("click", handler, { capture: true }), 400);
+  const handler = ev => {
+    ev.stopPropagation();
+    ev.preventDefault();
+    return false;
+  };
+  document.addEventListener("click",      handler, { capture: true, once: true });
+  document.addEventListener("touchstart", handler, { capture: true, once: true });
 }
 
 function cancelFling() {
@@ -255,7 +253,10 @@ function moveDrag(e) {
 }
 
 function endDrag(e) {
-  if (isDragging && e) {
+  const wasDragging = isDragging;
+  isDragging = false;
+  pendingDrag = false;
+  if (wasDragging && e) {
     const dx = (e.clientX ?? startX) - startX;
     const dy = (e.clientY ?? startY) - startY;
     if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
@@ -265,8 +266,6 @@ function endDrag(e) {
       saveViewState();
     }
   }
-  isDragging = false;
-  pendingDrag = false;
 }
 
 // ── Touch ──
@@ -360,7 +359,9 @@ function touchEnd(e) {
     saveViewState(); return;
   }
   if (e.touches.length === 0) {
-    if (isDragging) {
+    const wasDrag = isDragging;
+    isDragging = false; pendingDrag = false;
+    if (wasDrag) {
       const ct = e.changedTouches && e.changedTouches[0];
       const dx = (ct ? ct.clientX : startX) - startX;
       const dy = (ct ? ct.clientY : startY) - startY;
@@ -371,18 +372,8 @@ function touchEnd(e) {
         saveViewState();
       }
     }
-    isDragging = false; pendingDrag = false;
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const w = document.getElementById("tree-wrapper");
-  if (w) {
-    let t = null;
-    w.addEventListener("scroll", () => {
-      clearTimeout(t);
-      t = setTimeout(saveViewState, 200);
-    });
-  }
-});
+// scroll state disimpan via offsetX/offsetY
 /*Stable + fling + anti-blur*/
