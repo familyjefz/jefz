@@ -442,10 +442,6 @@ function renderTree() {
   const container = document.getElementById("tree");
   if (!container) return;
 
-  const wrapper = document.getElementById("tree-wrapper");
-  const savedLeft = wrapper ? wrapper.scrollLeft : 800;
-  const savedTop = wrapper ? wrapper.scrollTop : 400;
-
   container.innerHTML = "";
 
   const svgNS = "http://www.w3.org/2000/svg";
@@ -487,9 +483,6 @@ function renderTree() {
       if (!hasState && typeof zoomResetToJabbar === "function") {
         zoomResetToJabbar();
       }
-    } else {
-      wrapper.scrollLeft = savedLeft;
-      wrapper.scrollTop  = savedTop;
     }
   }
   if (typeof drawManualLinks === "function") drawManualLinks();
@@ -805,18 +798,13 @@ async function disconnectNode(path, treeId) {
 // ========== STANDARD FUNCTIONS ==========
 
 function getCurrentScroll() {
-  const w = document.getElementById("tree-wrapper");
-  return { left: w ? w.scrollLeft : 800, top: w ? w.scrollTop : 400 };
+  return { left: offsetX, top: offsetY };
 }
 
-function restoreScroll(left, top) {
-  const w = document.getElementById("tree-wrapper");
-  if (w) {
-    setTimeout(() => {
-      w.scrollLeft = left;
-      w.scrollTop = top;
-    }, 50);
-  }
+function restoreScroll(ox, oy) {
+  offsetX = ox;
+  offsetY = oy;
+  if (typeof applyTransform === "function") applyTransform();
 }
 
 function openOptions(path, treeId = "main") {
