@@ -170,13 +170,19 @@ function isClickable(target) {
 }
 
 function suppressNextClick() {
+  // Hanya suppress event "click" sintetis yang muncul setelah drag/fling.
+  // JANGAN intercept touchstart - itu akan "menelan" sentuhan pertama
+  // dari gesture pan selanjutnya (menyebabkan butuh 2x sentuh).
   const handler = ev => {
     ev.stopPropagation();
     ev.preventDefault();
     return false;
   };
-  document.addEventListener("click",      handler, { capture: true, once: true });
-  document.addEventListener("touchstart", handler, { capture: true, once: true });
+  document.addEventListener("click", handler, { capture: true, once: true });
+  // Auto-remove jika click tidak terjadi dalam 500ms (mencegah listener nyangkut)
+  setTimeout(() => {
+    document.removeEventListener("click", handler, { capture: true });
+  }, 500);
 }
 
 function cancelFling() {
