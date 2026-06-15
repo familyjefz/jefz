@@ -283,12 +283,11 @@ function getDist(touches) {
 }
 
 function touchStart(e) {
-  const wasFling = !!_flingRaf;
   cancelFling();
-  // Blok browser scroll segera - sebelum apapun
-  // kecuali jika target adalah elemen interaktif atau modal
+  // Blok scroll browser HANYA jika target bukan elemen yang bisa diklik
+  // (button/node-box) - agar event "click" sintetis tetap muncul untuk tap.
   const tgt = e.touches[0] && document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
-  if (!isAlwaysInteractive(tgt) && !isInfoModalOpen()) {
+  if (!isAlwaysInteractive(tgt) && !isClickable(tgt) && !isInfoModalOpen()) {
     e.preventDefault();
   }
   if (e.touches.length >= 2) {
@@ -328,25 +327,32 @@ function touchMove(e) {
     applyInfoZoom(); return;
   }
   if (isInfoModalOpen()) return;
-  // Selalu blok scroll browser saat ada sentuhan aktif di tree
-  if (pendingDrag || isDragging || isPinching) {
-    e.preventDefault();
-  }
+
+  // Pinch zoom tree
   if (isPinching && e.touches.length >= 2) {
+    e.preventDefault();
     const dist = getDist(e.touches);
     if (startDist <= 0) return;
     const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
     const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     setZoom((startScale * dist / startDist) * 100, cx, cy); return;
   }
+
   if ((isDragging || pendingDrag) && e.touches.length === 1 && !isPinching) {
     const t  = e.touches[0];
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
+
     if (!isDragging) {
+      // Belum melewati threshold — JANGAN preventDefault.
+      // Ini menjaga event "click" tetap muncul untuk tap di tombol.
       if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
       isDragging = true;
     }
+
+    // Drag terkonfirmasi — sekarang blok scroll browser
+    e.preventDefault();
+
     const now = Date.now();
     const dt  = now - lastMoveTime;
     if (dt > 0 && dt < 80) {
