@@ -10,7 +10,7 @@ let startY = 0;
 let startOffsetX = 0;
 let startOffsetY = 0;
 
-// Momentum/fling..
+// Momentum/fling
 let velX = 0;
 let velY = 0;
 let lastMoveTime = 0;
@@ -225,9 +225,6 @@ function startDrag(e) {
   const t = e.target;
   // Jangan intercept apapun di header/search/modal
   if (isAlwaysInteractive(t)) return;
-  if (t.closest(".header") || t.closest(".header-search-wrap") ||
-      t.closest(".search-suggestions") || t.closest(".custom-popup") ||
-      t.closest("#info-modal")) return;
   pendingDrag = true;
   isDragging  = false;
   startX = e.clientX; startY = e.clientY;
@@ -322,6 +319,7 @@ function touchStart(e) {
 }
 
 function touchMove(e) {
+  if (_touchExcluded) return; // touch dari area excluded, abaikan
   // Info modal pinch
   if (isInfoPinching && e.touches.length >= 2) {
     e.preventDefault();
@@ -375,6 +373,7 @@ function touchMove(e) {
 }
 
 function touchEnd(e) {
+  if (_touchExcluded) { _touchExcluded = false; return; }
   if ((isPinching || isInfoPinching) && e.touches.length < 2) {
     isPinching = false; isInfoPinching = false;
     isDragging = false; pendingDrag = false;
