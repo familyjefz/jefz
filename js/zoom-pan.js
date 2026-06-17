@@ -220,10 +220,9 @@ function startFling() {
 
 // ── Mouse drag ──
 function startDrag(e) {
-  // Stop fling PERTAMA
+  // Stop fling PERTAMA - sebelum cek apapun
   cancelFling();
   const t = e.target;
-  // Jangan intercept apapun di header/search/modal
   if (isAlwaysInteractive(t)) return;
   pendingDrag = true;
   isDragging  = false;
@@ -319,7 +318,6 @@ function touchStart(e) {
 }
 
 function touchMove(e) {
-  if (_touchExcluded) return; // touch dari area excluded, abaikan
   // Info modal pinch
   if (isInfoPinching && e.touches.length >= 2) {
     e.preventDefault();
