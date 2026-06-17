@@ -442,6 +442,8 @@ function renderTree() {
   const container = document.getElementById("tree");
   if (!container) return;
 
+  // Sembunyikan sebelum rebuild untuk eliminasi kedip
+  container.style.visibility = "hidden";
   container.innerHTML = "";
 
   const svgNS = "http://www.w3.org/2000/svg";
@@ -472,6 +474,11 @@ function renderTree() {
     }
 
     renderD3Tree(div, t.data, t.id);
+  });
+
+  // Show kembali — gunakan requestAnimationFrame agar browser sempat layout
+  requestAnimationFrame(() => {
+    container.style.visibility = "";
   });
 
   if (typeof attachConnectTargetListener === "function") attachConnectTargetListener();
