@@ -373,7 +373,6 @@ function touchMove(e) {
 }
 
 function touchEnd(e) {
-  if (_touchExcluded) { _touchExcluded = false; return; }
   if ((isPinching || isInfoPinching) && e.touches.length < 2) {
     isPinching = false; isInfoPinching = false;
     isDragging = false; pendingDrag = false;
