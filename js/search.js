@@ -127,8 +127,19 @@ function initSearch() {
       const li = document.createElement("div");
       li.className = "search-suggestion-item";
       li.textContent = m.name + (m.isSpouse ? " (pasangan)" : "");
-      li.addEventListener("mousedown", (e) => {
+      // touchend untuk mobile, click untuk desktop
+      let _tapped = false;
+      li.addEventListener("touchend", (e) => {
         e.preventDefault();
+        e.stopPropagation();
+        _tapped = true;
+        sug.innerHTML = "";
+        input.value = "";
+        input.blur();
+        goToNode(m.treeId, m.path);
+      }, { passive: false });
+      li.addEventListener("click", (e) => {
+        if (_tapped) { _tapped = false; return; } // sudah handled oleh touchend
         sug.innerHTML = "";
         input.value = "";
         input.blur();
