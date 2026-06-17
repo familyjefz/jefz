@@ -220,10 +220,14 @@ function startFling() {
 
 // ── Mouse drag ──
 function startDrag(e) {
-  // Stop fling PERTAMA - sebelum cek apapun
+  // Stop fling PERTAMA
   cancelFling();
   const t = e.target;
+  // Jangan intercept apapun di header/search/modal
   if (isAlwaysInteractive(t)) return;
+  if (t.closest(".header") || t.closest(".header-search-wrap") ||
+      t.closest(".search-suggestions") || t.closest(".custom-popup") ||
+      t.closest("#info-modal")) return;
   pendingDrag = true;
   isDragging  = false;
   startX = e.clientX; startY = e.clientY;
