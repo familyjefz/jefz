@@ -10,7 +10,7 @@ let startY = 0;
 let startOffsetX = 0;
 let startOffsetY = 0;
 
-// Momentum/fling
+// Momentum/fling..
 let velX = 0;
 let velY = 0;
 let lastMoveTime = 0;
